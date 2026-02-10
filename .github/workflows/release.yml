@@ -82,16 +82,11 @@ jobs:
           fi
 
           if [[ "${{ inputs.release }}" != "true" ]]; then
-            VERSION=$(python - <<'PY'
-          import re
-          from pathlib import Path
-          s = Path('app/build.gradle').read_text()
-          m = re.search(r"versionName\\s+'([^']+)'", s)
-          if not m:
-            raise SystemExit('versionName not found in app/build.gradle')
-          print(m.group(1))
-          PY
-          )
+            VERSION="$(sed -nE "s/^[[:space:]]*versionName[[:space:]]+['\"]([^'\"]+)['\"].*$/\1/p" app/build.gradle | head -n 1)"
+            if [[ -z \"$VERSION\" ]]; then
+              echo \"versionName not found in app/build.gradle\"
+              exit 1
+            fi
             echo "version=$VERSION" >> "$GITHUB_OUTPUT"
             echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
             exit 0
@@ -131,13 +126,13 @@ jobs:
           p = Path("app/build.gradle")
           s = p.read_text()
 
-          m = re.search(r"versionCode\\s+(\\d+)", s)
+          m = re.search(r"versionCode\s+(\d+)", s)
           if not m:
             raise SystemExit("versionCode not found in app/build.gradle")
           next_code = int(m.group(1)) + 1
 
-          s = re.sub(r"versionCode\\s+\\d+", f"versionCode {next_code}", s, count=1)
-          s = re.sub(r"versionName\\s+'[^']+'", f"versionName '{version}'", s, count=1)
+          s = re.sub(r"versionCode\s+\d+", f"versionCode {next_code}", s, count=1)
+          s = re.sub(r"versionName\s+['\"][^'\"]+['\"]", f"versionName '{version}'", s, count=1)
           p.write_text(s)
           print(f"versionName={version} versionCode={next_code}")
           PY
