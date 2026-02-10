@@ -10,6 +10,70 @@
 
 هذا المشروع يتجنب عمداً تنفيذ الخوارزميات الفلكية: بدلاً من ذلك يقوم بتفويض حسابات الشمس/الظل إلى تطبيق **SuntimesWidget** المثبت عبر `ContentProvider` المصدّرة منه.
 
+> تنبيه: تم تطوير هذا المشروع مع اعتماد كبير على مساعدات الذكاء الاصطناعي. معظم الشيفرة تم توليدها أو تعديلها باستخدام نموذج Codex 5.3 من OpenAI.
+
+## لقطات شاشة
+
+<table>
+  <thead>
+    <tr>
+      <th align="left">English</th>
+      <th align="left">Arabic (RTL)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <div><strong>Home</strong> (today timeline)</div>
+        <img src="assets/home_en_1.png" alt="Home (EN) - timeline top" style="max-width: 100%; height: auto;" />
+        <img src="assets/home_en_2.png" alt="Home (EN) - timeline" style="max-width: 100%; height: auto; margin-top: 8px;" />
+      </td>
+      <td>
+        <div><strong>Home</strong> (خط اليوم)</div>
+        <img src="assets/home_ar.png" alt="Home (AR) - timeline" style="max-width: 100%; height: auto;" />
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div><strong>Days</strong> (month cards)</div>
+        <img src="assets/days_en.png" alt="Days (EN)" style="max-width: 100%; height: auto;" />
+        <div style="margin-top: 6px; opacity: .8;">Dark</div>
+        <img src="assets/days_en_dark.png" alt="Days (EN) - dark" style="max-width: 100%; height: auto;" />
+      </td>
+      <td>
+        <div><strong>Days</strong> (بطاقات الشهر)</div>
+        <img src="assets/days_ar.png" alt="Days (AR)" style="max-width: 100%; height: auto;" />
+        <div style="margin-top: 6px; opacity: .8;">داكن</div>
+        <img src="assets/days_ar_dark.png" alt="Days (AR) - dark" style="max-width: 100%; height: auto;" />
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div><strong>Settings</strong> (Material 3)</div>
+        <img src="assets/settings_en_dark_1.png" alt="Settings (EN) - dark 1" style="max-width: 100%; height: auto;" />
+        <img src="assets/settings_en_dark_2.png" alt="Settings (EN) - dark 2" style="max-width: 100%; height: auto; margin-top: 8px;" />
+        <img src="assets/settings_en_dark_3.png" alt="Settings (EN) - dark 3" style="max-width: 100%; height: auto; margin-top: 8px;" />
+      </td>
+      <td>
+        <div><strong>Settings</strong> (الإعدادات)</div>
+        <img src="assets/settings_ar_1.png" alt="Settings (AR) 1" style="max-width: 100%; height: auto;" />
+        <img src="assets/settings_ar_2.png" alt="Settings (AR) 2" style="max-width: 100%; height: auto; margin-top: 8px;" />
+        <img src="assets/settings_ar_3.png" alt="Settings (AR) 3" style="max-width: 100%; height: auto; margin-top: 8px;" />
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <div><strong>Widget</strong> (today card)</div>
+        <img src="assets/widget_en.png" alt="Widget (EN)" style="max-width: 100%; height: auto;" />
+      </td>
+      <td>
+        <div><strong>Widget</strong> (ودجت اليوم)</div>
+        <img src="assets/widget_ar.png" alt="Widget (AR)" style="max-width: 100%; height: auto;" />
+      </td>
+    </tr>
+  </tbody>
+</table>
+
 ## ماذا يفعل هذا التطبيق؟
 
 - يعرض خطاً زمنياً لليوم (Home) وقائمة شهرية ببطاقات الأيام (Days).
