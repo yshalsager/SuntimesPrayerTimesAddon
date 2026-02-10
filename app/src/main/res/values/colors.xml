@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <color name='teal_earth'>#00695C</color>
+    <color name='parchment'>#F6F1E6</color>
+    <color name='parchment_sapphire'>#F1F5FF</color>
+    <color name='parchment_rose'>#FFF1F4</color>
+    <color name='charcoal'>#263238</color>
+    <color name='amber_earth'>#D4A017</color>
+
+    <color name='primary_sapphire'>#1B5EAB</color>
+    <color name='secondary_sapphire'>#0F86A6</color>
+    <color name='primary_rose'>#8B2F4A</color>
+    <color name='secondary_rose'>#C7427A</color>
+
+    <color name='surface_light'>#FFFFFF</color>
+    <color name='border_soft'>#1A263238</color>
+    <color name='text_muted'>#99263238</color>
+    <color name='surface_muted'>#F1ECE1</color>
+    <color name='surface_night'>#E6F0EE</color>
+    <color name='surface_prohibited'>#F3ECDD</color>
+</resources>

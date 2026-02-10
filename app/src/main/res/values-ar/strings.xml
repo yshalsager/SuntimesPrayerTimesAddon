@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name='app_name'>ملحق مواقيت الصلاة</string>
+    <string name='picker_title'>مواقيت الصلاة</string>
+    <string name='general_title'>عام</string>
+    <string name='language_title'>اللغة</string>
+    <string name='language_system'>النظام</string>
+
+    <string name='missing_permission'>صلاحية مفقودة: %1$s</string>
+    <string name='grant_permission'>منح الصلاحية</string>
+    <string name='language_english'>الإنجليزية</string>
+    <string name='language_arabic'>العربية</string>
+
+    <string name='theme_title'>المظهر</string>
+    <string name='theme_system'>النظام</string>
+    <string name='theme_light'>فاتح</string>
+    <string name='theme_dark'>داكن</string>
+
+    <string name='palette_title'>لوحة الألوان</string>
+    <string name='palette_parchment'>ورقي</string>
+    <string name='palette_dynamic'>ديناميكي (Android 12+)</string>
+    <string name='palette_sapphire'>ياقوتي</string>
+    <string name='palette_rose'>وردي</string>
+
+    <string name='main_settings'>الإعدادات</string>
+
+    <string name='event_prayer_fajr'>الفجر</string>
+    <string name='event_prayer_dhuhr'>الظهر</string>
+    <string name='event_prayer_jummah'>الجمعة</string>
+    <string name='event_prayer_asr'>العصر</string>
+    <string name='event_prayer_maghrib'>المغرب</string>
+    <string name='event_prayer_isha'>العشاء</string>
+
+    <string name='event_makruh_dawn_start'>وقت نهي (بداية من الفجر)</string>
+    <string name='event_makruh_sunrise_start'>وقت نهي (بداية الشروق)</string>
+    <string name='event_makruh_dawn_end'>وقت نهي (نهاية من الفجر)</string>
+    <string name='event_makruh_sunrise_end'>وقت نهي (بعد الشروق)</string>
+    <string name='event_makruh_zawal_start'>وقت نهي (قبل الظهر)</string>
+    <string name='event_makruh_zawal_end'>وقت نهي (نهاية الاستواء)</string>
+    <string name='event_makruh_after_asr_start'>وقت نهي (بداية بعد العصر)</string>
+    <string name='event_makruh_after_asr_end'>وقت نهي (نهاية بعد العصر)</string>
+    <string name='event_makruh_sunset_start'>وقت نهي (قبل الغروب)</string>
+    <string name='event_makruh_sunset_end'>وقت نهي (نهاية الغروب)</string>
+
+    <string name='method_title'>الطريقة</string>
+    <string name='method_summary'>اختر إعداداً مسبقاً أو قيماً مخصصة</string>
+    <string name='fajr_angle_title'>زاوية الفجر</string>
+    <string name='isha_mode_title'>طريقة العشاء</string>
+    <string name='isha_mode_angle'>زاوية</string>
+    <string name='isha_mode_fixed'>دقائق ثابتة بعد المغرب</string>
+    <string name='isha_angle_title'>زاوية العشاء</string>
+    <string name='isha_fixed_minutes_title'>دقائق العشاء الثابتة</string>
+    <string name='asr_factor_title'>نسبة ظل العصر</string>
+    <string name='maghrib_offset_title'>إزاحة المغرب (دقائق)</string>
+
+    <string name='host_title'>مضيف SuntimesWidget</string>
+    <string name='host_summary'>اختر نسخة SuntimesWidget المثبتة للاستعلام عنها</string>
+
+    <string name='makruh_preset_title'>إعداد أوقات النهي</string>
+    <string name='makruh_angle_title'>زاوية النهي</string>
+    <string name='zawal_minutes_title'>دقائق الاستواء</string>
+
+    <string name='method_egypt'>مصر</string>
+    <string name='method_mwl'>رابطة العالم الإسلامي</string>
+    <string name='method_karachi'>كراتشي</string>
+    <string name='method_isna'>أمريكا الشمالية (ISNA)</string>
+    <string name='method_uaq'>أم القرى</string>
+    <string name='method_custom'>مخصص</string>
+
+    <string name='asr_factor_1'>شافعي (×1)</string>
+    <string name='asr_factor_2'>حنفي (×2)</string>
+
+    <string name='makruh_preset_shafi'>شافعي</string>
+    <string name='makruh_preset_hanafi'>حنفي</string>
+    <string name='makruh_preset_custom'>مخصص</string>
+
+    <string name='days_view_title'>عرض الأيام</string>
+    <string name='days_month_basis_title'>أساس الشهر</string>
+    <string name='days_month_basis_gregorian'>ميلادي</string>
+    <string name='days_month_basis_hijri'>هجري</string>
+    <string name='days_show_hijri_title'>إظهار التاريخ الهجري</string>
+    <string name='days_show_prohibited_title'>إظهار أوقات النهي</string>
+    <string name='days_show_night_portions_title'>إظهار تقسيم الليل</string>
+
+    <string name='days_title'>الأيام</string>
+    <string name='prev_month'>الشهر السابق</string>
+    <string name='next_month'>الشهر التالي</string>
+    <string name='next_prayer_label'>الصلاة القادمة: %1$s</string>
+    <string name='in_countdown'>بعد %1$s</string>
+    <string name='prohibited_tag'>وقت نهي</string>
+    <string name='duration_minutes'>المدة %1$d دقيقة</string>
+    <string name='today'>اليوم</string>
+    <string name='now'>الآن</string>
+    <string name='minute_abbrev'>د</string>
+
+    <string name='prohibited_dawn'>من الفجر</string>
+    <string name='prohibited_sunrise'>الشروق</string>
+    <string name='prohibited_zawal'>الاستواء</string>
+    <string name='prohibited_after_asr'>بعد العصر</string>
+    <string name='prohibited_sunset'>الغروب</string>
+
+    <string name='night_midpoint'>منتصف الليل</string>
+    <string name='night_last_third'>الثلث الأخير</string>
+    <string name='night_last_sixth'>السدس الأخير</string>
+
+    <string name='event_type_night'>الليل</string>
+    <string name='event_type_prayer'>الصلاة</string>
+    <string name='event_type_makruh'>أوقات النهي</string>
+
+    <string name='hijri_variant_title'>حساب التاريخ الهجري</string>
+    <string name='hijri_variant_umalqura'>أم القرى</string>
+    <string name='hijri_variant_diyanet'>ديانة (تركيا)</string>
+    <string name='hijri_offset_title'>تصحيح التاريخ الهجري</string>
+    <string name='hijri_offset_minus_2'>-٢ يوم</string>
+    <string name='hijri_offset_minus_1'>-١ يوم</string>
+    <string name='hijri_offset_0'>٠</string>
+    <string name='hijri_offset_plus_1'>+١ يوم</string>
+    <string name='hijri_offset_plus_2'>+٢ يوم</string>
+
+    <string name='widget_title'>الودجت</string>
+    <string name='widget_show_prohibited_title'>إظهار أوقات النهي</string>
+    <string name='widget_show_night_portions_title'>إظهار تقسيم الليل</string>
+    <string name='widget_prayer_times_today'>مواقيت الصلاة (اليوم)</string>
+    <string name='widget_prayer_times_today_desc'>مواقيت الصلاة لليوم</string>
+
+    <string name='no_host_found'>لم يتم العثور على SuntimesWidget (ثبّت التطبيق أولاً).</string>
+    <string name='unknown_location'>موقع غير معروف</string>
+</resources>

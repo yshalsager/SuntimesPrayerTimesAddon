@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <style name='Theme.PrayerTimesAddon.Base' parent='Theme.Material3.DayNight.NoActionBar'>
+        <item name='android:windowBackground'>@drawable/bg_window</item>
+        <item name='android:statusBarColor'>@android:color/transparent</item>
+    </style>
+
+    <style name='Theme.PrayerTimesAddon.CustomBase' parent='Theme.PrayerTimesAddon.Base'>
+        <item name='android:colorBackground'>@color/parchment</item>
+
+        <item name='colorSurface'>@color/surface_light</item>
+        <item name='colorSurfaceVariant'>@color/surface_muted</item>
+        <item name='colorOnBackground'>@color/charcoal</item>
+        <item name='colorOnSurface'>@color/charcoal</item>
+        <item name='colorOnSurfaceVariant'>@color/text_muted</item>
+        <item name='colorOutline'>@color/border_soft</item>
+        <item name='colorOutlineVariant'>@color/border_soft</item>
+
+    </style>
+
+    <style name='Theme.PrayerTimesAddon.Dynamic' parent='Theme.PrayerTimesAddon.Base' />
+
+    <style name='Theme.PrayerTimesAddon.Parchment' parent='Theme.PrayerTimesAddon.CustomBase'>
+        <item name='colorPrimary'>@color/teal_earth</item>
+        <item name='colorOnPrimary'>@color/surface_light</item>
+        <item name='colorSecondary'>@color/amber_earth</item>
+        <item name='colorOnSecondary'>@color/charcoal</item>
+
+        <item name='colorPrimaryContainer'>@color/surface_night</item>
+        <item name='colorOnPrimaryContainer'>@color/charcoal</item>
+        <item name='colorSecondaryContainer'>@color/surface_prohibited</item>
+        <item name='colorOnSecondaryContainer'>@color/charcoal</item>
+    </style>
+
+    <style name='Theme.PrayerTimesAddon.Sapphire' parent='Theme.PrayerTimesAddon.CustomBase'>
+        <item name='android:colorBackground'>@color/parchment_sapphire</item>
+        <item name='colorPrimary'>@color/primary_sapphire</item>
+        <item name='colorOnPrimary'>@color/surface_light</item>
+        <item name='colorSecondary'>@color/secondary_sapphire</item>
+        <item name='colorOnSecondary'>@color/surface_light</item>
+
+        <item name='colorPrimaryContainer'>@color/surface_night</item>
+        <item name='colorOnPrimaryContainer'>@color/charcoal</item>
+        <item name='colorSecondaryContainer'>@color/surface_prohibited</item>
+        <item name='colorOnSecondaryContainer'>@color/charcoal</item>
+    </style>
+
+    <style name='Theme.PrayerTimesAddon.Rose' parent='Theme.PrayerTimesAddon.CustomBase'>
+        <item name='android:colorBackground'>@color/parchment_rose</item>
+        <item name='colorPrimary'>@color/primary_rose</item>
+        <item name='colorOnPrimary'>@color/surface_light</item>
+        <item name='colorSecondary'>@color/secondary_rose</item>
+        <item name='colorOnSecondary'>@color/surface_light</item>
+
+        <item name='colorPrimaryContainer'>@color/surface_night</item>
+        <item name='colorOnPrimaryContainer'>@color/charcoal</item>
+        <item name='colorSecondaryContainer'>@color/surface_prohibited</item>
+        <item name='colorOnSecondaryContainer'>@color/charcoal</item>
+    </style>
+
+    <style name='Theme.PrayerTimesAddon' parent='Theme.PrayerTimesAddon.Parchment' />
+
+    <style name='Theme.PrayerTimesAddon.NoActionBar' parent='Theme.PrayerTimesAddon'>
+        <item name='windowActionBar'>false</item>
+        <item name='windowNoTitle'>true</item>
+    </style>
+</resources>

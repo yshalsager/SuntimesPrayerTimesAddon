@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name='app_name'>Prayer Times Addon</string>
+    <string name='picker_title'>Prayer Times</string>
+
+    <string name='event_type_prayer'>Prayer</string>
+    <string name='event_type_makruh'>Makruh</string>
+    <string name='event_type_night'>Night</string>
+
+    <string name='event_prayer_fajr'>Fajr</string>
+    <string name='event_prayer_dhuhr'>Dhuhr</string>
+    <string name='event_prayer_jummah'>Jumu\'ah</string>
+    <string name='event_prayer_asr'>Asr</string>
+    <string name='event_prayer_maghrib'>Maghrib</string>
+    <string name='event_prayer_isha'>Isha</string>
+
+    <string name='event_makruh_dawn_start'>Makruh (Dawn start)</string>
+    <string name='event_makruh_sunrise_start'>Makruh (Sunrise start)</string>
+    <string name='event_makruh_dawn_end'>Makruh (Dawn end)</string>
+    <string name='event_makruh_sunrise_end'>Makruh (After sunrise)</string>
+    <string name='event_makruh_zawal_start'>Makruh (Before Dhuhr)</string>
+    <string name='event_makruh_zawal_end'>Makruh (Zawal end)</string>
+    <string name='event_makruh_after_asr_start'>Makruh (After Asr start)</string>
+    <string name='event_makruh_after_asr_end'>Makruh (After Asr end)</string>
+    <string name='event_makruh_sunset_start'>Makruh (Before sunset)</string>
+    <string name='event_makruh_sunset_end'>Makruh (Sunset end)</string>
+
+    <string name='main_settings'>Settings</string>
+
+    <string name='method_title'>Method</string>
+    <string name='method_summary'>Choose preset or custom values</string>
+    <string name='method_egypt'>Egypt</string>
+    <string name='method_mwl'>MWL</string>
+    <string name='method_karachi'>Karachi</string>
+    <string name='method_isna'>ISNA</string>
+    <string name='method_uaq'>Umm al-Qura</string>
+    <string name='method_custom'>Custom</string>
+
+    <string name='fajr_angle_title'>Fajr angle</string>
+    <string name='isha_mode_title'>Isha mode</string>
+    <string name='isha_mode_angle'>Angle</string>
+    <string name='isha_mode_fixed'>Fixed minutes after Maghrib</string>
+    <string name='isha_angle_title'>Isha angle</string>
+    <string name='isha_fixed_minutes_title'>Isha fixed minutes</string>
+    <string name='asr_factor_title'>Asr shadow ratio</string>
+    <string name='asr_factor_1'>Shafi (x1)</string>
+    <string name='asr_factor_2'>Hanafi (x2)</string>
+    <string name='maghrib_offset_title'>Maghrib offset minutes</string>
+
+    <string name='general_title'>General</string>
+    <string name='language_title'>Language</string>
+    <string name='language_system'>System</string>
+
+    <string name='missing_permission'>Missing permission: %1$s</string>
+    <string name='grant_permission'>Grant permission</string>
+    <string name='language_english'>English</string>
+    <string name='language_arabic'>Arabic</string>
+
+    <string name='theme_title'>Theme</string>
+    <string name='theme_system'>System</string>
+    <string name='theme_light'>Light</string>
+    <string name='theme_dark'>Dark</string>
+
+    <string name='palette_title'>Palette</string>
+    <string name='palette_parchment'>Parchment</string>
+    <string name='palette_dynamic'>Dynamic (Android 12+)</string>
+    <string name='palette_sapphire'>Sapphire</string>
+    <string name='palette_rose'>Rose</string>
+
+    <string name='host_title'>SuntimesWidget host</string>
+    <string name='host_summary'>Which installed SuntimesWidget to query</string>
+
+    <string name='makruh_preset_title'>Makruh preset</string>
+    <string name='makruh_preset_shafi'>Shafi</string>
+    <string name='makruh_preset_hanafi'>Hanafi</string>
+    <string name='makruh_preset_custom'>Custom</string>
+    <string name='makruh_angle_title'>Makruh angle</string>
+    <string name='zawal_minutes_title'>Zawal minutes</string>
+
+    <string name='days_view_title'>Days view</string>
+    <string name='days_month_basis_title'>Month basis</string>
+    <string name='days_month_basis_gregorian'>Gregorian</string>
+    <string name='days_month_basis_hijri'>Hijri</string>
+    <string name='days_show_hijri_title'>Show Hijri date</string>
+    <string name='days_show_prohibited_title'>Show prohibited times</string>
+    <string name='days_show_night_portions_title'>Show night portions</string>
+
+    <string name='days_title'>Days</string>
+    <string name='prev_month'>Previous month</string>
+    <string name='next_month'>Next month</string>
+    <string name='next_prayer_label'>Next Prayer: %1$s</string>
+    <string name='in_countdown'>in %1$s</string>
+    <string name='prohibited_tag'>Prohibited</string>
+    <string name='duration_minutes'>%1$d min duration</string>
+    <string name='today'>Today</string>
+    <string name='now'>Now</string>
+    <string name='minute_abbrev'>m</string>
+
+    <string name='prohibited_dawn'>Dawn</string>
+    <string name='prohibited_sunrise'>Sunrise</string>
+    <string name='prohibited_zawal'>Zawal</string>
+    <string name='prohibited_after_asr'>After Asr</string>
+    <string name='prohibited_sunset'>Sunset</string>
+
+    <string name='night_midpoint'>Night midpoint</string>
+    <string name='night_last_third'>Last third</string>
+    <string name='night_last_sixth'>Last sixth</string>
+
+    <string name='hijri_variant_title'>Hijri calculation</string>
+    <string name='hijri_variant_umalqura'>Umm al-Qura</string>
+    <string name='hijri_variant_diyanet'>Diyanet</string>
+    <string name='hijri_offset_title'>Hijri adjustment</string>
+    <string name='hijri_offset_minus_2'>-2 days</string>
+    <string name='hijri_offset_minus_1'>-1 day</string>
+    <string name='hijri_offset_0'>0</string>
+    <string name='hijri_offset_plus_1'>+1 day</string>
+    <string name='hijri_offset_plus_2'>+2 days</string>
+
+    <string name='widget_title'>Widget</string>
+    <string name='widget_show_prohibited_title'>Show prohibited times</string>
+    <string name='widget_show_night_portions_title'>Show night portions</string>
+    <string name='widget_prayer_times_today'>Prayer Times (Today)</string>
+    <string name='widget_prayer_times_today_desc'>Todays prayer times</string>
+
+    <string name='no_host_found'>No SuntimesWidget host found (install SuntimesWidget first).</string>
+    <string name='unknown_location'>Unknown location</string>
+</resources>

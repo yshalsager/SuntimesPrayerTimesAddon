@@ -1,0 +1,95 @@
+<?xml version='1.0' encoding='utf-8'?>
+<manifest xmlns:android='http://schemas.android.com/apk/res/android'
+    android:testOnly='false'>
+
+    <uses-permission android:name='suntimes.permission.READ_CALCULATOR' />
+    <uses-permission android:name='suntimes.permission.ADDON' />
+    <uses-permission android:name='suntimes.nightly.permission.READ_CALCULATOR' />
+    <uses-permission android:name='suntimes.nightly.permission.ADDON' />
+    <uses-permission android:name='suntimes.legacy.permission.READ_CALCULATOR' />
+    <uses-permission android:name='suntimes.legacy.permission.ADDON' />
+
+    <queries>
+        <package android:name='com.forrestguice.suntimeswidget' />
+        <package android:name='com.forrestguice.suntimeswidget.nightly' />
+        <package android:name='com.forrestguice.suntimeswidget.legacy' />
+    </queries>
+
+    <application
+        android:name='.PrayerTimesApplication'
+        android:allowBackup='true'
+        android:icon='@mipmap/ic_launcher'
+        android:roundIcon='@mipmap/ic_launcher_round'
+        android:label='@string/app_name'
+        android:supportsRtl='true'
+        android:theme='@style/Theme.PrayerTimesAddon'>
+
+        <provider
+            android:name='.provider.PrayerTimesProvider'
+            android:authorities='com.yshalsager.suntimes.prayertimesaddon.event.provider'
+            android:exported='true' />
+
+        <activity
+            android:name='.ui.AddonRegistrationActivity'
+            android:exported='true'
+            android:theme='@style/Theme.PrayerTimesAddon.NoActionBar'>
+            <intent-filter>
+                <action android:name='suntimes.action.ADDON_EVENT' />
+                <category android:name='suntimes.SUNTIMES_ALARM' />
+            </intent-filter>
+            <meta-data
+                android:name='EventInfoProvider'
+                android:value='content://com.yshalsager.suntimes.prayertimesaddon.event.provider' />
+        </activity>
+
+        <activity
+            android:name='.ui.EventPickerActivity'
+            android:exported='true'
+            android:label='@string/picker_title'
+            android:theme='@style/Theme.PrayerTimesAddon.NoActionBar'>
+            <intent-filter>
+                <action android:name='suntimes.action.PICK_EVENT' />
+                <category android:name='suntimes.SUNTIMES_ADDON' />
+            </intent-filter>
+            <meta-data
+                android:name='SuntimesEventPickerTitle'
+                android:value='@string/picker_title' />
+        </activity>
+
+        <activity
+            android:name='.ui.MainActivity'
+            android:exported='true'>
+            <intent-filter>
+                <action android:name='android.intent.action.MAIN' />
+                <category android:name='android.intent.category.LAUNCHER' />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name='.ui.SettingsActivity'
+            android:exported='false' />
+
+        <activity
+            android:name='.ui.DaysActivity'
+            android:exported='false' />
+
+        <receiver
+            android:name='.widget.PrayerTimesWidgetProvider'
+            android:exported='true'
+            android:label='@string/widget_prayer_times_today'>
+            <intent-filter>
+                <action android:name='android.appwidget.action.APPWIDGET_UPDATE' />
+                <action android:name='android.intent.action.TIME_CHANGED' />
+                <action android:name='android.intent.action.TIMEZONE_CHANGED' />
+                <action android:name='android.intent.action.DATE_CHANGED' />
+                <action android:name='android.intent.action.LOCALE_CHANGED' />
+                <action android:name='com.yshalsager.suntimes.prayertimesaddon.action.WIDGET_ALARM' />
+            </intent-filter>
+
+            <meta-data
+                android:name='android.appwidget.provider'
+                android:resource='@xml/prayer_times_widget' />
+        </receiver>
+
+    </application>
+</manifest>
