@@ -26,6 +26,13 @@ object HostConfigReader {
     private var cached_host: String? = null
     private var cached_config: HostConfig? = null
 
+    fun clear_cache(host_event_authority: String? = null) {
+        if (host_event_authority == null || host_event_authority == cached_host) {
+            cached_host = null
+            cached_config = null
+        }
+    }
+
     fun calc_authority_from_event_authority(event_authority: String): String? =
         event_authority.takeIf { it.endsWith(event_suffix) }?.removeSuffix(event_suffix)?.plus(calc_suffix)
 

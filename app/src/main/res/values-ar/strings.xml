@@ -55,6 +55,8 @@
 
     <string name='host_title'>مضيف SuntimesWidget</string>
     <string name='host_summary'>اختر نسخة SuntimesWidget المثبتة للاستعلام عنها</string>
+    <string name='host_location_title'>موقع المضيف</string>
+    <string name='open_in_host'>فتح</string>
 
     <string name='makruh_preset_title'>إعداد أوقات النهي</string>
     <string name='makruh_angle_title'>زاوية النهي</string>

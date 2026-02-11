@@ -69,6 +69,8 @@
 
     <string name='host_title'>SuntimesWidget host</string>
     <string name='host_summary'>Which installed SuntimesWidget to query</string>
+    <string name='host_location_title'>Host location</string>
+    <string name='open_in_host'>Open</string>
 
     <string name='makruh_preset_title'>Makruh preset</string>
     <string name='makruh_preset_shafi'>Shafi</string>

@@ -9,6 +9,7 @@ private const val event_provider_suffix = ".event.provider"
 
 data class HostInfo(
     val label: String,
+    val package_name: String,
     val event_authority: String,
     val required_permission: String?
 )
@@ -40,7 +41,7 @@ object HostResolver {
                 ?.toList()
                 ?: emptyList()
             for (authority in authorities) {
-                hosts.add(HostInfo(label, authority, resolve_required_permission(pm, authority)))
+                hosts.add(HostInfo(label, pkg, authority, resolve_required_permission(pm, authority)))
             }
         }
         return hosts

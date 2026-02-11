@@ -1,12 +1,19 @@
 package com.yshalsager.suntimes.prayertimesaddon.ui.compose
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
+import android.content.Intent
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,12 +24,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.android.material.color.DynamicColors
 import com.yshalsager.suntimes.prayertimesaddon.R
+import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingDropdown
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingInlineTextField
+import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingRow
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingSwitch
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingTextField
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingsSection
@@ -48,10 +60,12 @@ private fun SettingsContent(
 ) {
     val ctx = LocalContext.current
     val activity = ctx as? Activity
+    val lifecycle_owner = LocalLifecycleOwner.current
 
     val hosts = remember { HostResolver.detect_hosts(ctx) }
 
     var host_event_authority by rememberSaveable { mutableStateOf(HostResolver.ensure_default_selected(ctx) ?: "") }
+    var host_location_label by remember { mutableStateOf(ctx.getString(R.string.unknown_location)) }
 
     var language by rememberSaveable { mutableStateOf(Prefs.get_language(ctx)) }
     var theme by rememberSaveable { mutableStateOf(Prefs.get_theme(ctx)) }
@@ -104,6 +118,46 @@ private fun SettingsContent(
             makruh_preset = "custom"
             Prefs.set_makruh_preset(ctx, "custom")
         }
+    }
+
+    fun refresh_host_location() {
+        if (host_event_authority.isBlank()) {
+            host_location_label = ctx.getString(R.string.unknown_location)
+            return
+        }
+        HostConfigReader.clear_cache(host_event_authority)
+        val label = HostConfigReader.read_config(ctx, host_event_authority)?.display_label()
+        host_location_label = label ?: ctx.getString(R.string.unknown_location)
+    }
+
+    fun open_host_location_picker() {
+        if (host_event_authority.isBlank()) return
+        val host_package = hosts.firstOrNull { it.event_authority == host_event_authority }?.package_name
+            ?: ctx.packageManager.resolveContentProvider(host_event_authority, 0)?.packageName
+            ?: return
+        if (host_package.isBlank()) return
+        val component = ComponentName(host_package, "com.forrestguice.suntimeswidget.SuntimesActivity")
+        val explicit_intent = Intent("suntimes.action.CONFIG_LOCATION")
+            .setComponent(component)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        val pm = ctx.packageManager
+        try {
+            ctx.startActivity(explicit_intent)
+        } catch (_: ActivityNotFoundException) {
+            pm.getLaunchIntentForPackage(host_package)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let(ctx::startActivity)
+        }
+    }
+
+    LaunchedEffect(host_event_authority) {
+        refresh_host_location()
+    }
+
+    DisposableEffect(lifecycle_owner, host_event_authority) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) refresh_host_location()
+        }
+        lifecycle_owner.lifecycle.addObserver(observer)
+        onDispose { lifecycle_owner.lifecycle.removeObserver(observer) }
     }
 
     LazyColumn(
@@ -179,6 +233,19 @@ private fun SettingsContent(
                         host_event_authority = v
                         if (v.isNotBlank()) Prefs.set_host_event_authority(ctx, v)
                         WidgetUpdate.request(ctx)
+                    }
+                )
+
+                SettingRow(
+                    title = ctx.getString(R.string.host_location_title),
+                    subtitle = host_location_label,
+                    on_click = { open_host_location_picker() },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.open_in_host),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 )
             }
