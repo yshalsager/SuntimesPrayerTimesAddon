@@ -311,11 +311,11 @@ class MainActivity : ThemedActivity() {
             fun add_night_items(n: com.yshalsager.suntimes.prayertimesaddon.core.NightPortions?, min_t: Long, max_t: Long) {
                 if (n == null) return
                 listOf(
-                    getString(R.string.night_midpoint) to n.midpoint,
-                    getString(R.string.night_last_third) to n.last_third,
-                    getString(R.string.night_last_sixth) to n.last_sixth
-                ).forEach { (label, t) ->
-                    if (t in min_t..max_t) items.add(HomeItemUi.Night(t, label, timeline_time(t)))
+                    Triple(AddonEvent.night_midpoint.event_id, getString(R.string.night_midpoint), n.midpoint),
+                    Triple(AddonEvent.night_last_third.event_id, getString(R.string.night_last_third), n.last_third),
+                    Triple(AddonEvent.night_last_sixth.event_id, getString(R.string.night_last_sixth), n.last_sixth)
+                ).forEach { (event_id, label, t) ->
+                    if (t in min_t..max_t) items.add(HomeItemUi.Night(t, event_id, label, timeline_time(t)))
                 }
             }
 

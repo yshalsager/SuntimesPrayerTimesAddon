@@ -89,6 +89,7 @@ sealed class HomeItemUi(open val sort_time: Long) {
 
     data class Night(
         override val sort_time: Long,
+        val event_id: String,
         val label: String,
         val time: String
     ) : HomeItemUi(sort_time)
@@ -356,7 +357,7 @@ private fun TimelineRow(
                 when (item) {
                     is HomeItemUi.Prayer -> PrayerCard(item, on_open_alarm)
                     is HomeItemUi.Window -> WindowCard(item)
-                    is HomeItemUi.Night -> NightCard(item)
+                    is HomeItemUi.Night -> NightCard(item, on_open_alarm)
                     is HomeItemUi.Now -> NowCard(item)
                 }
             }
@@ -547,8 +548,9 @@ private fun WindowCard(item: HomeItemUi.Window) {
 }
 
 @Composable
-private fun NightCard(item: HomeItemUi.Night) {
+private fun NightCard(item: HomeItemUi.Night, on_open_alarm: (String) -> Unit) {
     Card(
+        onClick = { on_open_alarm(item.event_id) },
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
         shape = RoundedCornerShape(18.dp),
