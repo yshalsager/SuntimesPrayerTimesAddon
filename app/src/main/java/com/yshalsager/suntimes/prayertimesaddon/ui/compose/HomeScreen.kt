@@ -63,6 +63,7 @@ data class NextPrayerUi(
 sealed class HomeItemUi(open val sort_time: Long) {
     data class Prayer(
         override val sort_time: Long,
+        val event_id: String,
         val label: String,
         val time: String,
         val countdown: String?,
@@ -109,7 +110,8 @@ data class HomeDayUiState(
 fun HomeScreen(
     state: HomeUiState,
     on_open_days: () -> Unit,
-    on_open_settings: () -> Unit
+    on_open_settings: () -> Unit,
+    on_open_alarm: (String) -> Unit
 ) {
     val pager_state = rememberPagerState(initialPage = 1, pageCount = { 3 })
 
@@ -167,7 +169,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxSize().padding(padding)
             ) { page ->
                 val day = state.days.getOrNull(page) ?: return@HorizontalPager
-                DayTimeline(day = day, host_footer = state.host_footer)
+                DayTimeline(day = day, host_footer = state.host_footer, on_open_alarm = on_open_alarm)
             }
         }
     }
@@ -176,7 +178,8 @@ fun HomeScreen(
 @Composable
 private fun DayTimeline(
     day: HomeDayUiState,
-    host_footer: String
+    host_footer: String,
+    on_open_alarm: (String) -> Unit
 ) {
     val list_state = rememberLazyListState()
     val now_pos = day.items.indexOfFirst { it is HomeItemUi.Now }
@@ -217,7 +220,8 @@ private fun DayTimeline(
             TimelineRow(
                 item = item,
                 is_first = idx == 0,
-                is_last = idx == day.items.lastIndex
+                is_last = idx == day.items.lastIndex,
+                on_open_alarm = on_open_alarm
             )
         }
 
@@ -302,7 +306,8 @@ private fun NextCard(next: NextPrayerUi) {
 private fun TimelineRow(
     item: HomeItemUi,
     is_first: Boolean,
-    is_last: Boolean
+    is_last: Boolean,
+    on_open_alarm: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -313,7 +318,7 @@ private fun TimelineRow(
         TimelineAnchor(item, is_first, is_last)
         Spacer(Modifier.width(12.dp))
         when (item) {
-            is HomeItemUi.Prayer -> PrayerCard(item)
+            is HomeItemUi.Prayer -> PrayerCard(item, on_open_alarm)
             is HomeItemUi.Window -> WindowCard(item)
             is HomeItemUi.Night -> NightCard(item)
             is HomeItemUi.Now -> NowCard(item)
@@ -385,7 +390,7 @@ private fun TimelineAnchor(
 }
 
 @Composable
-private fun PrayerCard(item: HomeItemUi.Prayer) {
+private fun PrayerCard(item: HomeItemUi.Prayer, on_open_alarm: (String) -> Unit) {
     val container =
         when {
             item.is_next -> MaterialTheme.colorScheme.primaryContainer
@@ -401,6 +406,7 @@ private fun PrayerCard(item: HomeItemUi.Prayer) {
     val elevation = if (item.is_next) 2.dp else 0.dp
 
     Card(
+        onClick = { on_open_alarm(item.event_id) },
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = container),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),

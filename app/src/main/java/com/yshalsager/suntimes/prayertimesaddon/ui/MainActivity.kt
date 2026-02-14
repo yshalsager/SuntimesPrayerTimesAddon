@@ -4,6 +4,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.format.DateFormat
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
+import android.net.Uri
+import android.provider.AlarmClock
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +36,8 @@ import java.util.TimeZone
 import com.yshalsager.suntimes.prayertimesaddon.core.format_method_summary
 import android.os.Handler
 import android.os.Looper
+import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
+import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 
 class MainActivity : ThemedActivity() {
     private val request_code_permissions = 1001
@@ -69,7 +75,8 @@ class MainActivity : ThemedActivity() {
                 HomeScreen(
                     state = state,
                     on_open_days = { startActivity(Intent(this@MainActivity, DaysActivity::class.java)) },
-                    on_open_settings = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) }
+                    on_open_settings = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
+                    on_open_alarm = { event_id -> open_host_alarm(event_id) }
                 )
             }
         }
@@ -256,6 +263,7 @@ class MainActivity : ThemedActivity() {
                 items.add(
                     HomeItemUi.Prayer(
                         sort_time = t,
+                        event_id = event.event_id,
                         label = prayer_label(event, t),
                         time = timeline_time(t),
                         countdown = if (is_next) getString(R.string.in_countdown, format_countdown(t - now)) else null,
@@ -300,7 +308,18 @@ class MainActivity : ThemedActivity() {
             add_night_items(night_next, day_start, scope_end)
 
             if (fajr_tomorrow != null) {
-                items.add(HomeItemUi.Prayer(sort_time = fajr_tomorrow, label = prayer_label(AddonEvent.prayer_fajr, fajr_tomorrow), time = timeline_time(fajr_tomorrow), countdown = null, is_next = false, is_passed = false, dot_icon = R.drawable.ic_prayer_dawn))
+                items.add(
+                    HomeItemUi.Prayer(
+                        sort_time = fajr_tomorrow,
+                        event_id = AddonEvent.prayer_fajr.event_id,
+                        label = prayer_label(AddonEvent.prayer_fajr, fajr_tomorrow),
+                        time = timeline_time(fajr_tomorrow),
+                        countdown = null,
+                        is_next = false,
+                        is_passed = false,
+                        dot_icon = R.drawable.ic_prayer_dawn
+                    )
+                )
             }
 
             val ordered = items.filter { it.sort_time in day_start..scope_end }.sortedBy { it.sort_time }
@@ -338,6 +357,23 @@ class MainActivity : ThemedActivity() {
         )
 
         return Computed(ui_state, day_center.next_time_millis, day_center.prev_time_millis, day_center.next_boundary_millis, today_start, tz, time_format, day_format, date_format, loc)
+    }
+
+    private fun open_host_alarm(event_id: String) {
+        val host_event_authority = HostResolver.ensure_default_selected(this) ?: return
+        val host_package = packageManager.resolveContentProvider(host_event_authority, 0)?.packageName ?: return
+        val component = ComponentName(host_package, "com.forrestguice.suntimeswidget.alarmclock.ui.AlarmClockActivity")
+        val event_uri = Uri.parse("content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}/$event_id").toString()
+
+        val intent = Intent(AlarmClock.ACTION_SET_ALARM)
+            .setComponent(component)
+            .putExtra("solarevent", event_uri)
+            .putExtra("alarmtype", "ALARM")
+
+        try {
+            startActivity(intent)
+        } catch (_: ActivityNotFoundException) {
+        }
     }
 
     private fun apply_computed(c: Computed) {
