@@ -251,7 +251,8 @@ class MainActivity : ThemedActivity() {
                     is_passed = is_passed,
                     dot_icon =
                         when (event) {
-                            AddonEvent.prayer_fajr, AddonEvent.prayer_isha -> R.drawable.ic_prayer_moon
+                            AddonEvent.prayer_fajr -> R.drawable.ic_prayer_dawn
+                            AddonEvent.prayer_isha -> R.drawable.ic_prayer_moon
                             AddonEvent.prayer_maghrib -> R.drawable.ic_prayer_sunset
                             else -> R.drawable.ic_prayer_sun
                         }
@@ -302,7 +303,7 @@ class MainActivity : ThemedActivity() {
                     countdown = null,
                     is_next = false,
                     is_passed = false,
-                    dot_icon = R.drawable.ic_prayer_moon
+                    dot_icon = R.drawable.ic_prayer_dawn
                 )
             )
         }

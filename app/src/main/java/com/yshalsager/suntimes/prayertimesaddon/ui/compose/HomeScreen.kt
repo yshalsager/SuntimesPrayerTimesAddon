@@ -294,13 +294,13 @@ private fun TimelineAnchor(
 
         is HomeItemUi.Window -> {
             dot_bg = MaterialTheme.colorScheme.secondary
-            dot_icon = painterResource(R.drawable.ic_warning)
+            dot_icon = painterResource(R.drawable.ic_prohibited)
             dot_icon_tint = MaterialTheme.colorScheme.onSecondary
         }
 
         is HomeItemUi.Night -> {
             dot_bg = MaterialTheme.colorScheme.surfaceVariant
-            dot_icon = painterResource(R.drawable.ic_timer)
+            dot_icon = painterResource(R.drawable.ic_night_portion)
             dot_icon_tint = MaterialTheme.colorScheme.onSurfaceVariant
         }
 
