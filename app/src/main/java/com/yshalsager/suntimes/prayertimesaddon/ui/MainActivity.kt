@@ -20,6 +20,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
+import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_addon_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeItemUi
@@ -342,8 +343,21 @@ class MainActivity : ThemedActivity() {
                 )
             }
 
-            val base = date_format.format(Date(day_start))
-            val day_label = if (is_today) getString(R.string.today) + " \u00b7 " + base else base
+            val day_parts = ArrayList<String>(4)
+            if (is_today) day_parts.add(getString(R.string.today))
+            day_parts.add(day_format.format(Date(day_start)))
+            day_parts.add(date_format.format(Date(day_start)))
+            if (Prefs.get_days_show_hijri(this)) {
+                val hijri = hijri_for_day(
+                    day_start_millis = day_start,
+                    tz = tz,
+                    locale = Locale.getDefault(),
+                    variant = Prefs.get_hijri_variant(this),
+                    offset_days = Prefs.get_hijri_day_offset(this)
+                ).formatted
+                day_parts.add(hijri)
+            }
+            val day_label = day_parts.joinToString(" \u00b7 ")
             val day_state = HomeDayUiState(day_start = day_start, day_label = day_label, next_prayer = next_ui, items = ordered)
             return DayComputed(day_state, next_prayer?.second, prev_prayer_time, next_boundary_millis)
         }
