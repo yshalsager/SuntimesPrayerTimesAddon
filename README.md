@@ -76,11 +76,12 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
 
 ## What This App Does
 
-- Shows today’s timeline (Home) and a month/day-card list (Days).
+- Shows a timeline on Home (swipe left/right between yesterday, today, and tomorrow) and a month/day-card list (Days).
 - Exposes events to **SuntimesWidget Alarms**:
   - 5 prayers (Fajr, Dhuhr/Jumu'ah, Asr, Maghrib, Isha)
   - prohibited (makruh) boundaries and windows
   - night portions (midpoint, last third, last sixth)
+- Tap a prayer on Home to open the host alarm editor prefilled for that prayer event (event-based alarms automatically track changing prayer times; offsets like +/-30m are supported by the host UI).
 - Provides an Android home-screen widget ("Prayer Times (Today)") with the same day-card model.
 - Supports English + Arabic and RTL.
 - Supports theme mode (System/Light/Dark) + palette selection:
@@ -184,6 +185,7 @@ Makruh boundaries:
 - Host selection:
   - Auto-detect stable/nightly/legacy installs.
   - Persist the selected event-provider authority.
+  - Open the host location picker UI from Settings (so you can choose from the host's saved locations without duplicating a location database in the addon).
 - Prayer method:
   - Presets + custom
   - Fajr angle
