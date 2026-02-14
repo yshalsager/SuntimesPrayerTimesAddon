@@ -35,7 +35,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -128,7 +128,7 @@ fun SettingDropdown(
                         modifier = Modifier.weight(1f)
                     )
                     Icon(
-                        imageVector = Icons.Default.ExpandMore,
+                        imageVector = Icons.Default.ArrowDropDown,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )

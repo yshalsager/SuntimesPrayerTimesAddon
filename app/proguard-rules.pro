@@ -1,2 +1,1 @@
-# Keep empty (no minify in release for now)
-
+# Keep minimal and rely on library consumer rules (Time4J includes its own).
