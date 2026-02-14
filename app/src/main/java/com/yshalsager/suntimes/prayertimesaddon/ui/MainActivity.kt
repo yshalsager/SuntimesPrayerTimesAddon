@@ -53,7 +53,6 @@ class MainActivity : ThemedActivity() {
     private var tz: TimeZone? = null
     private var time_format: java.text.DateFormat? = null
     private var day_format: SimpleDateFormat? = null
-    private var date_format: java.text.DateFormat? = null
     private var loc: String? = null
 
     private var state by mutableStateOf(
@@ -137,7 +136,6 @@ class MainActivity : ThemedActivity() {
         val tz: TimeZone,
         val time_format: java.text.DateFormat,
         val day_format: SimpleDateFormat,
-        val date_format: java.text.DateFormat,
         val loc: String
     )
 
@@ -169,8 +167,14 @@ class MainActivity : ThemedActivity() {
         center_day_start = center
 
         val time_format = DateFormat.getTimeFormat(this).apply { timeZone = tz }
-        val day_format = SimpleDateFormat("EEE", Locale.getDefault()).apply { timeZone = tz }
-        val date_format = java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM, Locale.getDefault()).apply { timeZone = tz }
+        val locale = Locale.getDefault()
+        val day_format = SimpleDateFormat("EEE", locale).apply { timeZone = tz }
+        val date_format: java.text.DateFormat =
+            when (Prefs.get_gregorian_date_format(this)) {
+                Prefs.gregorian_date_format_long -> java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, locale)
+                Prefs.gregorian_date_format_card -> SimpleDateFormat("MMM d", locale)
+                else -> java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM, locale)
+            }.apply { timeZone = tz }
         val loc = host_config?.display_label() ?: "--"
 
         fun day_time(v: Long?): String = v?.let { "${day_format.format(Date(it))} ${time_format.format(Date(it))}" } ?: "--"
@@ -193,6 +197,11 @@ class MainActivity : ThemedActivity() {
             val prev_time_millis: Long?,
             val next_boundary_millis: Long?
         )
+
+        val month_basis = Prefs.get_days_month_basis(this)
+        val show_hijri_effective = Prefs.get_days_show_hijri(this) || month_basis == Prefs.days_month_basis_hijri
+        val hijri_variant = Prefs.get_hijri_variant(this)
+        val hijri_offset = Prefs.get_hijri_day_offset(this)
 
         fun build_day(day_start: Long): DayComputed {
             val is_today = day_start == today_start
@@ -343,19 +352,29 @@ class MainActivity : ThemedActivity() {
                 )
             }
 
-            val day_parts = ArrayList<String>(4)
+            val day_parts = ArrayList<String>(5)
             if (is_today) day_parts.add(getString(R.string.today))
             day_parts.add(day_format.format(Date(day_start)))
-            day_parts.add(date_format.format(Date(day_start)))
-            if (Prefs.get_days_show_hijri(this)) {
-                val hijri = hijri_for_day(
-                    day_start_millis = day_start,
-                    tz = tz,
-                    locale = Locale.getDefault(),
-                    variant = Prefs.get_hijri_variant(this),
-                    offset_days = Prefs.get_hijri_day_offset(this)
-                ).formatted
-                day_parts.add(hijri)
+
+            val greg = date_format.format(Date(day_start))
+            val hijri =
+                if (!show_hijri_effective) null
+                else
+                    hijri_for_day(
+                            day_start_millis = day_start,
+                            tz = tz,
+                            locale = locale,
+                            variant = hijri_variant,
+                            offset_days = hijri_offset
+                        )
+                        .formatted
+
+            if (month_basis == Prefs.days_month_basis_hijri) {
+                hijri?.let(day_parts::add)
+                day_parts.add(greg)
+            } else {
+                day_parts.add(greg)
+                hijri?.let(day_parts::add)
             }
             val day_label = day_parts.joinToString(" \u00b7 ")
             val day_state = HomeDayUiState(day_start = day_start, day_label = day_label, next_prayer = next_ui, items = ordered)
@@ -375,7 +394,7 @@ class MainActivity : ThemedActivity() {
             days = listOf(day_prev.day, day_center.day, day_next.day)
         )
 
-        return Computed(ui_state, day_center.next_time_millis, day_center.prev_time_millis, day_center.next_boundary_millis, today_start, center, tz, time_format, day_format, date_format, loc)
+        return Computed(ui_state, day_center.next_time_millis, day_center.prev_time_millis, day_center.next_boundary_millis, today_start, center, tz, time_format, day_format, loc)
     }
 
     private fun open_host_alarm(event_id: String) {
@@ -405,7 +424,6 @@ class MainActivity : ThemedActivity() {
         tz = c.tz
         time_format = c.time_format
         day_format = c.day_format
-        date_format = c.date_format
         loc = c.loc
     }
 

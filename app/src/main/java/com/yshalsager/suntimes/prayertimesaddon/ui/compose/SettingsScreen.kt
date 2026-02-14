@@ -70,6 +70,7 @@ private fun SettingsContent(
     var language by rememberSaveable { mutableStateOf(Prefs.get_language(ctx)) }
     var theme by rememberSaveable { mutableStateOf(Prefs.get_theme(ctx)) }
     var palette by rememberSaveable { mutableStateOf(Prefs.get_palette(ctx)) }
+    var gregorian_date_format by rememberSaveable { mutableStateOf(Prefs.get_gregorian_date_format(ctx)) }
 
     var method_preset by rememberSaveable { mutableStateOf(Prefs.get_method_preset(ctx)) }
     var fajr_angle_text by rememberSaveable { mutableStateOf(Prefs.get_fajr_angle(ctx).toString()) }
@@ -213,6 +214,30 @@ private fun SettingsContent(
                         Prefs.set_palette(ctx, v)
                         WidgetUpdate.request(ctx)
                         activity?.recreate()
+                    }
+                )
+
+                SettingDropdown(
+                    title = ctx.getString(R.string.days_month_basis_title),
+                    value_label = month_basis_label(ctx, days_month_basis),
+                    selected = days_month_basis,
+                    options = month_basis_options(ctx),
+                    on_select = { v ->
+                        days_month_basis = v
+                        Prefs.set_days_month_basis(ctx, v)
+                        WidgetUpdate.request(ctx)
+                    }
+                )
+
+                SettingDropdown(
+                    title = ctx.getString(R.string.gregorian_date_format_title),
+                    value_label = gregorian_date_format_label(ctx, gregorian_date_format),
+                    selected = gregorian_date_format,
+                    options = gregorian_date_format_options(ctx),
+                    on_select = { v ->
+                        gregorian_date_format = v
+                        Prefs.set_gregorian_date_format(ctx, v)
+                        WidgetUpdate.request(ctx)
                     }
                 )
             }
@@ -385,17 +410,6 @@ private fun SettingsContent(
 
         item {
             SettingsSection(ctx.getString(R.string.days_view_title)) {
-                SettingDropdown(
-                    title = ctx.getString(R.string.days_month_basis_title),
-                    value_label = month_basis_label(ctx, days_month_basis),
-                    selected = days_month_basis,
-                    options = month_basis_options(ctx),
-                    on_select = { v ->
-                        days_month_basis = v
-                        Prefs.set_days_month_basis(ctx, v)
-                    }
-                )
-
                 SettingSwitch(
                     title = ctx.getString(R.string.days_show_hijri_title),
                     checked = days_show_hijri,
@@ -507,6 +521,16 @@ private fun palette_options(ctx: android.content.Context, dynamic_ok: Boolean): 
 
 private fun palette_label(ctx: android.content.Context, v: String): String =
     palette_options(ctx, true).firstOrNull { it.first == v }?.second ?: v
+
+private fun gregorian_date_format_options(ctx: android.content.Context): List<Pair<String, String>> =
+    listOf(
+        Prefs.gregorian_date_format_card to ctx.getString(R.string.gregorian_date_format_card),
+        Prefs.gregorian_date_format_medium to ctx.getString(R.string.gregorian_date_format_medium),
+        Prefs.gregorian_date_format_long to ctx.getString(R.string.gregorian_date_format_long)
+    )
+
+private fun gregorian_date_format_label(ctx: android.content.Context, v: String): String =
+    gregorian_date_format_options(ctx).firstOrNull { it.first == v }?.second ?: v
 
 private fun method_options(ctx: android.content.Context): List<Pair<String, String>> =
     listOf(

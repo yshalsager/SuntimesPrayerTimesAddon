@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.DayItem
 import com.yshalsager.suntimes.prayertimesaddon.core.DayMeta
+import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.ui.DaysUiState
 import com.yshalsager.suntimes.prayertimesaddon.ui.DaysViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -152,6 +153,7 @@ private fun DaysContent(
 @Composable
 private fun DayCard(meta: DayMeta, item: DayItem?) {
     val ctx = LocalContext.current
+    val month_basis = Prefs.get_days_month_basis(ctx)
     val show_night = item?.let { it.night_midpoint != null && it.night_last_third != null && it.night_last_sixth != null } ?: false
     val has_prohibited =
         item?.let {
@@ -175,16 +177,21 @@ private fun DayCard(meta: DayMeta, item: DayItem?) {
         Column(Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.weight(1f)) {
+                    val hijri = item?.hijri ?: meta.hijri
+                    val greg = item?.title ?: meta.title
+                    val primary = if (month_basis == Prefs.days_month_basis_hijri && hijri != null) hijri else greg
+                    val secondary = if (month_basis == Prefs.days_month_basis_hijri) greg else hijri
+
                     Text(
-                        text = item?.hijri ?: meta.hijri ?: item?.title ?: meta.title,
+                        text = primary,
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-                    if (item?.hijri != null || meta.hijri != null) {
+                    if (secondary != null && secondary != primary) {
                         Text(
-                            text = item?.title ?: meta.title,
+                            text = secondary,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

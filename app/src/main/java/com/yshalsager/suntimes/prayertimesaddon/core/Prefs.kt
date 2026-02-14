@@ -19,6 +19,9 @@ object Prefs {
     const val hijri_variant_diyanet = "diyanet"
     const val days_month_basis_gregorian = "gregorian"
     const val days_month_basis_hijri = "hijri"
+    const val gregorian_date_format_card = "card"
+    const val gregorian_date_format_medium = "medium"
+    const val gregorian_date_format_long = "long"
 
     private const val k_days_show_prohibited = "days_show_prohibited"
     private const val k_days_show_night_portions = "days_show_night_portions"
@@ -26,6 +29,7 @@ object Prefs {
     private const val k_days_month_basis = "days_month_basis"
     private const val k_widget_show_prohibited = "widget_show_prohibited"
     private const val k_widget_show_night_portions = "widget_show_night_portions"
+    private const val k_gregorian_date_format = "gregorian_date_format"
     private const val k_hijri_variant = "hijri_variant"
     private const val k_hijri_day_offset = "hijri_day_offset"
     private const val k_language = "language"
@@ -86,6 +90,12 @@ object Prefs {
 
     fun set_widget_show_night_portions(context: Context, v: Boolean) =
         put_bool(context, k_widget_show_night_portions, v)
+
+    fun get_gregorian_date_format(context: Context): String =
+        get_str(context, k_gregorian_date_format, gregorian_date_format_card)
+
+    fun set_gregorian_date_format(context: Context, v: String) =
+        put_str(context, k_gregorian_date_format, v)
 
     fun get_hijri_variant(context: Context): String =
         get_str(context, k_hijri_variant, hijri_variant_umalqura)

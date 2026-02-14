@@ -21,6 +21,10 @@
     <string name='palette_dynamic'>ديناميكي (Android 12+)</string>
     <string name='palette_sapphire'>ياقوتي</string>
     <string name='palette_rose'>وردي</string>
+    <string name='gregorian_date_format_title'>تنسيق التاريخ الميلادي</string>
+    <string name='gregorian_date_format_card'>بطاقة</string>
+    <string name='gregorian_date_format_medium'>متوسط</string>
+    <string name='gregorian_date_format_long'>طويل</string>
 
     <string name='main_settings'>الإعدادات</string>
 

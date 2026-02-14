@@ -22,6 +22,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
 import com.yshalsager.suntimes.prayertimesaddon.core.format_method_summary
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import com.yshalsager.suntimes.prayertimesaddon.core.query_addon_time
+import com.yshalsager.suntimes.prayertimesaddon.core.format_gregorian_day_title
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -78,12 +79,13 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val maghrib = query_addon_time(context, AddonEvent.prayer_maghrib, day_start)
         val isha = query_addon_time(context, AddonEvent.prayer_isha, day_start)
 
-        val show_hijri = Prefs.get_days_show_hijri(context)
+        val month_basis = Prefs.get_days_month_basis(context)
+        val show_hijri = Prefs.get_days_show_hijri(context) || month_basis == Prefs.days_month_basis_hijri
         val hijri_variant = Prefs.get_hijri_variant(context)
         val hijri_offset = Prefs.get_hijri_day_offset(context)
         val locale = ConfigurationCompat.getLocales(context.resources.configuration).get(0) ?: Locale.getDefault()
-        val hijri = hijri_for_day(day_start, tz, locale, hijri_variant, hijri_offset).formatted
-        val greg = SimpleDateFormat("EEE, MMM d", locale).apply { timeZone = tz }.format(Date(day_start))
+        val hijri = if (!show_hijri) null else hijri_for_day(day_start, tz, locale, hijri_variant, hijri_offset).formatted
+        val greg = format_gregorian_day_title(context, day_start, tz, locale)
 
         val location = cfg?.display_label() ?: context.getString(R.string.unknown_location)
         val method = format_method_summary(context)
@@ -133,13 +135,11 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setInt(R.id.widget_root, "setBackgroundResource", colors.bg_res)
             rv.setInt(R.id.widget_accent, "setBackgroundColor", colors.accent)
 
-            if (show_hijri) {
-                rv.setTextViewText(R.id.widget_hijri, hijri)
-                rv.setTextViewText(R.id.widget_gregorian, greg)
-            } else {
-                rv.setTextViewText(R.id.widget_hijri, greg)
-                rv.setTextViewText(R.id.widget_gregorian, "")
-            }
+            val primary = if (month_basis == Prefs.days_month_basis_hijri && hijri != null) hijri else greg
+            val secondary = if (month_basis == Prefs.days_month_basis_hijri) greg else (hijri ?: "")
+
+            rv.setTextViewText(R.id.widget_hijri, primary)
+            rv.setTextViewText(R.id.widget_gregorian, if (secondary.isBlank() || secondary == primary) "" else secondary)
 
             rv.setTextViewText(R.id.widget_summary, summary)
 

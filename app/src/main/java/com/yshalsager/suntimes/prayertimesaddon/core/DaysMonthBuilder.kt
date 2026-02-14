@@ -65,6 +65,20 @@ fun today_start(tz: TimeZone): Long =
         timeInMillis
     }
 
+fun format_gregorian_day_title(context: Context, day_start_millis: Long, tz: TimeZone, locale: Locale): String {
+    val weekday = SimpleDateFormat("EEE", locale).apply { timeZone = tz }.format(Date(day_start_millis))
+    val date =
+        when (Prefs.get_gregorian_date_format(context)) {
+            Prefs.gregorian_date_format_long -> java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, locale)
+            Prefs.gregorian_date_format_card -> SimpleDateFormat("MMM d", locale)
+            else -> java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM, locale)
+        }
+            .apply { timeZone = tz }
+            .format(Date(day_start_millis))
+    val sep = if (locale.language == "ar") "،" else ","
+    return "$weekday$sep $date"
+}
+
 fun build_month_skeleton(
     context: Context,
     host: String,
@@ -76,9 +90,8 @@ fun build_month_skeleton(
 ): MonthSkeleton {
     val tz = HostConfigReader.read_config(context, host)?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
 
-    val date_sep = if (Locale.getDefault().language == "ar") "،" else ","
-    val date_format = SimpleDateFormat("EEE$date_sep MMM d", Locale.getDefault()).apply { timeZone = tz }
-    val month_format = SimpleDateFormat("MMMM yyyy", Locale.getDefault()).apply { timeZone = tz }
+    val locale = Locale.getDefault()
+    val month_format = SimpleDateFormat("MMMM yyyy", locale).apply { timeZone = tz }
 
     val today = today_start(tz)
     val anchor = month_anchor ?: today
@@ -143,7 +156,7 @@ fun build_month_skeleton(
         }
         DayMeta(
             day_start = day_start,
-            title = date_format.format(Date(day_start)),
+            title = format_gregorian_day_title(context, day_start, tz, locale),
             hijri = if (!show_hijri) null else hijri_cached(day_start).formatted,
             is_today = day_start == today,
             is_friday = is_friday

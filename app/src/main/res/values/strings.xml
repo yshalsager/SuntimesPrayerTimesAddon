@@ -66,6 +66,10 @@
     <string name='palette_dynamic'>Dynamic (Android 12+)</string>
     <string name='palette_sapphire'>Sapphire</string>
     <string name='palette_rose'>Rose</string>
+    <string name='gregorian_date_format_title'>Gregorian date format</string>
+    <string name='gregorian_date_format_card'>Card</string>
+    <string name='gregorian_date_format_medium'>Medium</string>
+    <string name='gregorian_date_format_long'>Long</string>
 
     <string name='host_title'>SuntimesWidget host</string>
     <string name='host_summary'>Which installed SuntimesWidget to query</string>
