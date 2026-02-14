@@ -44,6 +44,7 @@ class MainActivity : ThemedActivity() {
     private val ui = Handler(Looper.getMainLooper())
     private var tick: Runnable? = null
 
+    private var center_day_start: Long? = null
     private var next_time_millis: Long? = null
     private var prev_time_millis: Long? = null
     private var next_boundary_millis: Long? = null
@@ -76,7 +77,8 @@ class MainActivity : ThemedActivity() {
                     state = state,
                     on_open_days = { startActivity(Intent(this@MainActivity, DaysActivity::class.java)) },
                     on_open_settings = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
-                    on_open_alarm = { event_id -> open_host_alarm(event_id) }
+                    on_open_alarm = { event_id -> open_host_alarm(event_id) },
+                    on_shift_day = { delta -> shift_day(delta) }
                 )
             }
         }
@@ -130,6 +132,7 @@ class MainActivity : ThemedActivity() {
         val prev_time_millis: Long?,
         val next_boundary_millis: Long?,
         val today_start: Long,
+        val center_day_start: Long,
         val tz: TimeZone,
         val time_format: java.text.DateFormat,
         val day_format: SimpleDateFormat,
@@ -161,6 +164,8 @@ class MainActivity : ThemedActivity() {
             }
 
         val today_start = same_day_start(now)
+        val center = same_day_start(center_day_start ?: today_start)
+        center_day_start = center
 
         val time_format = DateFormat.getTimeFormat(this).apply { timeZone = tz }
         val day_format = SimpleDateFormat("EEE", Locale.getDefault()).apply { timeZone = tz }
@@ -343,9 +348,9 @@ class MainActivity : ThemedActivity() {
             return DayComputed(day_state, next_prayer?.second, prev_prayer_time, next_boundary_millis)
         }
 
-        val day_prev = build_day(shift_day_start(today_start, -1))
-        val day_center = build_day(today_start)
-        val day_next = build_day(shift_day_start(today_start, 1))
+        val day_prev = build_day(shift_day_start(center, -1))
+        val day_center = build_day(center)
+        val day_next = build_day(shift_day_start(center, 1))
 
         val host_now = "${day_format.format(Date(now))} ${time_format.format(Date(now))}"
         val ui_state = HomeUiState(
@@ -356,7 +361,7 @@ class MainActivity : ThemedActivity() {
             days = listOf(day_prev.day, day_center.day, day_next.day)
         )
 
-        return Computed(ui_state, day_center.next_time_millis, day_center.prev_time_millis, day_center.next_boundary_millis, today_start, tz, time_format, day_format, date_format, loc)
+        return Computed(ui_state, day_center.next_time_millis, day_center.prev_time_millis, day_center.next_boundary_millis, today_start, center, tz, time_format, day_format, date_format, loc)
     }
 
     private fun open_host_alarm(event_id: String) {
@@ -382,6 +387,7 @@ class MainActivity : ThemedActivity() {
         prev_time_millis = c.prev_time_millis
         next_boundary_millis = c.next_boundary_millis
         today_start = c.today_start
+        center_day_start = c.center_day_start
         tz = c.tz
         time_format = c.time_format
         day_format = c.day_format
@@ -484,4 +490,16 @@ class MainActivity : ThemedActivity() {
     }
 
     // method summary formatting is shared with widget/settings
+
+    private fun shift_day(delta: Int) {
+        val zone = tz ?: return
+        val center = center_day_start ?: return
+        center_day_start =
+            Calendar.getInstance(zone).run {
+                timeInMillis = center
+                add(Calendar.DAY_OF_YEAR, delta)
+                timeInMillis
+            }
+        refresh_home()
+    }
 }

@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.yshalsager.suntimes.prayertimesaddon.R
+import kotlinx.coroutines.flow.collectLatest
 
 private val page_h_padding = 12.dp
 private val page_v_padding = 12.dp
@@ -111,9 +113,24 @@ fun HomeScreen(
     state: HomeUiState,
     on_open_days: () -> Unit,
     on_open_settings: () -> Unit,
-    on_open_alarm: (String) -> Unit
+    on_open_alarm: (String) -> Unit,
+    on_shift_day: (Int) -> Unit
 ) {
     val pager_state = rememberPagerState(initialPage = 1, pageCount = { 3 })
+
+    LaunchedEffect(pager_state) {
+        snapshotFlow { pager_state.isScrollInProgress }.collectLatest { in_progress ->
+            if (in_progress) return@collectLatest
+            val page = pager_state.currentPage
+            if (page == 0) {
+                on_shift_day(-1)
+                pager_state.scrollToPage(1)
+            } else if (page == 2) {
+                on_shift_day(1)
+                pager_state.scrollToPage(1)
+            }
+        }
+    }
 
     AppScaffold(
         title = state.location_summary,
