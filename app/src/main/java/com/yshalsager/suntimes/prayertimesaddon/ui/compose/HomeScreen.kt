@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
@@ -93,6 +95,12 @@ data class HomeUiState(
     val location_summary: String,
     val host_footer: String,
     val error: String?,
+    val days: List<HomeDayUiState>
+)
+
+data class HomeDayUiState(
+    val day_start: Long,
+    val day_label: String,
     val next_prayer: NextPrayerUi?,
     val items: List<HomeItemUi>
 )
@@ -103,17 +111,7 @@ fun HomeScreen(
     on_open_days: () -> Unit,
     on_open_settings: () -> Unit
 ) {
-    val list_state = rememberLazyListState()
-    val now_pos = state.items.indexOfFirst { it is HomeItemUi.Now }
-    val static_items = (if (state.error != null) 1 else 0) + (if (state.next_prayer != null) 1 else 0)
-
-    LaunchedEffect(now_pos, static_items) {
-        if (now_pos < 0) return@LaunchedEffect
-        val target_index = static_items + now_pos
-        if (list_state.firstVisibleItemIndex > static_items) return@LaunchedEffect
-        val visible = list_state.layoutInfo.visibleItemsInfo.any { it.index == target_index }
-        if (!visible) list_state.scrollToItem(target_index)
-    }
+    val pager_state = rememberPagerState(initialPage = 1, pageCount = { 3 })
 
     AppScaffold(
         title = state.location_summary,
@@ -127,18 +125,17 @@ fun HomeScreen(
             }
         }
     ) { padding ->
-        LazyColumn(
-            state = list_state,
-            modifier = Modifier.fillMaxSize().padding(padding),
-            verticalArrangement = Arrangement.spacedBy(item_gap),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = page_h_padding,
-                end = page_h_padding,
-                top = page_v_padding,
-                bottom = 24.dp
-            )
-        ) {
-            if (state.error != null) {
+        if (state.error != null) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding),
+                verticalArrangement = Arrangement.spacedBy(item_gap),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                    start = page_h_padding,
+                    end = page_h_padding,
+                    top = page_v_padding,
+                    bottom = 24.dp
+                )
+            ) {
                 item {
                     Card(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -153,31 +150,85 @@ fun HomeScreen(
                         )
                     }
                 }
-            }
-
-            if (state.next_prayer != null) {
                 item {
-                    NextCard(state.next_prayer)
+                    Text(
+                        text = state.host_footer,
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
-
-            itemsIndexed(state.items) { idx, item ->
-                TimelineRow(
-                    item = item,
-                    is_first = idx == 0,
-                    is_last = idx == state.items.lastIndex
-                )
+        } else {
+            HorizontalPager(
+                state = pager_state,
+                beyondViewportPageCount = 1,
+                modifier = Modifier.fillMaxSize().padding(padding)
+            ) { page ->
+                val day = state.days.getOrNull(page) ?: return@HorizontalPager
+                DayTimeline(day = day, host_footer = state.host_footer)
             }
+        }
+    }
+}
 
-            item {
-                Text(
-                    text = state.host_footer,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+@Composable
+private fun DayTimeline(
+    day: HomeDayUiState,
+    host_footer: String
+) {
+    val list_state = rememberLazyListState()
+    val now_pos = day.items.indexOfFirst { it is HomeItemUi.Now }
+    val static_items = 1 + (if (day.next_prayer != null) 1 else 0)
+
+    LaunchedEffect(now_pos, static_items, day.day_start) {
+        if (now_pos < 0) return@LaunchedEffect
+        val target_index = static_items + now_pos
+        val visible = list_state.layoutInfo.visibleItemsInfo.any { it.index == target_index }
+        if (!visible) list_state.scrollToItem(target_index)
+    }
+
+    LazyColumn(
+        state = list_state,
+        verticalArrangement = Arrangement.spacedBy(item_gap),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+            start = page_h_padding,
+            end = page_h_padding,
+            top = page_v_padding,
+            bottom = 24.dp
+        )
+    ) {
+        item {
+            Text(
+                text = day.day_label,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        if (day.next_prayer != null) {
+            item { NextCard(day.next_prayer) }
+        }
+
+        itemsIndexed(day.items) { idx, item ->
+            TimelineRow(
+                item = item,
+                is_first = idx == 0,
+                is_last = idx == day.items.lastIndex
+            )
+        }
+
+        item {
+            Text(
+                text = host_footer,
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold
+            )
         }
     }
 }
