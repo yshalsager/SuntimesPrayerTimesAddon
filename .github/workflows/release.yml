@@ -82,9 +82,9 @@ jobs:
           fi
 
           if [[ "${{ inputs.release }}" != "true" ]]; then
-            VERSION="$(sed -nE "s/^[[:space:]]*versionName[[:space:]]+['\"]([^'\"]+)['\"].*$/\1/p" app/build.gradle | head -n 1)"
-            if [[ -z \"$VERSION\" ]]; then
-              echo \"versionName not found in app/build.gradle\"
+            VERSION="$(sed -nE "s/^[[:space:]]*versionName[[:space:]]+['\"]([^'\"]+)['\"].*$/\\1/p" app/build.gradle | head -n 1)"
+            if [[ -z "$VERSION" ]]; then
+              echo "versionName not found in app/build.gradle"
               exit 1
             fi
             echo "version=$VERSION" >> "$GITHUB_OUTPUT"
@@ -282,13 +282,32 @@ jobs:
             ${{ steps.artifacts.outputs.apk_release }}
           if-no-files-found: error
 
+      - name: Generate release notes (changelogen)
+        if: ${{ github.event_name == 'push' || (inputs.release && inputs.create_tag && !inputs.dry_run) }}
+        shell: bash
+        env:
+          TAG: ${{ needs.version.outputs.tag }}
+        run: |
+          set -euo pipefail
+
+          git fetch --tags --force
+          PREV_TAG=$(git tag -l 'v*.*.*' --sort=-v:refname | grep -v "^$TAG$" | head -n 1 || true)
+
+          args=(--to "$TAG" --output release_notes.md)
+          if [[ -n "$PREV_TAG" ]]; then
+            args=(--from "$PREV_TAG" "${args[@]}")
+          fi
+
+          npx --yes changelogen@latest "${args[@]}"
+          echo "Generated release_notes.md"
+
       - name: Create GitHub Release
         if: ${{ github.event_name == 'push' || (inputs.release && inputs.create_tag && !inputs.dry_run) }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version.outputs.tag }}
           name: ${{ needs.version.outputs.tag }}
-          generate_release_notes: true
+          body_path: release_notes.md
           files: |
             ${{ steps.artifacts.outputs.apk_debug }}
             ${{ steps.artifacts.outputs.apk_release }}
