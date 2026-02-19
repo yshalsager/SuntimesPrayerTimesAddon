@@ -4,10 +4,8 @@ import net.time4j.Moment
 import net.time4j.PlainDate
 import net.time4j.TemporalType
 import net.time4j.calendar.HijriCalendar
-import net.time4j.format.expert.ChronoFormatter
-import net.time4j.format.expert.PatternType
 import net.time4j.tz.ZonalOffset
-import java.util.concurrent.ConcurrentHashMap
+import java.text.NumberFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
@@ -37,18 +35,14 @@ private fun plain_date_at(millis: Long, tz: TimeZone): PlainDate {
     return moment.toZonalTimestamp(offset).toDate()
 }
 
-private data class HijriFmtKey(val locale: String, val variant: String, val pattern: String)
-private val hijri_formatters = ConcurrentHashMap<HijriFmtKey, ChronoFormatter<HijriCalendar>>()
+private fun locale_number(locale: Locale, value: Int): String =
+    NumberFormat.getIntegerInstance(locale).format(value)
 
-private fun hijri_formatter(locale: Locale, variant: String, pattern: String): ChronoFormatter<HijriCalendar> {
-    val key = HijriFmtKey(locale.toLanguageTag(), variant, pattern)
-    return hijri_formatters.getOrPut(key) {
-        ChronoFormatter.setUp(HijriCalendar::class.java, locale)
-            .addPattern(pattern, PatternType.CLDR_DATE)
-            .build()
-            .withCalendarVariant(variant)
-    }
-}
+private fun format_hijri_date(locale: Locale, hijri: HijriCalendar): String =
+    "${locale_number(locale, hijri.dayOfMonth)} ${hijri.month.getDisplayName(locale)} ${locale_number(locale, hijri.year)}"
+
+private fun format_hijri_month_year(locale: Locale, hijri: HijriCalendar): String =
+    "${hijri.month.getDisplayName(locale)} ${locale_number(locale, hijri.year)}"
 
 fun hijri_for_day(
     day_start_millis: Long,
@@ -61,13 +55,12 @@ fun hijri_for_day(
     val time4j_variant = time4j_variant(variant)
     val date = plain_date_at(millis, tz)
     val hijri = date.transform(HijriCalendar::class.java, time4j_variant)
-    val fmt = hijri_formatter(locale, time4j_variant, "d MMMM y")
 
     return HijriInfo(
         year = hijri.year,
         month = hijri.month.value,
         day = hijri.dayOfMonth,
-        formatted = fmt.format(hijri)
+        formatted = format_hijri_date(locale, hijri)
     )
 }
 
@@ -82,5 +75,5 @@ fun hijri_month_title_for_day(
     val time4j_variant = time4j_variant(variant)
     val date = plain_date_at(millis, tz)
     val hijri = date.transform(HijriCalendar::class.java, time4j_variant)
-    return hijri_formatter(locale, time4j_variant, "MMMM y").format(hijri)
+    return format_hijri_month_year(locale, hijri)
 }
