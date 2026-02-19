@@ -118,10 +118,16 @@ class MainActivity : ThemedActivity() {
         }
 
         Thread {
-            val computed = compute_home(host)
-            ui.post {
-                apply_computed(computed)
-                start_tick(host)
+            try {
+                val computed = compute_home(host)
+                ui.post {
+                    apply_computed(computed)
+                    start_tick(host)
+                }
+            } catch (_: ArithmeticException) {
+                ui.post {
+                    state = state.copy(error = getString(R.string.hijri_out_of_range))
+                }
             }
         }.start()
     }

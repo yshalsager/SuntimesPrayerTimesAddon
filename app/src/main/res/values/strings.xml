@@ -53,6 +53,7 @@
 
     <string name='missing_permission'>Missing permission: %1$s</string>
     <string name='grant_permission'>Grant permission</string>
+    <string name='hijri_out_of_range'>The selected Hijri method does not support this date range.</string>
     <string name='language_english'>English</string>
     <string name='language_arabic'>Arabic</string>
 

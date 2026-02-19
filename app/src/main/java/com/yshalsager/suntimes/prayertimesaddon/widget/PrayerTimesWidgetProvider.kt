@@ -84,7 +84,14 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val hijri_variant = Prefs.get_hijri_variant(context)
         val hijri_offset = Prefs.get_hijri_day_offset(context)
         val locale = ConfigurationCompat.getLocales(context.resources.configuration).get(0) ?: Locale.getDefault()
-        val hijri = if (!show_hijri) null else hijri_for_day(day_start, tz, locale, hijri_variant, hijri_offset).formatted
+        val hijri =
+            if (!show_hijri) null
+            else
+                try {
+                    hijri_for_day(day_start, tz, locale, hijri_variant, hijri_offset).formatted
+                } catch (_: ArithmeticException) {
+                    null
+                }
         val greg = format_gregorian_day_title(context, day_start, tz, locale)
 
         val location = cfg?.display_label() ?: context.getString(R.string.unknown_location)

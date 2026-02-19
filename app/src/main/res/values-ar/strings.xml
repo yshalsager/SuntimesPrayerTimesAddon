@@ -8,6 +8,7 @@
 
     <string name='missing_permission'>صلاحية مفقودة: %1$s</string>
     <string name='grant_permission'>منح الصلاحية</string>
+    <string name='hijri_out_of_range'>طريقة التاريخ الهجري المحددة لا تدعم هذا النطاق الزمني.</string>
     <string name='language_english'>الإنجليزية</string>
     <string name='language_arabic'>العربية</string>
 

@@ -111,12 +111,19 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
         day_cache.clear()
 
         workers.execute {
-            val skel = build_month_skeleton(ctx, host, month_basis, show_hijri_effective, hijri_variant, hijri_offset, month_anchor)
-            main.post {
-                if (this_id != load_id) return@post
-                month_start = skel.start
-                month_end = skel.end
-                state = DaysUiState(loading = false, title = skel.title, skeleton = skel)
+            try {
+                val skel = build_month_skeleton(ctx, host, month_basis, show_hijri_effective, hijri_variant, hijri_offset, month_anchor)
+                main.post {
+                    if (this_id != load_id) return@post
+                    month_start = skel.start
+                    month_end = skel.end
+                    state = DaysUiState(loading = false, title = skel.title, skeleton = skel)
+                }
+            } catch (_: ArithmeticException) {
+                main.post {
+                    if (this_id != load_id) return@post
+                    state = DaysUiState(loading = false, error = ctx.getString(R.string.hijri_out_of_range))
+                }
             }
         }
     }
