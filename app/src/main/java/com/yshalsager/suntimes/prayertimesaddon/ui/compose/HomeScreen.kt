@@ -364,7 +364,7 @@ private fun TimelineRow(
             if (!is_last) Spacer(Modifier.height(item_gap))
         }
 
-        TimelineAnchor(item, is_first, is_last, modifier = Modifier.align(Alignment.TopStart).fillMaxHeight())
+        TimelineAnchor(item, is_first, is_last, modifier = Modifier.matchParentSize().align(Alignment.TopStart))
     }
 }
 
@@ -411,31 +411,33 @@ private fun TimelineAnchor(
         }
     }
 
-    Box(modifier = modifier.width(28.dp), contentAlignment = Alignment.TopCenter) {
-        Canvas(Modifier.fillMaxSize()) {
-            val line_w = 2.dp.toPx()
-            val x = (size.width - line_w) / 2f
-            val top_end = dot_top.toPx()
-            val dot_bottom = top_end + 24.dp.toPx()
-            if (!is_first) drawRect(line_color, topLeft = Offset(x, 0f), size = Size(line_w, top_end))
-            if (!is_last) drawRect(line_color, topLeft = Offset(x, dot_bottom), size = Size(line_w, size.height - dot_bottom))
-        }
+    Box(modifier = modifier, contentAlignment = Alignment.TopStart) {
+        Box(modifier = Modifier.width(28.dp).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+            Canvas(Modifier.fillMaxSize()) {
+                val line_w = 2.dp.toPx()
+                val x = (size.width - line_w) / 2f
+                val top_end = dot_top.toPx()
+                val dot_bottom = top_end + 24.dp.toPx()
+                if (!is_first) drawRect(line_color, topLeft = Offset(x, 0f), size = Size(line_w, top_end))
+                if (!is_last) drawRect(line_color, topLeft = Offset(x, dot_bottom), size = Size(line_w, size.height - dot_bottom))
+            }
 
-        Box(
-            modifier = Modifier
-                .offset(y = dot_top)
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(dot_bg),
-            contentAlignment = Alignment.Center
-        ) {
-            if (dot_icon != null) {
-                Image(
-                    painter = dot_icon,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp),
-                    colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(dot_icon_tint)
-                )
+            Box(
+                modifier = Modifier
+                    .offset(y = dot_top)
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(dot_bg),
+                contentAlignment = Alignment.Center
+            ) {
+                if (dot_icon != null) {
+                    Image(
+                        painter = dot_icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(dot_icon_tint)
+                    )
+                }
             }
         }
     }
