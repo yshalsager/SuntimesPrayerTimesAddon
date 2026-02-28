@@ -240,7 +240,7 @@ jobs:
           VERSION="${{ needs.version.outputs.version }}"
 
           DEBUG_APK=$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -n 1 || true)
-          RELEASE_APK=$(find app/build/outputs/apk/release -type f -name "*.apk" | head -n 1 || true)
+          RELEASE_APK=$(find app/build/outputs/apk/release -type f -name "*.apk" ! -name "*-unsigned.apk" | head -n 1 || true)
 
           if [[ -z "$DEBUG_APK" ]]; then
             echo "No debug APK found"
@@ -248,7 +248,7 @@ jobs:
           fi
 
           if [[ -z "$RELEASE_APK" ]]; then
-            echo "No release APK found"
+            echo "No signed release APK found"
             exit 1
           fi
 
