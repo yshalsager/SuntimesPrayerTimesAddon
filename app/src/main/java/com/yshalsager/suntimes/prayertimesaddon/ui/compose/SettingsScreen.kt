@@ -708,6 +708,7 @@ private fun prayer_alarm_preset_json(ctx: android.content.Context): String {
     val events =
         listOf(
             AddonEvent.prayer_fajr to ctx.getString(R.string.event_prayer_fajr),
+            AddonEvent.prayer_duha to ctx.getString(R.string.event_prayer_duha),
             AddonEvent.prayer_dhuhr to ctx.getString(R.string.event_prayer_dhuhr),
             AddonEvent.prayer_asr to ctx.getString(R.string.event_prayer_asr),
             AddonEvent.prayer_maghrib to ctx.getString(R.string.event_prayer_maghrib),
