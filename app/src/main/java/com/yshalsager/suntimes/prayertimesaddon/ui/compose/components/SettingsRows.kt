@@ -15,9 +15,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
@@ -34,8 +36,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -96,6 +96,7 @@ fun SettingSwitch(title: String, subtitle: String? = null, checked: Boolean, on_
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun SettingDropdown(
     title: String,
     subtitle: String? = null,
@@ -109,11 +110,15 @@ fun SettingDropdown(
         title = title,
         subtitle = subtitle,
         trailing = {
-            Box(Modifier.wrapContentSize(Alignment.TopEnd)) {
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                modifier = Modifier.wrapContentSize(Alignment.TopEnd)
+            ) {
                 Row(
                     modifier = Modifier
+                        .menuAnchor(type = MenuAnchorType.PrimaryNotEditable, enabled = true)
                         .widthIn(min = 120.dp, max = 220.dp)
-                        .clickable { expanded = true }
                         .defaultMinSize(minHeight = 52.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -127,14 +132,9 @@ fun SettingDropdown(
                         textAlign = TextAlign.End,
                         modifier = Modifier.weight(1f)
                     )
-                    Icon(
-                        imageVector = Icons.Default.ArrowDropDown,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 }
-
-                DropdownMenu(
+                ExposedDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                     modifier = Modifier.widthIn(min = 180.dp, max = 280.dp)
