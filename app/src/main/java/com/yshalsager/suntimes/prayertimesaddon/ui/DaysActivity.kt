@@ -21,4 +21,9 @@ class DaysActivity : ThemedActivity() {
         }
         vm.load(force = true)
     }
+
+    override fun onResume() {
+        super.onResume()
+        vm.load()
+    }
 }

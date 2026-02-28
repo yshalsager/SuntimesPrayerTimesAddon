@@ -81,13 +81,13 @@ object Prefs {
         put_str(context, k_days_month_basis, v)
 
     fun get_widget_show_prohibited(context: Context): Boolean =
-        sp(context).getBoolean(k_widget_show_prohibited, get_days_show_prohibited(context))
+        sp(context).getBoolean(k_widget_show_prohibited, true)
 
     fun set_widget_show_prohibited(context: Context, v: Boolean) =
         put_bool(context, k_widget_show_prohibited, v)
 
     fun get_widget_show_night_portions(context: Context): Boolean =
-        sp(context).getBoolean(k_widget_show_night_portions, get_days_show_night_portions(context))
+        sp(context).getBoolean(k_widget_show_night_portions, true)
 
     fun set_widget_show_night_portions(context: Context, v: Boolean) =
         put_bool(context, k_widget_show_night_portions, v)
