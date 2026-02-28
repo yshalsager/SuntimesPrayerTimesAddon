@@ -8,6 +8,7 @@
     <string name='event_type_night'>Night</string>
 
     <string name='event_prayer_fajr'>Fajr</string>
+    <string name='event_prayer_duha'>Duha</string>
     <string name='event_prayer_dhuhr'>Dhuhr</string>
     <string name='event_prayer_jummah'>Jumu\'ah</string>
     <string name='event_prayer_asr'>Asr</string>
@@ -27,7 +28,7 @@
 
     <string name='main_settings'>Settings</string>
 
-    <string name='method_title'>Method</string>
+    <string name='method_title'>Time calculation</string>
     <string name='method_summary'>Choose preset or custom values</string>
     <string name='method_egypt'>Egypt</string>
     <string name='method_mwl'>MWL</string>
@@ -75,7 +76,15 @@
     <string name='host_title'>SuntimesWidget host</string>
     <string name='host_summary'>Which installed SuntimesWidget to query</string>
     <string name='host_location_title'>Host location</string>
+    <string name='host_alarms_title'>Host alarms</string>
+    <string name='host_alarms_summary'>Open host alarms screen</string>
     <string name='open_in_host'>Open</string>
+    <string name='export_label'>Export</string>
+    <string name='export_prayer_alarm_preset_title'>Prayer alarm preset</string>
+    <string name='export_prayer_alarm_preset_summary'>Export an importable host alarms preset file</string>
+    <string name='prayer_alarm_preset_filename'>prayer-alarms-preset.txt</string>
+    <string name='alarm_preset_export_success'>Alarm preset exported</string>
+    <string name='alarm_preset_export_failed'>Failed to export alarm preset</string>
 
     <string name='makruh_preset_title'>Makruh preset</string>
     <string name='makruh_preset_shafi'>Shafi</string>
@@ -88,7 +97,7 @@
     <string name='makruh_angle_title'>Makruh angle</string>
     <string name='zawal_minutes_title'>Zawal minutes</string>
 
-    <string name='days_view_title'>Days view</string>
+    <string name='days_view_title'>Calendar view</string>
     <string name='days_month_basis_title'>Month basis</string>
     <string name='days_month_basis_gregorian'>Gregorian</string>
     <string name='days_month_basis_hijri'>Hijri</string>
@@ -96,22 +105,24 @@
     <string name='days_show_prohibited_title'>Show prohibited times</string>
     <string name='days_show_night_portions_title'>Show night portions</string>
 
-    <string name='days_title'>Days</string>
+    <string name='days_title'>Calendar</string>
     <string name='prev_month'>Previous month</string>
     <string name='next_month'>Next month</string>
     <string name='next_prayer_label'>Next Prayer: %1$s</string>
     <string name='in_countdown'>in %1$s</string>
     <string name='prohibited_tag'>Prohibited</string>
+    <string name='prohibited_tag_light'>Light prohibited</string>
+    <string name='prohibited_tag_heavy'>Heavy prohibited</string>
     <string name='duration_minutes'>%1$d min duration</string>
     <string name='today'>Today</string>
     <string name='now'>Now</string>
     <string name='minute_abbrev'>m</string>
 
-    <string name='prohibited_dawn'>Dawn</string>
-    <string name='prohibited_sunrise'>Sunrise</string>
-    <string name='prohibited_zawal'>Zawal</string>
-    <string name='prohibited_after_asr'>After Asr</string>
-    <string name='prohibited_sunset'>Sunset</string>
+    <string name='prohibited_dawn'>Dawn (light)</string>
+    <string name='prohibited_sunrise'>Sunrise (heavy)</string>
+    <string name='prohibited_zawal'>Zawal (heavy)</string>
+    <string name='prohibited_after_asr'>After Asr (light)</string>
+    <string name='prohibited_sunset'>Sunset (heavy)</string>
 
     <string name='night_midpoint'>Night midpoint</string>
     <string name='night_last_third'>Last third</string>

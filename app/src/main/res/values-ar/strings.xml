@@ -30,6 +30,7 @@
     <string name='main_settings'>الإعدادات</string>
 
     <string name='event_prayer_fajr'>الفجر</string>
+    <string name='event_prayer_duha'>الضحى</string>
     <string name='event_prayer_dhuhr'>الظهر</string>
     <string name='event_prayer_jummah'>الجمعة</string>
     <string name='event_prayer_asr'>العصر</string>
@@ -47,7 +48,7 @@
     <string name='event_makruh_sunset_start'>وقت نهي (قبل الغروب)</string>
     <string name='event_makruh_sunset_end'>وقت نهي (نهاية الغروب)</string>
 
-    <string name='method_title'>الطريقة</string>
+    <string name='method_title'>حساب الأوقات</string>
     <string name='method_summary'>اختر إعداداً مسبقاً أو قيماً مخصصة</string>
     <string name='fajr_angle_title'>زاوية الفجر</string>
     <string name='isha_mode_title'>طريقة العشاء</string>
@@ -61,7 +62,15 @@
     <string name='host_title'>مضيف SuntimesWidget</string>
     <string name='host_summary'>اختر نسخة SuntimesWidget المثبتة للاستعلام عنها</string>
     <string name='host_location_title'>موقع المضيف</string>
+    <string name='host_alarms_title'>منبّهات المضيف</string>
+    <string name='host_alarms_summary'>فتح شاشة منبّهات التطبيق المضيف</string>
     <string name='open_in_host'>فتح</string>
+    <string name='export_label'>تصدير</string>
+    <string name='export_prayer_alarm_preset_title'>إعداد منبّهات الصلاة</string>
+    <string name='export_prayer_alarm_preset_summary'>تصدير ملف إعداد جاهز للاستيراد في منبّهات المضيف</string>
+    <string name='prayer_alarm_preset_filename'>prayer-alarms-preset.txt</string>
+    <string name='alarm_preset_export_success'>تم تصدير إعداد المنبّهات</string>
+    <string name='alarm_preset_export_failed'>فشل تصدير إعداد المنبّهات</string>
 
     <string name='makruh_preset_title'>إعداد أوقات النهي</string>
     <string name='makruh_sunrise_minutes_title'>نهاية نهي الشروق</string>
@@ -85,20 +94,22 @@
     <string name='makruh_preset_hanafi'>حنفي</string>
     <string name='makruh_preset_custom'>مخصص</string>
 
-    <string name='days_view_title'>عرض الأيام</string>
-    <string name='days_month_basis_title'>أساس الشهر</string>
+    <string name='days_view_title'>عرض التقويم</string>
+    <string name='days_month_basis_title'>مرجع الشهر</string>
     <string name='days_month_basis_gregorian'>ميلادي</string>
     <string name='days_month_basis_hijri'>هجري</string>
     <string name='days_show_hijri_title'>إظهار التاريخ الهجري</string>
     <string name='days_show_prohibited_title'>إظهار أوقات النهي</string>
     <string name='days_show_night_portions_title'>إظهار تقسيم الليل</string>
 
-    <string name='days_title'>الأيام</string>
+    <string name='days_title'>التقويم</string>
     <string name='prev_month'>الشهر السابق</string>
     <string name='next_month'>الشهر التالي</string>
     <string name='next_prayer_label'>الصلاة القادمة: %1$s</string>
     <string name='in_countdown'>بعد %1$s</string>
     <string name='prohibited_tag'>وقت نهي</string>
+    <string name='prohibited_tag_light'>وقت نهي</string>
+    <string name='prohibited_tag_heavy'>وقت نهي</string>
     <string name='duration_minutes'>المدة %1$d دقيقة</string>
     <string name='today'>اليوم</string>
     <string name='now'>الآن</string>

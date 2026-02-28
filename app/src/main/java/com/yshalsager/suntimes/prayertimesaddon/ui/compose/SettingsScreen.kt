@@ -4,6 +4,10 @@ import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -29,6 +33,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.android.material.color.DynamicColors
 import com.yshalsager.suntimes.prayertimesaddon.R
+import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
+import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
@@ -40,6 +46,9 @@ import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingTex
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingsSection
 import androidx.compose.ui.text.input.KeyboardType
 import com.yshalsager.suntimes.prayertimesaddon.widget.WidgetUpdate
+import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
+import org.json.JSONArray
+import org.json.JSONObject
 
 @Composable
 fun SettingsRoot(on_back: () -> Unit) {
@@ -132,11 +141,13 @@ private fun SettingsContent(
         host_location_label = label ?: ctx.getString(R.string.unknown_location)
     }
 
+    fun selected_host_package(): String? =
+        hosts.firstOrNull { it.event_authority == host_event_authority }?.package_name
+            ?: ctx.packageManager.resolveContentProvider(host_event_authority, 0)?.packageName
+
     fun open_host_location_picker() {
         if (host_event_authority.isBlank()) return
-        val host_package = hosts.firstOrNull { it.event_authority == host_event_authority }?.package_name
-            ?: ctx.packageManager.resolveContentProvider(host_event_authority, 0)?.packageName
-            ?: return
+        val host_package = selected_host_package() ?: return
         if (host_package.isBlank()) return
         val component = ComponentName(host_package, "com.forrestguice.suntimeswidget.SuntimesActivity")
         val explicit_intent = Intent("suntimes.action.CONFIG_LOCATION")
@@ -148,6 +159,34 @@ private fun SettingsContent(
         } catch (_: ActivityNotFoundException) {
             pm.getLaunchIntentForPackage(host_package)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let(ctx::startActivity)
         }
+    }
+
+    fun open_host_alarms() {
+        if (host_event_authority.isBlank()) return
+        val host_package = selected_host_package() ?: return
+        val pm = ctx.packageManager
+        val explicit_intent = Intent("android.intent.action.SHOW_ALARMS")
+        explicit_intent.component = ComponentName(host_package, "com.forrestguice.suntimeswidget.alarmclock.ui.AlarmClockActivity")
+        explicit_intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        try {
+            ctx.startActivity(explicit_intent)
+        } catch (_: ActivityNotFoundException) {
+            try {
+                val fallback_intent = Intent("android.intent.action.SHOW_ALARMS")
+                fallback_intent.setPackage(host_package)
+                fallback_intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                ctx.startActivity(fallback_intent)
+            } catch (_: ActivityNotFoundException) {
+                pm.getLaunchIntentForPackage(host_package)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let(ctx::startActivity)
+            }
+        }
+    }
+
+    val create_preset_file_launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val ok = write_prayer_alarm_preset(ctx, uri)
+        val msg = if (ok) ctx.getString(R.string.alarm_preset_export_success) else ctx.getString(R.string.alarm_preset_export_failed)
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
     }
 
     LaunchedEffect(host_event_authority) {
@@ -269,6 +308,32 @@ private fun SettingsContent(
                     trailing = {
                         Text(
                             text = ctx.getString(R.string.open_in_host),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+
+                SettingRow(
+                    title = ctx.getString(R.string.host_alarms_title),
+                    subtitle = ctx.getString(R.string.host_alarms_summary),
+                    on_click = { open_host_alarms() },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.open_in_host),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+
+                SettingRow(
+                    title = ctx.getString(R.string.export_prayer_alarm_preset_title),
+                    subtitle = ctx.getString(R.string.export_prayer_alarm_preset_summary),
+                    on_click = { create_preset_file_launcher.launch(ctx.getString(R.string.prayer_alarm_preset_filename)) },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.export_label),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -477,6 +542,8 @@ private fun SettingsContent(
             }
         }
 
+        item { Spacer(Modifier.height(12.dp)) }
+
         item {
             SettingsSection(ctx.getString(R.string.widget_title)) {
                 SettingSwitch(
@@ -624,3 +691,47 @@ private fun hijri_offset_options(ctx: android.content.Context): List<Pair<String
 
 private fun hijri_offset_label(ctx: android.content.Context, v: String): String =
     hijri_offset_options(ctx).firstOrNull { it.first == v }?.second ?: v
+
+private fun write_prayer_alarm_preset(ctx: android.content.Context, uri: Uri): Boolean {
+    val json = prayer_alarm_preset_json(ctx)
+    val out = ctx.contentResolver.openOutputStream(uri) ?: return false
+    return try {
+        out.bufferedWriter().use { it.write(json) }
+        true
+    } catch (_: Exception) {
+        false
+    }
+}
+
+private fun prayer_alarm_preset_json(ctx: android.content.Context): String {
+    val repeat_days = "[1,2,3,4,5,6,7]"
+    val events =
+        listOf(
+            AddonEvent.prayer_fajr to ctx.getString(R.string.event_prayer_fajr),
+            AddonEvent.prayer_dhuhr to ctx.getString(R.string.event_prayer_dhuhr),
+            AddonEvent.prayer_asr to ctx.getString(R.string.event_prayer_asr),
+            AddonEvent.prayer_maghrib to ctx.getString(R.string.event_prayer_maghrib),
+            AddonEvent.prayer_isha to ctx.getString(R.string.event_prayer_isha)
+        )
+
+    val arr = JSONArray()
+    events.forEach { (event, label) ->
+        val event_uri = "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}/${event.event_id}"
+        arr.put(
+            JSONObject()
+                .put("alarmType", "ALARM")
+                .put("enabled", 1)
+                .put("alarmlabel", label)
+                .put("repeating", 1)
+                .put("repeatdays", repeat_days)
+                .put("datetime", -1)
+                .put("alarmtime", -1)
+                .put("hour", -1)
+                .put("minute", -1)
+                .put("timeoffset", 0)
+                .put("event", event_uri)
+                .put("vibrate", 1)
+        )
+    }
+    return arr.toString()
+}
