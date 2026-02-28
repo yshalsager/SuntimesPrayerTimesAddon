@@ -45,6 +45,7 @@ object Prefs {
     private const val k_maghrib_offset_minutes = "maghrib_offset_minutes"
     private const val k_makruh_preset = "makruh_preset"
     private const val k_makruh_angle = "makruh_angle"
+    private const val k_makruh_sunrise_minutes = "makruh_sunrise_minutes"
     private const val k_zawal_minutes = "zawal_minutes"
 
     private fun sp(context: Context) = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
@@ -186,6 +187,22 @@ object Prefs {
 
     fun set_makruh_angle(context: Context, angle: Double) =
         put_str(context, k_makruh_angle, angle.toString())
+
+    fun get_makruh_sunrise_minutes(context: Context): Int {
+        val minutes = get_int(context, k_makruh_sunrise_minutes, 15)
+        return when (minutes) {
+            10, 15, 20 -> minutes
+            else -> 15
+        }
+    }
+
+    fun set_makruh_sunrise_minutes(context: Context, minutes: Int) {
+        val v = when (minutes) {
+            10, 15, 20 -> minutes
+            else -> 15
+        }
+        put_str(context, k_makruh_sunrise_minutes, v.toString())
+    }
 
     fun get_zawal_minutes(context: Context): Int =
         get_int(context, k_zawal_minutes, 10)

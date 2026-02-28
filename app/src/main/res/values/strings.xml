@@ -81,6 +81,10 @@
     <string name='makruh_preset_shafi'>Shafi</string>
     <string name='makruh_preset_hanafi'>Hanafi</string>
     <string name='makruh_preset_custom'>Custom</string>
+    <string name='makruh_sunrise_minutes_title'>Sunrise prohibited end</string>
+    <string name='makruh_sunrise_minutes_10'>10 min after sunrise</string>
+    <string name='makruh_sunrise_minutes_15'>15 min after sunrise</string>
+    <string name='makruh_sunrise_minutes_20'>20 min after sunrise</string>
     <string name='makruh_angle_title'>Makruh angle</string>
     <string name='zawal_minutes_title'>Zawal minutes</string>
 

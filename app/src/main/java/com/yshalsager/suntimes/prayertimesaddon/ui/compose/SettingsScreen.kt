@@ -81,6 +81,7 @@ private fun SettingsContent(
     var maghrib_offset_minutes_text by rememberSaveable { mutableStateOf(Prefs.get_maghrib_offset_minutes(ctx).toString()) }
 
     var makruh_preset by rememberSaveable { mutableStateOf(Prefs.get_makruh_preset(ctx)) }
+    var makruh_sunrise_minutes by rememberSaveable { mutableStateOf(Prefs.get_makruh_sunrise_minutes(ctx).toString()) }
     var makruh_angle_text by rememberSaveable { mutableStateOf(Prefs.get_makruh_angle(ctx).toString()) }
     var zawal_minutes_text by rememberSaveable { mutableStateOf(Prefs.get_zawal_minutes(ctx).toString()) }
 
@@ -382,6 +383,17 @@ private fun SettingsContent(
                     }
                 )
 
+                SettingDropdown(
+                    title = ctx.getString(R.string.makruh_sunrise_minutes_title),
+                    value_label = makruh_sunrise_minutes_label(ctx, makruh_sunrise_minutes),
+                    selected = makruh_sunrise_minutes,
+                    options = makruh_sunrise_minutes_options(ctx),
+                    on_select = { v ->
+                        makruh_sunrise_minutes = v
+                        Prefs.set_makruh_sunrise_minutes(ctx, v.toIntOrNull() ?: 15)
+                    }
+                )
+
                 if (makruh_preset == "custom") {
                     SettingTextField(
                         title = ctx.getString(R.string.makruh_angle_title),
@@ -572,6 +584,16 @@ private fun makruh_options(ctx: android.content.Context): List<Pair<String, Stri
 
 private fun makruh_label(ctx: android.content.Context, v: String): String =
     makruh_options(ctx).firstOrNull { it.first == v }?.second ?: v
+
+private fun makruh_sunrise_minutes_options(ctx: android.content.Context): List<Pair<String, String>> =
+    listOf(
+        "10" to ctx.getString(R.string.makruh_sunrise_minutes_10),
+        "15" to ctx.getString(R.string.makruh_sunrise_minutes_15),
+        "20" to ctx.getString(R.string.makruh_sunrise_minutes_20)
+    )
+
+private fun makruh_sunrise_minutes_label(ctx: android.content.Context, v: String): String =
+    makruh_sunrise_minutes_options(ctx).firstOrNull { it.first == v }?.second ?: v
 
 private fun month_basis_options(ctx: android.content.Context): List<Pair<String, String>> =
     listOf(

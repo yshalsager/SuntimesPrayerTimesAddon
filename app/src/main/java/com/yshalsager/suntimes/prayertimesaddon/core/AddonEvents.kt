@@ -89,7 +89,10 @@ object AddonEventMapper {
                 HostQuery(HostEventIds.sun_elevation(-Prefs.get_fajr_angle(context), rising = true))
             AddonEvent.makruh_dawn_end -> HostQuery("SUNRISE")
             AddonEvent.makruh_sunrise_start -> HostQuery("SUNRISE")
-            AddonEvent.makruh_sunrise_end -> HostQuery(HostEventIds.sun_elevation(Prefs.get_makruh_angle(context), rising = true))
+            AddonEvent.makruh_sunrise_end -> {
+                val delta = Prefs.get_makruh_sunrise_minutes(context) * 60_000L
+                HostQuery("SUNRISE", delta_millis = delta)
+            }
 
             AddonEvent.makruh_zawal_end -> HostQuery("NOON")
             AddonEvent.makruh_zawal_start -> {

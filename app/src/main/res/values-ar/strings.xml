@@ -64,6 +64,10 @@
     <string name='open_in_host'>فتح</string>
 
     <string name='makruh_preset_title'>إعداد أوقات النهي</string>
+    <string name='makruh_sunrise_minutes_title'>نهاية نهي الشروق</string>
+    <string name='makruh_sunrise_minutes_10'>بعد الشروق بـ ١٠ دقائق</string>
+    <string name='makruh_sunrise_minutes_15'>بعد الشروق بـ ١٥ دقيقة</string>
+    <string name='makruh_sunrise_minutes_20'>بعد الشروق بـ ٢٠ دقيقة</string>
     <string name='makruh_angle_title'>زاوية النهي</string>
     <string name='zawal_minutes_title'>دقائق الاستواء</string>
 
