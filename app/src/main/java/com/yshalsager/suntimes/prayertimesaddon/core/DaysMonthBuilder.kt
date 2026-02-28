@@ -31,6 +31,7 @@ data class DayItem(
     val is_today: Boolean,
     val is_friday: Boolean,
     val fajr: String,
+    val duha: String,
     val dhuhr: String,
     val asr: String,
     val maghrib: String,
@@ -189,6 +190,7 @@ fun build_day_item(
     val maghrib_offset_ms = Prefs.get_maghrib_offset_minutes(context) * 60_000L
 
     val fajr = q(AddonEvent.prayer_fajr)
+    val duha = q(AddonEvent.prayer_duha)
     val asr = q(AddonEvent.prayer_asr)
     val isha = q(AddonEvent.prayer_isha)
 
@@ -227,6 +229,7 @@ fun build_day_item(
         is_today = meta.is_today,
         is_friday = meta.is_friday,
         fajr = time_str(fajr),
+        duha = time_str(duha),
         dhuhr = time_str(dhuhr),
         asr = time_str(asr),
         maghrib = time_str(maghrib),

@@ -212,6 +212,7 @@ private fun DayCard(meta: DayMeta, item: DayItem?) {
             PrayerRow(
                 is_friday = item?.is_friday ?: meta.is_friday,
                 fajr = item?.fajr ?: "--",
+                duha = item?.duha,
                 dhuhr = item?.dhuhr ?: "--",
                 asr = item?.asr ?: "--",
                 maghrib = item?.maghrib ?: "--",
@@ -232,22 +233,36 @@ private fun DayCard(meta: DayMeta, item: DayItem?) {
 }
 
 @Composable
-private fun PrayerRow(is_friday: Boolean, fajr: String, dhuhr: String, asr: String, maghrib: String, isha: String) {
+private fun PrayerRow(is_friday: Boolean, fajr: String, duha: String?, dhuhr: String, asr: String, maghrib: String, isha: String) {
     val ctx = LocalContext.current
     val dhuhr_label = if (is_friday) ctx.getString(R.string.event_prayer_jummah) else ctx.getString(R.string.event_prayer_dhuhr)
-    val labels = listOf(
-        ctx.getString(R.string.event_prayer_fajr) to fajr,
-        dhuhr_label to dhuhr,
-        ctx.getString(R.string.event_prayer_asr) to asr,
-        ctx.getString(R.string.event_prayer_maghrib) to maghrib,
-        ctx.getString(R.string.event_prayer_isha) to isha
-    )
+    val labels = buildList {
+        add(Triple(ctx.getString(R.string.event_prayer_fajr), fajr, false))
+        if (duha != null) add(Triple(ctx.getString(R.string.event_prayer_duha), duha, true))
+        add(Triple(dhuhr_label, dhuhr, false))
+        add(Triple(ctx.getString(R.string.event_prayer_asr), asr, false))
+        add(Triple(ctx.getString(R.string.event_prayer_maghrib), maghrib, false))
+        add(Triple(ctx.getString(R.string.event_prayer_isha), isha, false))
+    }
 
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        labels.forEach { (label, time) ->
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        labels.forEach { (label, time, is_optional) ->
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(text = time, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (is_optional) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = time,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (is_optional) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
@@ -263,17 +278,18 @@ private fun LazyListState.visible_range(): Pair<Int, Int>? {
 private fun ProhibitedRow(item: DayItem) {
     val ctx = LocalContext.current
     val labels = listOf(
-        ctx.getString(R.string.prohibited_dawn) to item.prohibited_dawn,
-        ctx.getString(R.string.prohibited_sunrise) to item.prohibited_sunrise,
-        ctx.getString(R.string.prohibited_zawal) to item.prohibited_zawal,
-        ctx.getString(R.string.prohibited_after_asr) to item.prohibited_after_asr,
-        ctx.getString(R.string.prohibited_sunset) to item.prohibited_sunset
+        Triple(ctx.getString(R.string.prohibited_dawn), item.prohibited_dawn, true),
+        Triple(ctx.getString(R.string.prohibited_sunrise), item.prohibited_sunrise, false),
+        Triple(ctx.getString(R.string.prohibited_zawal), item.prohibited_zawal, false),
+        Triple(ctx.getString(R.string.prohibited_after_asr), item.prohibited_after_asr, true),
+        Triple(ctx.getString(R.string.prohibited_sunset), item.prohibited_sunset, false)
     )
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        labels.forEach { (label, range) ->
+        labels.forEach { (label, range, is_light) ->
+            val label_color = if (is_light) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = label, style = MaterialTheme.typography.labelSmall, color = label_color, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(text = range ?: "--", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }

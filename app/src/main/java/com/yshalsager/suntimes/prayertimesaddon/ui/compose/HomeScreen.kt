@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -42,11 +41,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.yshalsager.suntimes.prayertimesaddon.R
@@ -55,11 +55,14 @@ import kotlinx.coroutines.flow.collectLatest
 private val page_h_padding = 12.dp
 private val page_v_padding = 12.dp
 private val item_gap = 8.dp
-private val anchor_gap_small = 6.dp
 private val card_h_padding = 12.dp
 private val card_v_padding = 9.dp
 private val prayer_card_h_padding = 14.dp
 private val prayer_card_v_padding = 10.dp
+private val timeline_lane_width = 40.dp
+private val timeline_dot_size = 24.dp
+private val timeline_icon_size = 14.dp
+private val timeline_line_width = 2.dp
 
 data class NextPrayerUi(
     val label: String,
@@ -77,6 +80,7 @@ sealed class HomeItemUi(open val sort_time: Long) {
         val countdown: String?,
         val is_next: Boolean,
         val is_passed: Boolean,
+        val is_optional: Boolean,
         val dot_icon: Int
     ) : HomeItemUi(sort_time)
 
@@ -84,7 +88,8 @@ sealed class HomeItemUi(open val sort_time: Long) {
         override val sort_time: Long,
         val label: String,
         val range: String,
-        val duration: String?
+        val duration: String?,
+        val is_light: Boolean
     ) : HomeItemUi(sort_time)
 
     data class Night(
@@ -186,12 +191,14 @@ fun HomeScreen(
                     }
                 }
                 item {
+                    Spacer(Modifier.height(item_gap))
                     Text(
                         text = state.host_footer,
                         modifier = Modifier.fillMaxWidth(),
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.End
                     )
                 }
             }
@@ -265,12 +272,14 @@ private fun DayTimeline(
             }
 
             item {
+                Spacer(Modifier.height(item_gap))
                 Text(
                     text = host_footer,
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.End
                 )
             }
         }
@@ -351,9 +360,8 @@ private fun TimelineRow(
 ) {
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.fillMaxWidth()) {
-            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
-                Spacer(Modifier.width(28.dp))
-                Spacer(Modifier.width(12.dp))
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Spacer(Modifier.width(timeline_lane_width))
                 when (item) {
                     is HomeItemUi.Prayer -> PrayerCard(item, on_open_alarm)
                     is HomeItemUi.Window -> WindowCard(item)
@@ -364,7 +372,12 @@ private fun TimelineRow(
             if (!is_last) Spacer(Modifier.height(item_gap))
         }
 
-        TimelineAnchor(item, is_first, is_last, modifier = Modifier.matchParentSize().align(Alignment.TopStart))
+        TimelineAnchor(
+            item = item,
+            is_first = is_first,
+            is_last = is_last,
+            modifier = Modifier.matchParentSize().align(Alignment.CenterStart)
+        )
     }
 }
 
@@ -379,23 +392,23 @@ private fun TimelineAnchor(
     val dot_bg: Color
     val dot_icon: Painter?
     val dot_icon_tint: Color
-    val dot_top = if (is_first) 0.dp else anchor_gap_small
 
     when (item) {
         is HomeItemUi.Prayer -> {
-            dot_bg = when {
-                item.is_next -> MaterialTheme.colorScheme.primary
-                item.is_passed -> MaterialTheme.colorScheme.surfaceVariant
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
+            dot_bg = if (item.is_next) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
             dot_icon = painterResource(item.dot_icon)
-            dot_icon_tint = if (item.is_next) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+            dot_icon_tint =
+                when {
+                    item.is_next -> MaterialTheme.colorScheme.onPrimary
+                    item.is_optional -> MaterialTheme.colorScheme.tertiary
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                }
         }
 
         is HomeItemUi.Window -> {
-            dot_bg = MaterialTheme.colorScheme.secondary
+            dot_bg = if (item.is_light) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.secondary
             dot_icon = painterResource(R.drawable.ic_prohibited)
-            dot_icon_tint = MaterialTheme.colorScheme.onSecondary
+            dot_icon_tint = if (item.is_light) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSecondary
         }
 
         is HomeItemUi.Night -> {
@@ -411,21 +424,39 @@ private fun TimelineAnchor(
         }
     }
 
-    Box(modifier = modifier, contentAlignment = Alignment.TopStart) {
-        Box(modifier = Modifier.width(28.dp).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
+    Box(modifier = modifier, contentAlignment = Alignment.CenterStart) {
+        Box(modifier = Modifier.fillMaxHeight().width(timeline_lane_width), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
-                val line_w = 2.dp.toPx()
-                val x = (size.width - line_w) / 2f
-                val top_end = dot_top.toPx()
-                val dot_bottom = top_end + 24.dp.toPx()
-                if (!is_first) drawRect(line_color, topLeft = Offset(x, 0f), size = Size(line_w, top_end))
-                if (!is_last) drawRect(line_color, topLeft = Offset(x, dot_bottom), size = Size(line_w, size.height - dot_bottom))
+                val line_w = timeline_line_width.toPx()
+                val center_x = size.width / 2f
+                val dot_h = timeline_dot_size.toPx()
+                val center_y = size.height / 2f
+                val top_end = center_y - (dot_h / 2f)
+                val bottom_start = center_y + (dot_h / 2f)
+
+                if (!is_first) {
+                    drawLine(
+                        color = line_color,
+                        start = Offset(center_x, 0f),
+                        end = Offset(center_x, top_end),
+                        strokeWidth = line_w,
+                        cap = StrokeCap.Butt
+                    )
+                }
+                if (!is_last) {
+                    drawLine(
+                        color = line_color,
+                        start = Offset(center_x, bottom_start),
+                        end = Offset(center_x, size.height),
+                        strokeWidth = line_w,
+                        cap = StrokeCap.Butt
+                    )
+                }
             }
 
             Box(
                 modifier = Modifier
-                    .offset(y = dot_top)
-                    .size(24.dp)
+                    .size(timeline_dot_size)
                     .clip(CircleShape)
                     .background(dot_bg),
                 contentAlignment = Alignment.Center
@@ -434,7 +465,7 @@ private fun TimelineAnchor(
                     Image(
                         painter = dot_icon,
                         contentDescription = null,
-                        modifier = Modifier.size(14.dp),
+                        modifier = Modifier.size(timeline_icon_size),
                         colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(dot_icon_tint)
                     )
                 }
@@ -486,9 +517,9 @@ private fun PrayerCard(item: HomeItemUi.Prayer, on_open_alarm: (String) -> Unit)
                     Spacer(Modifier.height(1.dp))
                     Text(
                         text = item.countdown,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (item.is_next) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = if (item.is_next) FontWeight.Bold else FontWeight.Medium
                     )
                 }
             }
@@ -505,9 +536,14 @@ private fun PrayerCard(item: HomeItemUi.Prayer, on_open_alarm: (String) -> Unit)
 
 @Composable
 private fun WindowCard(item: HomeItemUi.Window) {
+    val container = MaterialTheme.colorScheme.secondaryContainer
+    val on_container = MaterialTheme.colorScheme.onSecondaryContainer
+    val accent = if (item.is_light) on_container.copy(alpha = 0.78f) else MaterialTheme.colorScheme.secondary
+    val tag = if (item.is_light) R.string.prohibited_tag_light else R.string.prohibited_tag_heavy
+
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        colors = CardDefaults.cardColors(containerColor = container),
         shape = RoundedCornerShape(18.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
@@ -515,14 +551,14 @@ private fun WindowCard(item: HomeItemUi.Window) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = item.label,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = accent,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = stringResourceCompat(R.string.prohibited_tag),
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.65f),
+                    text = stringResourceCompat(tag),
+                    color = on_container.copy(alpha = 0.65f),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -531,7 +567,7 @@ private fun WindowCard(item: HomeItemUi.Window) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = item.range,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = on_container,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -539,7 +575,7 @@ private fun WindowCard(item: HomeItemUi.Window) {
                 if (item.duration != null) {
                     Text(
                         text = item.duration,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                        color = on_container.copy(alpha = 0.7f),
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Medium
                     )

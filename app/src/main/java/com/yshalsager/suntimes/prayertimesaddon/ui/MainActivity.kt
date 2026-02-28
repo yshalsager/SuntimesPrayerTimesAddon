@@ -243,6 +243,7 @@ class MainActivity : ThemedActivity() {
             val sun_today = query_host_sun(this, host, day_start)
 
             val fajr = q(AddonEvent.prayer_fajr)
+            val duha = q(AddonEvent.prayer_duha)
             val asr = q(AddonEvent.prayer_asr)
             val isha = q(AddonEvent.prayer_isha)
 
@@ -255,9 +256,21 @@ class MainActivity : ThemedActivity() {
             val zawal_start = if (sun_today?.noon != null) sun_today.noon - Prefs.get_zawal_minutes(this) * 60_000L else q(AddonEvent.makruh_zawal_start)
             val sunset_start = q(AddonEvent.makruh_sunset_start)
             val sunset_end = sun_today?.sunset ?: q(AddonEvent.makruh_sunset_end)
+            val duha_subtitle =
+                if (duha != null && zawal_start != null && zawal_start > duha) {
+                    window_range_str(duha, zawal_start)
+                } else null
 
-            val prayers = listOf(
+            val obligatory_prayers = listOf(
                 AddonEvent.prayer_fajr to fajr,
+                AddonEvent.prayer_dhuhr to dhuhr,
+                AddonEvent.prayer_asr to asr,
+                AddonEvent.prayer_maghrib to maghrib,
+                AddonEvent.prayer_isha to isha
+            )
+            val timeline_prayers = listOf(
+                AddonEvent.prayer_fajr to fajr,
+                AddonEvent.prayer_duha to duha,
                 AddonEvent.prayer_dhuhr to dhuhr,
                 AddonEvent.prayer_asr to asr,
                 AddonEvent.prayer_maghrib to maghrib,
@@ -273,23 +286,30 @@ class MainActivity : ThemedActivity() {
 
             val scope_end = fajr_tomorrow ?: (tomorrow_start + 6L * hour_ms)
 
-            val next_prayer = if (!is_today) null else prayers.mapNotNull { (event, t) -> if (t != null && t >= now) event to t else null }.minByOrNull { it.second }
-            val prev_prayer_time = if (!is_today) null else prayers.mapNotNull { it.second }.filter { it < now }.maxOrNull() ?: q(AddonEvent.prayer_isha, yesterday_start)
+            val next_prayer = if (!is_today) null else obligatory_prayers.mapNotNull { (event, t) -> if (t != null && t >= now) event to t else null }.minByOrNull { it.second }
+            val prev_prayer_time = if (!is_today) null else obligatory_prayers.mapNotNull { it.second }.filter { it < now }.maxOrNull() ?: q(AddonEvent.prayer_isha, yesterday_start)
 
             val items = ArrayList<HomeItemUi>(24)
-            prayers.forEach { (event, t) ->
+            timeline_prayers.forEach { (event, t) ->
                 if (t == null) return@forEach
                 val is_next = is_today && next_prayer != null && event == next_prayer.first && t == next_prayer.second
                 val is_passed = is_today && t < now && !is_next
+                val is_optional = event == AddonEvent.prayer_duha
                 items.add(
                     HomeItemUi.Prayer(
                         sort_time = t,
                         event_id = event.event_id,
                         label = prayer_label(event, t),
                         time = timeline_time(t),
-                        countdown = if (is_next) getString(R.string.in_countdown, format_countdown(t - now)) else null,
+                        countdown =
+                            when {
+                                is_next -> getString(R.string.in_countdown, format_countdown(t - now))
+                                is_optional -> duha_subtitle
+                                else -> null
+                            },
                         is_next = is_next,
                         is_passed = is_passed,
+                        is_optional = is_optional,
                         dot_icon =
                             when (event) {
                                 AddonEvent.prayer_fajr -> R.drawable.ic_prayer_dawn
@@ -304,14 +324,25 @@ class MainActivity : ThemedActivity() {
             if (is_today) items.add(HomeItemUi.Now(now, time_format.format(Date(now))))
 
             listOf(
-                Triple(R.string.prohibited_dawn, fajr, sunrise),
-                Triple(R.string.prohibited_sunrise, sunrise, sunrise_end),
-                Triple(R.string.prohibited_zawal, zawal_start, zawal_end),
-                Triple(R.string.prohibited_after_asr, asr, sunset_start),
-                Triple(R.string.prohibited_sunset, sunset_start, sunset_end)
-            ).forEach { (label, start, end) ->
+                true to Triple(R.string.prohibited_dawn, fajr, sunrise),
+                false to Triple(R.string.prohibited_sunrise, sunrise, sunrise_end),
+                false to Triple(R.string.prohibited_zawal, zawal_start, zawal_end),
+                true to Triple(R.string.prohibited_after_asr, asr, sunset_start),
+                false to Triple(R.string.prohibited_sunset, sunset_start, sunset_end)
+            ).forEach { (is_light, spec) ->
+                val label = spec.first
+                val start = spec.second
+                val end = spec.third
                 if (start == null) return@forEach
-                items.add(HomeItemUi.Window(sort_time = start, label = getString(label), range = window_range_str(start, end), duration = duration_minutes_str(start, end)))
+                items.add(
+                    HomeItemUi.Window(
+                        sort_time = start,
+                        label = getString(label),
+                        range = window_range_str(start, end),
+                        duration = duration_minutes_str(start, end),
+                        is_light = is_light
+                    )
+                )
             }
 
             fun add_night_items(n: com.yshalsager.suntimes.prayertimesaddon.core.NightPortions?, min_t: Long, max_t: Long) {
@@ -338,6 +369,7 @@ class MainActivity : ThemedActivity() {
                         countdown = null,
                         is_next = false,
                         is_passed = false,
+                        is_optional = false,
                         dot_icon = R.drawable.ic_prayer_dawn
                     )
                 )

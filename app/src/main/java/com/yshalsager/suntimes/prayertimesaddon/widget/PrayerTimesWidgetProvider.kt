@@ -74,6 +74,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         fun range(a: Long?, b: Long?): String = "${time_short(a)}-${time_short(b)}"
 
         val fajr = query_addon_time(context, AddonEvent.prayer_fajr, day_start)
+        val duha = query_addon_time(context, AddonEvent.prayer_duha, day_start)
         val dhuhr = query_addon_time(context, AddonEvent.prayer_dhuhr, day_start)
         val asr = query_addon_time(context, AddonEvent.prayer_asr, day_start)
         val maghrib = query_addon_time(context, AddonEvent.prayer_maghrib, day_start)
@@ -111,7 +112,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val widget_show_night = Prefs.get_widget_show_night_portions(context)
 
         val sunrise = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_sunrise_start, day_start)
-        val sunrise_end = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_sunrise_end, day_start)
+        val sunrise_end = if (!widget_show_prohibited) null else duha
         val zawal_start = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_zawal_start, day_start)
         val sunset_start = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_sunset_start, day_start)
         val sunset = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_sunset_end, day_start)
@@ -161,18 +162,21 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setInt(R.id.widget_night_row, "setLayoutDirection", row_dir)
 
             rv.setTextViewText(R.id.widget_prayer_fajr, time_str(fajr))
+            rv.setTextViewText(R.id.widget_prayer_duha, time_str(duha))
             rv.setTextViewText(R.id.widget_prayer_dhuhr, time_str(dhuhr))
             rv.setTextViewText(R.id.widget_prayer_asr, time_str(asr))
             rv.setTextViewText(R.id.widget_prayer_maghrib, time_str(maghrib))
             rv.setTextViewText(R.id.widget_prayer_isha, time_str(isha))
 
             rv.setTextColor(R.id.widget_prayer_fajr, colors.text_primary)
+            rv.setTextColor(R.id.widget_prayer_duha, colors.accent)
             rv.setTextColor(R.id.widget_prayer_dhuhr, colors.text_primary)
             rv.setTextColor(R.id.widget_prayer_asr, colors.text_primary)
             rv.setTextColor(R.id.widget_prayer_maghrib, colors.text_primary)
             rv.setTextColor(R.id.widget_prayer_isha, colors.text_primary)
 
             rv.setTextViewText(R.id.widget_label_fajr, context.getString(R.string.event_prayer_fajr))
+            rv.setTextViewText(R.id.widget_label_duha, context.getString(R.string.event_prayer_duha))
             rv.setTextViewText(R.id.widget_label_dhuhr, if (is_friday) context.getString(R.string.event_prayer_jummah) else context.getString(R.string.event_prayer_dhuhr))
             rv.setTextViewText(R.id.widget_label_asr, context.getString(R.string.event_prayer_asr))
             rv.setTextViewText(R.id.widget_label_maghrib, context.getString(R.string.event_prayer_maghrib))
@@ -180,11 +184,13 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
             listOf(
                 R.id.widget_label_fajr,
+                R.id.widget_label_duha,
                 R.id.widget_label_dhuhr,
                 R.id.widget_label_asr,
                 R.id.widget_label_maghrib,
                 R.id.widget_label_isha
             ).forEach { rv.setTextColor(it, colors.text_muted) }
+            rv.setTextColor(R.id.widget_label_duha, colors.accent)
 
             val prohibited_ok =
                 widget_show_prohibited &&
@@ -199,11 +205,11 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                 rv.setTextViewText(R.id.widget_prohibited_after_asr, labeled(R.string.prohibited_after_asr, prohibited_after_asr))
                 rv.setTextViewText(R.id.widget_prohibited_sunset, labeled(R.string.prohibited_sunset, prohibited_sunset))
 
-                rv.setTextColor(R.id.widget_prohibited_dawn, colors.text_muted)
-                rv.setTextColor(R.id.widget_prohibited_sunrise, colors.text_muted)
-                rv.setTextColor(R.id.widget_prohibited_zawal, colors.text_muted)
-                rv.setTextColor(R.id.widget_prohibited_after_asr, colors.text_muted)
-                rv.setTextColor(R.id.widget_prohibited_sunset, colors.text_muted)
+                rv.setTextColor(R.id.widget_prohibited_dawn, colors.prohibited_light)
+                rv.setTextColor(R.id.widget_prohibited_sunrise, colors.prohibited_heavy)
+                rv.setTextColor(R.id.widget_prohibited_zawal, colors.prohibited_heavy)
+                rv.setTextColor(R.id.widget_prohibited_after_asr, colors.prohibited_light)
+                rv.setTextColor(R.id.widget_prohibited_sunset, colors.prohibited_heavy)
             }
 
             rv.setViewVisibility(R.id.widget_night_row, if (night_ok) View.VISIBLE else View.GONE)
@@ -231,7 +237,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val candidates =
             buildList {
                 // Prayers
-                listOf(fajr, dhuhr, asr, maghrib, isha).forEach { if (it != null) add(it) }
+                listOf(fajr, duha, dhuhr, asr, maghrib, isha).forEach { if (it != null) add(it) }
 
                 // Prohibited boundaries (start/end)
                 listOf(sunrise, sunrise_end, zawal_start, dhuhr, sunset_start, sunset).forEach { if (it != null) add(it) }
@@ -246,7 +252,14 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         schedule_next(context, now, candidates)
     }
 
-    private data class WidgetColors(val bg_res: Int, val accent: Int, val text_primary: Int, val text_muted: Int)
+    private data class WidgetColors(
+        val bg_res: Int,
+        val accent: Int,
+        val text_primary: Int,
+        val text_muted: Int,
+        val prohibited_light: Int,
+        val prohibited_heavy: Int
+    )
 
     private fun widget_colors(context: Context): WidgetColors {
         val theme = Prefs.get_theme(context)
@@ -303,7 +316,14 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             } else {
                 if (dark) 0xFFB6B0A4.toInt() else 0xFF6B6B6B.toInt()
             }
-        return WidgetColors(bg_res = bg_res, accent = accent, text_primary = text_primary, text_muted = text_muted)
+        return WidgetColors(
+            bg_res = bg_res,
+            accent = accent,
+            text_primary = text_primary,
+            text_muted = text_muted,
+            prohibited_light = accent,
+            prohibited_heavy = text_muted
+        )
     }
 
     private fun day_start(at_millis: Long, tz: TimeZone): Long =

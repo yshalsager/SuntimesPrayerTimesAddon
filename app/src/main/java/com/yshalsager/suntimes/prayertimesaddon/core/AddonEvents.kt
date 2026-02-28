@@ -15,6 +15,7 @@ enum class AddonEvent(
     val type: AddonEventType
 ) {
     prayer_fajr("PRAYER_FAJR", R.string.event_prayer_fajr, AddonEventType.prayer),
+    prayer_duha("PRAYER_DUHA", R.string.event_prayer_duha, AddonEventType.prayer),
     prayer_dhuhr("PRAYER_DHUHR", R.string.event_prayer_dhuhr, AddonEventType.prayer),
     prayer_asr("PRAYER_ASR", R.string.event_prayer_asr, AddonEventType.prayer),
     prayer_maghrib("PRAYER_MAGHRIB", R.string.event_prayer_maghrib, AddonEventType.prayer),
@@ -67,6 +68,10 @@ object AddonEventMapper {
         return when (addon_event) {
             AddonEvent.prayer_fajr ->
                 HostQuery(HostEventIds.sun_elevation(-Prefs.get_fajr_angle(context), rising = true))
+            AddonEvent.prayer_duha -> {
+                val delta = Prefs.get_makruh_sunrise_minutes(context) * 60_000L
+                HostQuery("SUNRISE", delta_millis = delta)
+            }
 
             AddonEvent.prayer_dhuhr -> HostQuery("NOON")
             AddonEvent.prayer_asr -> HostQuery(HostEventIds.shadow_ratio(Prefs.get_asr_factor(context)))
