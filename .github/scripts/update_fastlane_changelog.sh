@@ -18,11 +18,6 @@ for locale in en-US ar; do
 
   printf '%s\n' "$text" > "$file"
 
-  if LC_ALL=C grep -P '[^\x00-\x7F]' "$file" >/dev/null; then
-    echo "Non-ASCII changelog content in $file"
-    exit 1
-  fi
-
   size=$(wc -c < "$file")
   if [[ "$size" -gt 500 ]]; then
     echo "Changelog too large ($size > 500): $file"
