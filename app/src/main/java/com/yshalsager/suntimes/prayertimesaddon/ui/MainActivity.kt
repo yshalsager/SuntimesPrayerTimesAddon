@@ -43,6 +43,11 @@ import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 
 class MainActivity : ThemedActivity() {
+    companion object {
+        private const val action_open_days = "com.yshalsager.suntimes.prayertimesaddon.action.OPEN_DAYS"
+        private const val action_open_settings = "com.yshalsager.suntimes.prayertimesaddon.action.OPEN_SETTINGS"
+    }
+
     private val request_code_permissions = 1001
     private val ui = Handler(Looper.getMainLooper())
     private var tick: Runnable? = null
@@ -75,6 +80,7 @@ class MainActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handle_shortcut_action(intent)
         setContent {
             PrayerTimesTheme {
                 HomeScreen(
@@ -88,6 +94,12 @@ class MainActivity : ThemedActivity() {
                 )
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handle_shortcut_action(intent)
     }
 
     override fun onPause() {
@@ -105,6 +117,16 @@ class MainActivity : ThemedActivity() {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == request_code_permissions) refresh_home()
+    }
+
+    private fun handle_shortcut_action(incoming_intent: Intent?) {
+        when (incoming_intent?.action) {
+            action_open_days -> startActivity(Intent(this, DaysActivity::class.java))
+            action_open_settings -> startActivity(Intent(this, SettingsActivity::class.java))
+            else -> return
+        }
+        incoming_intent.action = null
+        setIntent(incoming_intent)
     }
 
     private fun refresh_home() {

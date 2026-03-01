@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<shortcuts xmlns:android='http://schemas.android.com/apk/res/android'>
+    <shortcut
+        android:shortcutId='open_days'
+        android:enabled='true'
+        android:icon='@drawable/ic_shortcut_days'
+        android:shortcutShortLabel='@string/shortcut_days_short'
+        android:shortcutLongLabel='@string/shortcut_days_long'>
+        <intent
+            android:action='com.yshalsager.suntimes.prayertimesaddon.action.OPEN_DAYS'
+            android:targetPackage='com.yshalsager.suntimes.prayertimesaddon'
+            android:targetClass='com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity' />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId='open_settings'
+        android:enabled='true'
+        android:icon='@drawable/ic_shortcut_settings'
+        android:shortcutShortLabel='@string/shortcut_settings_short'
+        android:shortcutLongLabel='@string/shortcut_settings_long'>
+        <intent
+            android:action='com.yshalsager.suntimes.prayertimesaddon.action.OPEN_SETTINGS'
+            android:targetPackage='com.yshalsager.suntimes.prayertimesaddon'
+            android:targetClass='com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity' />
+    </shortcut>
+</shortcuts>

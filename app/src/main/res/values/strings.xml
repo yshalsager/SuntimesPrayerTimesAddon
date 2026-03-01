@@ -27,6 +27,10 @@
     <string name='event_makruh_sunset_end'>Makruh (Sunset end)</string>
 
     <string name='main_settings'>Settings</string>
+    <string name='shortcut_days_short'>Calendar</string>
+    <string name='shortcut_days_long'>Open calendar view</string>
+    <string name='shortcut_settings_short'>Settings</string>
+    <string name='shortcut_settings_long'>Open settings</string>
 
     <string name='method_title'>Time calculation</string>
     <string name='method_summary'>Choose preset or custom values</string>

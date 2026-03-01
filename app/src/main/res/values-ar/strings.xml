@@ -30,6 +30,10 @@
     <string name='gregorian_date_format_long'>طويل</string>
 
     <string name='main_settings'>الإعدادات</string>
+    <string name='shortcut_days_short'>التقويم</string>
+    <string name='shortcut_days_long'>فتح عرض التقويم</string>
+    <string name='shortcut_settings_short'>الإعدادات</string>
+    <string name='shortcut_settings_long'>فتح الإعدادات</string>
 
     <string name='event_prayer_fajr'>الفجر</string>
     <string name='event_prayer_duha'>الضحى</string>
