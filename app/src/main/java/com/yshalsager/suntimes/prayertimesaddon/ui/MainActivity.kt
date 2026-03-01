@@ -87,6 +87,7 @@ class MainActivity : ThemedActivity() {
 
     override fun onPause() {
         super.onPause()
+        refresh_id += 1
         tick?.let(ui::removeCallbacks)
         tick = null
     }
