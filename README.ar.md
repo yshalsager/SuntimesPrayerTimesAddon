@@ -4,7 +4,7 @@
 [![Language](https://img.shields.io/badge/language-Kotlin-7F52FF)](https://kotlinlang.org/)
 [![UI](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4)](https://developer.android.com/jetpack/compose)
 [![Design](https://img.shields.io/badge/Material-Material%203-757575)](https://m3.material.io/)
-[![minSdk](https://img.shields.io/badge/minSdk-21-2ea44f)](https://developer.android.com/about/versions/android-5.0)
+[![minSdk](https://img.shields.io/badge/minSdk-23-2ea44f)](https://developer.android.com/about/versions/android-6.0)
 
 مواقيت الصلاة، أوقات النهي (المكروه) وأجزاء الليل كـ **Addon** لتطبيق **SuntimesWidget**.
 
@@ -91,7 +91,7 @@
 
 ## المتطلبات
 
-- Android `minSdk 21` (Lollipop)
+- Android `minSdk 23` (Marshmallow)
 - وجود تطبيق **SuntimesWidget** مثبتاً (يدعم stable/nightly/legacy)
 - منح صلاحيات الوصول (SuntimesWidget يحمي `ContentProvider` بصلاحيات `suntimes.*.permission.*`)
 
