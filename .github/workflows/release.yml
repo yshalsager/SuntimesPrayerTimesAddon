@@ -235,7 +235,6 @@ jobs:
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
 
   screenshots_refresh:
-    continue-on-error: true
     uses: ./.github/workflows/screenshots.yml
     with:
       create_pr: ${{ github.event_name == 'workflow_dispatch' }}
