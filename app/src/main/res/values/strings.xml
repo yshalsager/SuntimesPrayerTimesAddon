@@ -122,18 +122,18 @@
     <string name='next_prayer_label'>Next Prayer: %1$s</string>
     <string name='in_countdown'>in %1$s</string>
     <string name='prohibited_tag'>Prohibited</string>
-    <string name='prohibited_tag_light'>Light prohibited</string>
-    <string name='prohibited_tag_heavy'>Heavy prohibited</string>
+    <string name='prohibited_tag_light'>Prohibited</string>
+    <string name='prohibited_tag_heavy'>Prohibited</string>
     <string name='duration_minutes'>%1$d min duration</string>
     <string name='today'>Today</string>
     <string name='now'>Now</string>
     <string name='minute_abbrev'>m</string>
 
-    <string name='prohibited_dawn'>Dawn (light)</string>
-    <string name='prohibited_sunrise'>Sunrise (heavy)</string>
-    <string name='prohibited_zawal'>Zawal (heavy)</string>
-    <string name='prohibited_after_asr'>After Asr (light)</string>
-    <string name='prohibited_sunset'>Sunset (heavy)</string>
+    <string name='prohibited_dawn'>Dawn</string>
+    <string name='prohibited_sunrise'>Sunrise</string>
+    <string name='prohibited_zawal'>Zawal</string>
+    <string name='prohibited_after_asr'>After Asr</string>
+    <string name='prohibited_sunset'>Sunset</string>
 
     <string name='night_midpoint'>Night midpoint</string>
     <string name='night_last_third'>Last third</string>
