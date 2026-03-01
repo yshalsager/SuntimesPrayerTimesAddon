@@ -29,6 +29,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import android.os.Build
+import java.util.UUID
 
 class PrayerTimesWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -38,6 +39,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         val action = intent.action ?: return
+        if (action == action_alarm && !is_valid_alarm_intent(context, intent)) return
         if (action == action_alarm || action == Intent.ACTION_TIME_CHANGED || action == Intent.ACTION_TIMEZONE_CHANGED || action == Intent.ACTION_DATE_CHANGED || action == Intent.ACTION_LOCALE_CHANGED) {
             val mgr = AppWidgetManager.getInstance(context)
             val ids = mgr.getAppWidgetIds(ComponentName(context, PrayerTimesWidgetProvider::class.java))
@@ -348,12 +350,31 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val next = candidates.filter { it >= now }.minOrNull() ?: (now + 6 * 60 * 60 * 1000L)
         val when_ms = (next + 30_000L).coerceAtLeast(now + 60_000L)
 
-        val intent = Intent(context, PrayerTimesWidgetProvider::class.java).apply { action = action_alarm }
+        val intent = Intent(context, PrayerTimesWidgetProvider::class.java).apply {
+            action = action_alarm
+            putExtra(extra_alarm_token, alarm_token(context))
+        }
         val pi = PendingIntent.getBroadcast(context, 2, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         mgr.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when_ms, pi)
     }
 
+    private fun is_valid_alarm_intent(context: Context, intent: Intent): Boolean {
+        val token = intent.getStringExtra(extra_alarm_token) ?: return false
+        return token == alarm_token(context)
+    }
+
+    private fun alarm_token(context: Context): String {
+        val prefs = context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE)
+        val existing = prefs.getString(pref_alarm_token, null)
+        if (!existing.isNullOrBlank()) return existing
+        val created = UUID.randomUUID().toString()
+        prefs.edit().putString(pref_alarm_token, created).apply()
+        return created
+    }
+
     companion object {
         const val action_alarm = "com.yshalsager.suntimes.prayertimesaddon.action.WIDGET_ALARM"
+        private const val extra_alarm_token = "alarm_token"
+        private const val pref_alarm_token = "widget_alarm_token"
     }
 }
