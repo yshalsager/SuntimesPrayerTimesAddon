@@ -36,7 +36,10 @@ private fun plain_date_at(millis: Long, tz: TimeZone): PlainDate {
 }
 
 private fun locale_number(locale: Locale, value: Int): String =
-    NumberFormat.getIntegerInstance(locale).format(value)
+    NumberFormat.getIntegerInstance(locale).run {
+        isGroupingUsed = false
+        format(value)
+    }
 
 private fun format_hijri_date(locale: Locale, hijri: HijriCalendar): String =
     "${locale_number(locale, hijri.dayOfMonth)} ${hijri.month.getDisplayName(locale)} ${locale_number(locale, hijri.year)}"
