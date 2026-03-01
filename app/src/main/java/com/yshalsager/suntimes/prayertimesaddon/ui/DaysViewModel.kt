@@ -46,7 +46,7 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
         private set
 
     val day_cache = mutableStateMapOf<Long, DayItem>()
-    private val day_inflight = Collections.synchronizedSet(HashSet<Long>())
+    private var day_inflight = Collections.synchronizedSet(HashSet<Long>())
     private val workers = Executors.newFixedThreadPool(3)
 
     private var loaded_host: String? = null
@@ -107,7 +107,7 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
         loaded_show_prohibited = show_prohibited
         loaded_show_night = show_night
         state = DaysUiState(loading = true)
-        day_inflight.clear()
+        day_inflight = Collections.synchronizedSet(HashSet<Long>())
         day_cache.clear()
 
         workers.execute {
@@ -129,10 +129,12 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun ensure_range_loaded(first_index: Int, last_index: Int) {
+        val this_id = load_id
         val skel = state.skeleton ?: return
         val host = loaded_host ?: return
         val show_prohibited = loaded_show_prohibited
         val show_night = loaded_show_night
+        val inflight = day_inflight
 
         val start = (first_index - 7).coerceAtLeast(0)
         val end = (last_index + 7).coerceAtMost(skel.days.lastIndex)
@@ -150,13 +152,17 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
         for (i in indices) {
             val meta = skel.days[i]
             if (day_cache.containsKey(meta.day_start)) continue
-            if (!day_inflight.add(meta.day_start)) continue
+            if (!inflight.add(meta.day_start)) continue
 
             workers.execute {
                 val item = build_day_item(getApplication(), host, meta, show_prohibited, show_night)
                 main.post {
+                    if (this_id != load_id) {
+                        inflight.remove(meta.day_start)
+                        return@post
+                    }
                     day_cache[meta.day_start] = item
-                    day_inflight.remove(meta.day_start)
+                    inflight.remove(meta.day_start)
                 }
             }
         }
