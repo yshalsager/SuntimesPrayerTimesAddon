@@ -236,6 +236,9 @@ jobs:
 
   screenshots_refresh:
     uses: ./.github/workflows/screenshots.yml
+    permissions:
+      contents: write
+      pull-requests: write
     with:
       create_pr: ${{ github.event_name == 'workflow_dispatch' }}
       base_ref: ${{ github.ref_name }}
