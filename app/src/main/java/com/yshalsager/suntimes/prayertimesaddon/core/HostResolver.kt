@@ -49,7 +49,11 @@ object HostResolver {
 
     fun ensure_default_selected(context: Context): String? {
         val existing = Prefs.get_host_event_authority(context)
-        return if (!existing.isNullOrBlank()) existing else choose_default_host(context)
+        if (!existing.isNullOrBlank()) {
+            val provider = resolve_content_provider(context.packageManager, existing)
+            if (provider != null) return existing
+        }
+        return choose_default_host(context)
     }
 
     fun choose_default_host(context: Context): String? {
