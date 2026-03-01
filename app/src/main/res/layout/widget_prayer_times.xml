@@ -4,13 +4,13 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="8dp">
+    android:padding="6dp">
 
     <TextView
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
         android:layout_height="3dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="6dp"
         android:text="" />
 
     <LinearLayout
@@ -18,7 +18,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="8dp">
+        android:paddingBottom="6dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -32,7 +32,7 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textStyle="bold" />
 
             <TextView
@@ -41,8 +41,8 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:paddingStart="8dp"
-                android:textSize="12sp" />
+                android:paddingStart="6dp"
+                android:textSize="13sp" />
         </LinearLayout>
 
         <TextView
@@ -51,8 +51,8 @@
             android:layout_height="wrap_content"
             android:ellipsize="end"
             android:maxLines="1"
-            android:paddingTop="2dp"
-            android:textSize="12sp" />
+            android:paddingTop="1dp"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <LinearLayout
@@ -67,8 +67,8 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal">
-            <TextView android:id="@+id/widget_label_fajr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
-            <TextView android:id="@+id/widget_prayer_fajr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_label_fajr" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:gravity="center_horizontal" />
+            <TextView android:id="@+id/widget_prayer_fajr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -77,8 +77,8 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal">
-            <TextView android:id="@+id/widget_label_duha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
-            <TextView android:id="@+id/widget_prayer_duha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_label_duha" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:gravity="center_horizontal" />
+            <TextView android:id="@+id/widget_prayer_duha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -87,8 +87,8 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal">
-            <TextView android:id="@+id/widget_label_dhuhr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
-            <TextView android:id="@+id/widget_prayer_dhuhr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_label_dhuhr" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:gravity="center_horizontal" />
+            <TextView android:id="@+id/widget_prayer_dhuhr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -97,8 +97,8 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal">
-            <TextView android:id="@+id/widget_label_asr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
-            <TextView android:id="@+id/widget_prayer_asr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_label_asr" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:gravity="center_horizontal" />
+            <TextView android:id="@+id/widget_prayer_asr" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -107,8 +107,8 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal">
-            <TextView android:id="@+id/widget_label_maghrib" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
-            <TextView android:id="@+id/widget_prayer_maghrib" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_label_maghrib" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:gravity="center_horizontal" />
+            <TextView android:id="@+id/widget_prayer_maghrib" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
 
         <LinearLayout
@@ -117,8 +117,8 @@
             android:layout_weight="1"
             android:orientation="vertical"
             android:gravity="center_horizontal">
-            <TextView android:id="@+id/widget_label_isha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="9sp" android:maxLines="1" android:ellipsize="end" />
-            <TextView android:id="@+id/widget_prayer_isha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="11sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+            <TextView android:id="@+id/widget_label_isha" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="10sp" android:maxLines="1" android:ellipsize="end" android:gravity="center_horizontal" />
+            <TextView android:id="@+id/widget_prayer_isha" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="12sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
         </LinearLayout>
     </LinearLayout>
 
@@ -126,28 +126,28 @@
         android:id="@+id/widget_prohibited_row"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="6dp"
         android:orientation="horizontal"
         android:visibility="gone">
 
-        <TextView android:id="@+id/widget_prohibited_dawn" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
-        <TextView android:id="@+id/widget_prohibited_sunrise" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
-        <TextView android:id="@+id/widget_prohibited_zawal" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
-        <TextView android:id="@+id/widget_prohibited_after_asr" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
-        <TextView android:id="@+id/widget_prohibited_sunset" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_prohibited_dawn" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_prohibited_sunrise" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_prohibited_zawal" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_prohibited_after_asr" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_prohibited_sunset" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/widget_night_row"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:orientation="horizontal"
         android:visibility="gone">
 
-        <TextView android:id="@+id/widget_night_midpoint" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
-        <TextView android:id="@+id/widget_night_last_third" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
-        <TextView android:id="@+id/widget_night_last_sixth" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_night_midpoint" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_night_last_third" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_night_last_sixth" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
     </LinearLayout>
 
 </LinearLayout>
