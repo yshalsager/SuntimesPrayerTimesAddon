@@ -57,6 +57,9 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                 rv.setTextViewText(R.id.widget_summary, "")
                 rv.setViewVisibility(R.id.widget_prohibited_row, View.GONE)
                 rv.setViewVisibility(R.id.widget_night_row, View.GONE)
+                val open_main = PendingIntent.getActivity(context, 0, Intent(context, com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+                rv.setOnClickPendingIntent(R.id.widget_root, open_main)
+                rv.setOnClickPendingIntent(R.id.widget_header, open_main)
                 mgr.updateAppWidget(id, rv)
             }
             return
