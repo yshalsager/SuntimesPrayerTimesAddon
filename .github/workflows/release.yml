@@ -397,13 +397,6 @@ jobs:
             ${{ steps.artifacts.outputs.apk_release }}
             ${{ steps.artifacts.outputs.aab_release }}
           if-no-files-found: error
-
-      - name: Setup Ruby for fastlane
-        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.target == 'play' || inputs.target == 'both') && !inputs.dry_run }}
-        uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
-
       - name: Decode Google Play service account key
         if: ${{ github.event_name == 'workflow_dispatch' && (inputs.target == 'play' || inputs.target == 'both') && !inputs.dry_run }}
         shell: bash
