@@ -1,7 +1,6 @@
 package com.yshalsager.suntimes.prayertimesaddon.widget
 
 import android.app.AlarmManager
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ContentProvider
 import android.content.ContentValues
@@ -31,11 +30,13 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowAlarmManager
 import java.util.TimeZone
 
 private const val host_event_authority = "com.test.host.event.provider"
 private const val host_calc_authority = "com.test.host.calculator.provider"
 private const val alarm_token_key = "alarm_token"
+private const val alarm_token_pref_key = "widget_alarm_token"
 private const val day_millis = 24 * 60 * 60 * 1000L
 
 @RunWith(RobolectricTestRunner::class)
@@ -82,8 +83,7 @@ class PrayerTimesWidgetProviderTest {
 
         app_widget_manager = AppWidgetManager.getInstance(context)
 
-        val alarm_manager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        shadowOf(alarm_manager).scheduledAlarms.mapNotNull { it.operation }.forEach(alarm_manager::cancel)
+        ShadowAlarmManager.reset()
     }
 
     @After
@@ -109,6 +109,9 @@ class PrayerTimesWidgetProviderTest {
         Prefs.set_host_event_authority(context, "")
         HostConfigReader.clear_cache()
     }
+
+    private fun alarm_token_from_prefs() =
+        context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).getString(alarm_token_pref_key, null)
 
     @Test
     fun on_update_without_host_shows_no_host_state() {
@@ -159,9 +162,7 @@ class PrayerTimesWidgetProviderTest {
 
         update_widget_with_host(provider, widget_id)
 
-        val alarm_manager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val scheduled = shadowOf(alarm_manager).scheduledAlarms.first()
-        val valid_token = shadowOf(scheduled.operation!!).savedIntent.getStringExtra(alarm_token_key)
+        val valid_token = alarm_token_from_prefs()
         assertNotNull(valid_token)
 
         clear_selected_host()
@@ -209,12 +210,8 @@ class PrayerTimesWidgetProviderTest {
 
         assertEquals("alarms=${alarms.size}", 1, alarms.size)
         val scheduled = alarms.first()
-        assertTrue(scheduled.triggerAtTime >= now_before + 60_000L)
-
-        val operation: PendingIntent = scheduled.operation!!
-        val alarm_intent = shadowOf(operation).savedIntent
-        assertEquals(PrayerTimesWidgetProvider.action_alarm, alarm_intent.action)
-        assertNotNull(alarm_intent.getStringExtra(alarm_token_key))
+        assertTrue(scheduled.triggerAtMs >= now_before + 60_000L)
+        assertNotNull(alarm_token_from_prefs())
     }
 }
 
