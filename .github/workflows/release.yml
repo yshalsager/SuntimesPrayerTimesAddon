@@ -251,7 +251,7 @@ jobs:
 
   build:
     needs: [version, screenshots_refresh]
-    if: ${{ needs.version.result == 'success' && (needs.screenshots_refresh.result == 'success' || needs.screenshots_refresh.result == 'skipped') }}
+    if: ${{ always() && needs.version.result == 'success' && (needs.screenshots_refresh.result == 'success' || needs.screenshots_refresh.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
