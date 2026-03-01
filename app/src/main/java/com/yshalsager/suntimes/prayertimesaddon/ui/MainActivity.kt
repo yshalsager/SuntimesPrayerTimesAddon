@@ -16,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
+import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
@@ -153,7 +154,7 @@ class MainActivity : ThemedActivity() {
     private fun compute_home(host: String): Computed {
         val host_config = HostConfigReader.read_config(this, host)
         val tz = host_config?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
-        val now = System.currentTimeMillis()
+        val now = AppClock.now_millis()
         val maghrib_offset_ms = Prefs.get_maghrib_offset_minutes(this) * 60_000L
 
         fun same_day_start(millis: Long): Long =
@@ -486,7 +487,7 @@ class MainActivity : ThemedActivity() {
         }
 
         fun update() {
-            val n = System.currentTimeMillis()
+            val n = AppClock.now_millis()
             val ts = today_start
             if (ts != null && same_day_start(n) != ts) {
                 refresh_home()

@@ -59,6 +59,7 @@ fun add_days(day_start_millis: Long, offset_days: Int, tz: TimeZone): Long =
 
 fun today_start(tz: TimeZone): Long =
     Calendar.getInstance(tz).run {
+        timeInMillis = AppClock.now_millis()
         set(Calendar.HOUR_OF_DAY, 0)
         set(Calendar.MINUTE, 0)
         set(Calendar.SECOND, 0)

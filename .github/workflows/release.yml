@@ -31,9 +31,30 @@ on:
         description: 'Optional explicit version (e.g. 0.2.0). Overrides bump calculation when set.'
         required: false
         type: string
+      target:
+        description: 'Publish target'
+        required: true
+        default: izzy
+        type: choice
+        options:
+          - izzy
+          - play
+          - both
+      play_track:
+        description: 'Google Play track (used when target includes play)'
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - beta
+          - internal
   push:
     tags:
       - 'v*.*.*'
+
+env:
+  MISE_ENV: ci
 
 jobs:
   version:
@@ -43,6 +64,8 @@ jobs:
     outputs:
       version: ${{ steps.v.outputs.version }}
       tag: ${{ steps.v.outputs.tag }}
+      publish_target: ${{ steps.publish_target.outputs.target }}
+      publish_izzy: ${{ steps.publish_target.outputs.publish_izzy }}
       checkout_ref: ${{ steps.checkout_ref.outputs.ref }}
     steps:
       - uses: actions/checkout@v6
@@ -55,10 +78,6 @@ jobs:
         with:
           cache: true
           cache_key_prefix: 'mise-v1'
-          # AGP 9.x is built/tested with JDK 17. Keep repo's mise.toml untouched; override Java in CI only.
-          mise_toml: |
-            [tools]
-            java = "temurin-17.0.18+8"
 
       - name: Compute version
         id: v
@@ -137,18 +156,33 @@ jobs:
           print(f"versionName={version} versionCode={next_code}")
           PY
 
+      - name: Generate fastlane changelogs
+        if: ${{ inputs.release && inputs.create_tag && github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/') }}
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION_CODE="$(sed -nE "s/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*$/\\1/p" app/build.gradle | head -n 1)"
+          if [[ -z "$VERSION_CODE" ]]; then
+            echo "versionCode not found in app/build.gradle"
+            exit 1
+          fi
+          VERSION_CODE="$VERSION_CODE" VERSION="$VERSION" .github/scripts/update_fastlane_changelog.sh
+
       - name: Commit + tag (manual release)
         if: ${{ inputs.release && inputs.create_tag && github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/') }}
         env:
           TAG: ${{ steps.v.outputs.tag }}
+          TARGET: ${{ inputs.target }}
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/build.gradle
+          git add app/build.gradle fastlane/metadata/android/en-US/changelogs/*.txt fastlane/metadata/android/ar/changelogs/*.txt
           git commit -m "chore(release): $TAG"
-          git tag "$TAG"
+          git tag -a "$TAG" -m "target:${TARGET}"
 
       - name: Push changes (manual release)
         if: ${{ inputs.release && inputs.create_tag && github.event_name == 'workflow_dispatch' && !startsWith(github.ref, 'refs/tags/') }}
@@ -157,6 +191,33 @@ jobs:
           set -euo pipefail
           git push
           git push --tags
+
+      - name: Resolve publish target
+        id: publish_target
+        env:
+          INPUT_TARGET: ${{ inputs.target }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="izzy"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tag="${GITHUB_REF#refs/tags/}"
+            tag_note="$(git for-each-ref "refs/tags/$tag" --format='%(contents)' | head -n 1 | tr -d '\r')"
+            case "$tag_note" in
+              target:play) target="play" ;;
+              target:both) target="both" ;;
+              target:izzy) target="izzy" ;;
+            esac
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && -n "${INPUT_TARGET:-}" ]]; then
+            target="$INPUT_TARGET"
+          fi
+          if [[ "$target" == "izzy" || "$target" == "both" ]]; then
+            publish_izzy="true"
+          else
+            publish_izzy="false"
+          fi
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+          echo "publish_izzy=$publish_izzy" >> "$GITHUB_OUTPUT"
 
       - name: Decide checkout ref
         id: checkout_ref
@@ -173,8 +234,15 @@ jobs:
           fi
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
 
+  screenshots_refresh:
+    continue-on-error: true
+    uses: ./.github/workflows/screenshots.yml
+    with:
+      create_pr: ${{ github.event_name == 'workflow_dispatch' }}
+      base_ref: ${{ github.ref_name }}
+
   build:
-    needs: version
+    needs: [version, screenshots_refresh]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -187,17 +255,40 @@ jobs:
 
       - uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - uses: jdx/mise-action@v3
         with:
           cache: true
           cache_key_prefix: 'mise-v1'
-          mise_toml: |
-            [tools]
-            java = "temurin-17.0.18+8"
 
       - uses: gradle/actions/setup-gradle@v5
+
+      - name: Verify fastlane changelogs for current versionCode
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION_CODE="$(sed -nE "s/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*$/\\1/p" app/build.gradle | head -n 1)"
+          if [[ -z "$VERSION_CODE" ]]; then
+            echo "versionCode not found in app/build.gradle"
+            exit 1
+          fi
+          for locale in en-US ar; do
+            file="fastlane/metadata/android/${locale}/changelogs/${VERSION_CODE}.txt"
+            if [[ ! -f "$file" ]]; then
+              echo "Missing changelog file: $file"
+              exit 1
+            fi
+            if LC_ALL=C grep -P '[^\\x00-\\x7F]' "$file" >/dev/null; then
+              echo "Non-ASCII changelog file: $file"
+              exit 1
+            fi
+            size=$(wc -c < "$file")
+            if [[ "$size" -gt 500 ]]; then
+              echo "Changelog too large ($size > 500): $file"
+              exit 1
+            fi
+          done
 
       - name: Decode signing keystore
         shell: bash
@@ -231,6 +322,11 @@ jobs:
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
+          mise x java -- ./gradlew :app:bundleRelease \
+            -Pandroid.injected.signing.store.file="$PWD/release-keystore.jks" \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD"
 
       - name: Collect artifacts
         id: artifacts
@@ -241,6 +337,7 @@ jobs:
 
           DEBUG_APK=$(find app/build/outputs/apk/debug -type f -name "*.apk" | head -n 1 || true)
           RELEASE_APK=$(find app/build/outputs/apk/release -type f -name "*.apk" ! -name "*-unsigned.apk" | head -n 1 || true)
+          RELEASE_AAB=$(find app/build/outputs/bundle/release -type f -name "*.aab" | head -n 1 || true)
 
           if [[ -z "$DEBUG_APK" ]]; then
             echo "No debug APK found"
@@ -252,15 +349,24 @@ jobs:
             exit 1
           fi
 
+          if [[ -z "$RELEASE_AAB" ]]; then
+            echo "No release AAB found"
+            exit 1
+          fi
+
           OUT_DEBUG="PrayerTimesAddon-v$VERSION-debug.apk"
           OUT_RELEASE="PrayerTimesAddon-v$VERSION-release.apk"
+          OUT_RELEASE_AAB="PrayerTimesAddon-v$VERSION-release.aab"
           cp "$DEBUG_APK" "$OUT_DEBUG"
           cp "$RELEASE_APK" "$OUT_RELEASE"
+          cp "$RELEASE_AAB" "$OUT_RELEASE_AAB"
 
           echo "apk_debug=$OUT_DEBUG" >> "$GITHUB_OUTPUT"
           echo "apk_release=$OUT_RELEASE" >> "$GITHUB_OUTPUT"
+          echo "aab_release=$OUT_RELEASE_AAB" >> "$GITHUB_OUTPUT"
           echo "Debug APK: $OUT_DEBUG"
           echo "Release APK: $OUT_RELEASE"
+          echo "Release AAB: $OUT_RELEASE_AAB"
 
       - name: Verify release APK signature
         shell: bash
@@ -271,19 +377,50 @@ jobs:
             echo "ANDROID_SDK_ROOT/ANDROID_HOME not set"
             exit 1
           fi
-          "$SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose "${{ steps.artifacts.outputs.apk_release }}"
+          "$SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose "${{ steps.artifacts.outputs.apk_release }}"
 
       - name: Upload workflow artifact
         uses: actions/upload-artifact@v7
         with:
-          name: apks
+          name: release-artifacts
           path: |
             ${{ steps.artifacts.outputs.apk_debug }}
             ${{ steps.artifacts.outputs.apk_release }}
+            ${{ steps.artifacts.outputs.aab_release }}
           if-no-files-found: error
 
+      - name: Setup Ruby for fastlane
+        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.target == 'play' || inputs.target == 'both') && !inputs.dry_run }}
+        uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Decode Google Play service account key
+        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.target == 'play' || inputs.target == 'both') && !inputs.dry_run }}
+        shell: bash
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${PLAY_SERVICE_ACCOUNT_JSON:-}" ]]; then
+            echo "Missing secret PLAY_SERVICE_ACCOUNT_JSON"
+            exit 1
+          fi
+          printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > play-service-account.json
+
+      - name: Upload to Google Play
+        if: ${{ github.event_name == 'workflow_dispatch' && (inputs.target == 'play' || inputs.target == 'both') && !inputs.dry_run }}
+        shell: bash
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON_PATH: ${{ github.workspace }}/play-service-account.json
+          PLAY_AAB_PATH: ${{ github.workspace }}/${{ steps.artifacts.outputs.aab_release }}
+          PLAY_TRACK: ${{ inputs.play_track }}
+        run: |
+          set -euo pipefail
+          bundle exec fastlane android upload_play track:"$PLAY_TRACK" aab:"$PLAY_AAB_PATH"
+
       - name: Generate release notes (changelogen)
-        if: ${{ github.event_name == 'push' || (inputs.release && inputs.create_tag && !inputs.dry_run) }}
+        if: ${{ needs.version.outputs.publish_izzy == 'true' && (github.event_name == 'push' || (inputs.release && inputs.create_tag && !inputs.dry_run)) }}
         shell: bash
         env:
           TAG: ${{ needs.version.outputs.tag }}
@@ -302,7 +439,7 @@ jobs:
           echo "Generated release_notes.md"
 
       - name: Create GitHub Release
-        if: ${{ github.event_name == 'push' || (inputs.release && inputs.create_tag && !inputs.dry_run) }}
+        if: ${{ needs.version.outputs.publish_izzy == 'true' && (github.event_name == 'push' || (inputs.release && inputs.create_tag && !inputs.dry_run)) }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.version.outputs.tag }}
@@ -311,3 +448,4 @@ jobs:
           files: |
             ${{ steps.artifacts.outputs.apk_debug }}
             ${{ steps.artifacts.outputs.apk_release }}
+            ${{ steps.artifacts.outputs.aab_release }}

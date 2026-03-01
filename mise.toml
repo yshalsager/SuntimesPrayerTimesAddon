@@ -1,2 +1,8 @@
 [tools]
 java = "openjdk-25.0.2"
+ruby = "4"
+uv = "0.10"
+
+[tasks.screenshots-lossless]
+description = "Lossless compress Fastlane screenshots"
+run = "uv run scripts/compress_screenshots_lossless.py"

@@ -9,6 +9,9 @@ on:
       - '**'
   workflow_dispatch:
 
+env:
+  MISE_ENV: ci
+
 jobs:
   test_and_build:
     runs-on: ubuntu-latest
@@ -17,15 +20,12 @@ jobs:
 
       - uses: android-actions/setup-android@v3
         with:
-          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
 
       - uses: jdx/mise-action@v3
         with:
           cache: true
           cache_key_prefix: 'mise-v1'
-          mise_toml: |
-            [tools]
-            java = 'temurin-17.0.18+8'
 
       - uses: gradle/actions/setup-gradle@v5
 
@@ -34,3 +34,13 @@ jobs:
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug
+
+  validate_fastlane_metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: ashutoshgngwr/validate-fastlane-supply-metadata@v2
+        with:
+          fastlaneDir: ./fastlane/metadata/android
+          usePlayStoreLocales: false

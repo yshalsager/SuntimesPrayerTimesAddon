@@ -25,50 +25,31 @@
     <tr>
       <td>
         <div><strong>Home</strong> (today timeline)</div>
-        <img src="assets/home_en_1.png" alt="Home (EN) - timeline top" style="max-width: 100%; height: auto;" />
-        <img src="assets/home_en_2.png" alt="Home (EN) - timeline" style="max-width: 100%; height: auto; margin-top: 8px;" />
+        <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01_home.png" alt="Home (EN)" style="max-width: 100%; height: auto;" />
       </td>
       <td>
         <div><strong>Home</strong> (خط اليوم)</div>
-        <img src="assets/home_ar.png" alt="Home (AR) - timeline" style="max-width: 100%; height: auto;" />
+        <img src="fastlane/metadata/android/ar/images/phoneScreenshots/01_home.png" alt="Home (AR)" style="max-width: 100%; height: auto;" />
       </td>
     </tr>
     <tr>
       <td>
         <div><strong>Days</strong> (month cards)</div>
-        <img src="assets/days_en.png" alt="Days (EN)" style="max-width: 100%; height: auto;" />
-        <div style="margin-top: 6px; opacity: .8;">Dark</div>
-        <img src="assets/days_en_dark.png" alt="Days (EN) - dark" style="max-width: 100%; height: auto;" />
+        <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02_calendar.png" alt="Calendar (EN)" style="max-width: 100%; height: auto;" />
       </td>
       <td>
         <div><strong>Days</strong> (بطاقات الشهر)</div>
-        <img src="assets/days_ar.png" alt="Days (AR)" style="max-width: 100%; height: auto;" />
-        <div style="margin-top: 6px; opacity: .8;">داكن</div>
-        <img src="assets/days_ar_dark.png" alt="Days (AR) - dark" style="max-width: 100%; height: auto;" />
+        <img src="fastlane/metadata/android/ar/images/phoneScreenshots/02_calendar.png" alt="Calendar (AR)" style="max-width: 100%; height: auto;" />
       </td>
     </tr>
     <tr>
       <td>
         <div><strong>Settings</strong> (Material 3)</div>
-        <img src="assets/settings_en_dark_1.png" alt="Settings (EN) - dark 1" style="max-width: 100%; height: auto;" />
-        <img src="assets/settings_en_dark_2.png" alt="Settings (EN) - dark 2" style="max-width: 100%; height: auto; margin-top: 8px;" />
-        <img src="assets/settings_en_dark_3.png" alt="Settings (EN) - dark 3" style="max-width: 100%; height: auto; margin-top: 8px;" />
+        <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03_settings.png" alt="Settings (EN)" style="max-width: 100%; height: auto;" />
       </td>
       <td>
         <div><strong>Settings</strong> (الإعدادات)</div>
-        <img src="assets/settings_ar_1.png" alt="Settings (AR) 1" style="max-width: 100%; height: auto;" />
-        <img src="assets/settings_ar_2.png" alt="Settings (AR) 2" style="max-width: 100%; height: auto; margin-top: 8px;" />
-        <img src="assets/settings_ar_3.png" alt="Settings (AR) 3" style="max-width: 100%; height: auto; margin-top: 8px;" />
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <div><strong>Widget</strong> (today card)</div>
-        <img src="assets/widget_en.png" alt="Widget (EN)" style="max-width: 100%; height: auto;" />
-      </td>
-      <td>
-        <div><strong>Widget</strong> (ودجت اليوم)</div>
-        <img src="assets/widget_ar.png" alt="Widget (AR)" style="max-width: 100%; height: auto;" />
+        <img src="fastlane/metadata/android/ar/images/phoneScreenshots/03_settings.png" alt="Settings (AR)" style="max-width: 100%; height: auto;" />
       </td>
     </tr>
   </tbody>

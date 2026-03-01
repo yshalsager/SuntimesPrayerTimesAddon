@@ -160,3 +160,7 @@ fabric.properties
 .idea/
 .android_home/
 .gradle_home/
+
+# Generated Fastlane artifacts
+fastlane/report.xml
+fastlane/metadata/android/screenshots.html
