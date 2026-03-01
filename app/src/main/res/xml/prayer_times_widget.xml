@@ -4,6 +4,10 @@
     android:description="@string/widget_prayer_times_today_desc"
     android:minWidth="250dp"
     android:minHeight="110dp"
+    android:minResizeWidth="160dp"
+    android:minResizeHeight="80dp"
+    android:targetCellWidth="4"
+    android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen" />

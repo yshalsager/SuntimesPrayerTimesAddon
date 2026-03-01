@@ -7,6 +7,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Bundle
 import android.text.TextUtils
 import android.text.format.DateFormat
 import android.view.View
@@ -34,6 +35,11 @@ import java.util.UUID
 class PrayerTimesWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         update_all(context, appWidgetManager, appWidgetIds)
+    }
+
+    override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: Bundle) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        update_all(context, appWidgetManager, intArrayOf(appWidgetId))
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -144,17 +150,20 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
         ids.forEach { id ->
             val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
+            val layout_profile = widget_layout_profile(mgr, id)
 
             rv.setInt(R.id.widget_root, "setBackgroundResource", colors.bg_res)
             rv.setInt(R.id.widget_accent, "setBackgroundColor", colors.accent)
 
             val primary = if (month_basis == Prefs.days_month_basis_hijri && hijri != null) hijri else greg
             val secondary = if (month_basis == Prefs.days_month_basis_hijri) greg else (hijri ?: "")
+            val secondary_text = if (!layout_profile.show_secondary_date || secondary.isBlank() || secondary == primary) "" else secondary
 
             rv.setTextViewText(R.id.widget_hijri, primary)
-            rv.setTextViewText(R.id.widget_gregorian, if (secondary.isBlank() || secondary == primary) "" else secondary)
-
+            rv.setTextViewText(R.id.widget_gregorian, secondary_text)
+            rv.setViewVisibility(R.id.widget_gregorian, if (secondary_text.isBlank()) View.GONE else View.VISIBLE)
             rv.setTextViewText(R.id.widget_summary, summary)
+            rv.setViewVisibility(R.id.widget_summary, if (layout_profile.show_summary) View.VISIBLE else View.GONE)
 
             rv.setTextColor(R.id.widget_hijri, colors.text_primary)
             rv.setTextColor(R.id.widget_gregorian, colors.text_muted)
@@ -198,7 +207,8 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setTextColor(R.id.widget_label_duha, colors.accent)
 
             val prohibited_ok =
-                widget_show_prohibited &&
+                layout_profile.show_optional_rows &&
+                    widget_show_prohibited &&
                     listOf(prohibited_dawn, prohibited_sunrise, prohibited_zawal, prohibited_after_asr, prohibited_sunset).any { it != null }
             rv.setViewVisibility(R.id.widget_prohibited_row, if (prohibited_ok) View.VISIBLE else View.GONE)
             if (prohibited_ok) {
@@ -217,8 +227,9 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                 rv.setTextColor(R.id.widget_prohibited_sunset, colors.prohibited_heavy)
             }
 
-            rv.setViewVisibility(R.id.widget_night_row, if (night_ok) View.VISIBLE else View.GONE)
-            if (night_ok) {
+            val show_night_row = layout_profile.show_optional_rows && night_ok
+            rv.setViewVisibility(R.id.widget_night_row, if (show_night_row) View.VISIBLE else View.GONE)
+            if (show_night_row) {
                 fun labeled(label_res: Int, v: Long?): String = "${context.getString(label_res)}\n${time_short(v)}"
 
                 rv.setTextViewText(R.id.widget_night_midpoint, labeled(R.string.night_midpoint, night_midpoint))
@@ -265,6 +276,23 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val prohibited_light: Int,
         val prohibited_heavy: Int
     )
+
+    private data class WidgetLayoutProfile(
+        val show_secondary_date: Boolean,
+        val show_summary: Boolean,
+        val show_optional_rows: Boolean
+    )
+
+    private fun widget_layout_profile(mgr: AppWidgetManager, id: Int): WidgetLayoutProfile {
+        val options = mgr.getAppWidgetOptions(id)
+        val min_width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
+        val min_height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110)
+        return when {
+            min_height < 110 -> WidgetLayoutProfile(show_secondary_date = false, show_summary = false, show_optional_rows = false)
+            min_height < 140 -> WidgetLayoutProfile(show_secondary_date = min_width >= 220, show_summary = true, show_optional_rows = false)
+            else -> WidgetLayoutProfile(show_secondary_date = min_width >= 220, show_summary = true, show_optional_rows = true)
+        }
+    }
 
     private fun widget_colors(context: Context): WidgetColors {
         val theme = Prefs.get_theme(context)
