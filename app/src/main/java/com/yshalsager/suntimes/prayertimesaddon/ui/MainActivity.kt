@@ -116,7 +116,16 @@ class MainActivity : ThemedActivity() {
 
         val required_perm = HostResolver.get_required_permission(this, host)
         if (required_perm != null && ContextCompat.checkSelfPermission(this, required_perm) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(required_perm), request_code_permissions)
+            val declared =
+                try {
+                    @Suppress("DEPRECATION")
+                    packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS).requestedPermissions?.contains(required_perm) == true
+                } catch (_: Exception) {
+                    false
+                }
+            if (HostResolver.is_runtime_permission(this, required_perm) && declared) {
+                ActivityCompat.requestPermissions(this, arrayOf(required_perm), request_code_permissions)
+            }
             state = state.copy(error = getString(R.string.missing_permission, required_perm))
             return
         }

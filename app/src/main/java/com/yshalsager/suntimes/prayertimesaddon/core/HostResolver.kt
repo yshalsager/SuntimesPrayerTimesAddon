@@ -3,6 +3,7 @@ package com.yshalsager.suntimes.prayertimesaddon.core
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
+import android.content.pm.PermissionInfo
 import android.content.pm.ProviderInfo
 
 private const val event_provider_suffix = ".event.provider"
@@ -67,6 +68,18 @@ object HostResolver {
 
     fun get_required_permission(context: Context, authority: String): String? =
         resolve_required_permission(context.packageManager, authority)
+
+    fun is_runtime_permission(context: Context, permission: String): Boolean {
+        val pm = context.packageManager
+        val info =
+            try {
+                pm.getPermissionInfo(permission, 0)
+            } catch (_: Exception) {
+                return false
+            }
+        val base = info.protectionLevel and PermissionInfo.PROTECTION_MASK_BASE
+        return base == PermissionInfo.PROTECTION_DANGEROUS
+    }
 
     @Suppress("DEPRECATION")
     private fun get_pkg_info(pm: PackageManager, pkg: String): PackageInfo? {

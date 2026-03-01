@@ -66,7 +66,8 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
 
         val required_perm = HostResolver.get_required_permission(ctx, host)
         if (required_perm != null && ContextCompat.checkSelfPermission(ctx, required_perm) != PackageManager.PERMISSION_GRANTED) {
-            state = DaysUiState(error = ctx.getString(R.string.missing_permission, required_perm), required_permission = required_perm)
+            val requestable = required_perm.takeIf { HostResolver.is_runtime_permission(ctx, it) }
+            state = DaysUiState(error = ctx.getString(R.string.missing_permission, required_perm), required_permission = requestable)
             return
         }
 
