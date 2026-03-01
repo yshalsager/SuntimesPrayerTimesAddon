@@ -22,6 +22,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -44,6 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -110,6 +112,7 @@ data class HomeUiState(
     val location_summary: String,
     val host_footer: String,
     val error: String?,
+    val show_reinstall_addon: Boolean,
     val days: List<HomeDayUiState>
 )
 
@@ -125,9 +128,12 @@ fun HomeScreen(
     state: HomeUiState,
     on_open_days: () -> Unit,
     on_open_settings: () -> Unit,
+    on_install_host: () -> Unit,
+    on_reinstall_addon: () -> Unit,
     on_open_alarm: (String) -> Unit,
     on_shift_day: (Int) -> Unit
 ) {
+    val ctx = LocalContext.current
     val pager_state = rememberPagerState(initialPage = 1, pageCount = { 3 })
     var override_center_day by remember { mutableStateOf<HomeDayUiState?>(null) }
     val latest_state by rememberUpdatedState(state)
@@ -188,6 +194,24 @@ fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyMedium
                         )
+                    }
+                }
+                if (state.error == ctx.getString(R.string.no_host_found)) {
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            Button(onClick = on_install_host) {
+                                Text(text = ctx.getString(R.string.install_host_action))
+                            }
+                        }
+                    }
+                }
+                if (state.show_reinstall_addon) {
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            Button(onClick = on_reinstall_addon) {
+                                Text(text = ctx.getString(R.string.reinstall_addon_action))
+                            }
+                        }
                     }
                 }
                 item {

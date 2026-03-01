@@ -28,7 +28,8 @@ data class DaysUiState(
     val title: String = "",
     val skeleton: MonthSkeleton? = null,
     val error: String? = null,
-    val required_permission: String? = null
+    val required_permission: String? = null,
+    val show_reinstall_addon: Boolean = false
 )
 
 class DaysViewModel(app: Application) : AndroidViewModel(app) {
@@ -67,7 +68,10 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
         val required_perm = HostResolver.get_required_permission(ctx, host)
         if (required_perm != null && ContextCompat.checkSelfPermission(ctx, required_perm) != PackageManager.PERMISSION_GRANTED) {
             val requestable = required_perm.takeIf { HostResolver.is_runtime_permission(ctx, it) }
-            state = DaysUiState(error = ctx.getString(R.string.missing_permission, required_perm), required_permission = requestable)
+            val message =
+                if (requestable != null) ctx.getString(R.string.missing_permission, required_perm)
+                else ctx.getString(R.string.missing_permission_reinstall, required_perm)
+            state = DaysUiState(error = message, required_permission = requestable, show_reinstall_addon = requestable == null)
             return
         }
 

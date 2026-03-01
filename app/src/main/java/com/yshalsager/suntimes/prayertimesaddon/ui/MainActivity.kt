@@ -22,6 +22,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
+import com.yshalsager.suntimes.prayertimesaddon.core.open_url
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_addon_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeItemUi
@@ -63,6 +64,7 @@ class MainActivity : ThemedActivity() {
             location_summary = "--",
             host_footer = "--",
             error = null,
+            show_reinstall_addon = false,
             days = listOf(
                 HomeDayUiState(0L, "--", null, emptyList()),
                 HomeDayUiState(0L, "--", null, emptyList()),
@@ -79,6 +81,8 @@ class MainActivity : ThemedActivity() {
                     state = state,
                     on_open_days = { startActivity(Intent(this@MainActivity, DaysActivity::class.java)) },
                     on_open_settings = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
+                    on_install_host = { open_url(this@MainActivity, "https://github.com/forrestguice/SuntimesWidget") },
+                    on_reinstall_addon = { open_url(this@MainActivity, "https://github.com/yshalsager/SuntimesPrayerTimesAddon/releases/latest") },
                     on_open_alarm = { event_id -> open_host_alarm(event_id) },
                     on_shift_day = { delta -> shift_day(delta) }
                 )
@@ -110,7 +114,7 @@ class MainActivity : ThemedActivity() {
 
         val host = HostResolver.ensure_default_selected(this)
         if (host == null) {
-            state = state.copy(error = getString(R.string.no_host_found))
+            state = state.copy(error = getString(R.string.no_host_found), show_reinstall_addon = false)
             return
         }
 
@@ -123,10 +127,14 @@ class MainActivity : ThemedActivity() {
                 } catch (_: Exception) {
                     false
                 }
-            if (HostResolver.is_runtime_permission(this, required_perm) && declared) {
+            val requestable = HostResolver.is_runtime_permission(this, required_perm) && declared
+            if (requestable) {
                 ActivityCompat.requestPermissions(this, arrayOf(required_perm), request_code_permissions)
             }
-            state = state.copy(error = getString(R.string.missing_permission, required_perm))
+            val message =
+                if (requestable) getString(R.string.missing_permission, required_perm)
+                else getString(R.string.missing_permission_reinstall, required_perm)
+            state = state.copy(error = message, show_reinstall_addon = !requestable)
             return
         }
 
@@ -141,7 +149,7 @@ class MainActivity : ThemedActivity() {
             } catch (_: ArithmeticException) {
                 ui.post {
                     if (this_refresh_id != refresh_id) return@post
-                    state = state.copy(error = getString(R.string.hijri_out_of_range))
+                    state = state.copy(error = getString(R.string.hijri_out_of_range), show_reinstall_addon = false)
                 }
             }
         }.start()
@@ -444,6 +452,7 @@ class MainActivity : ThemedActivity() {
             location_summary = "$loc | $host_now",
             host_footer = "HOST: $host",
             error = null,
+            show_reinstall_addon = false,
             days = listOf(day_prev.day, day_center.day, day_next.day)
         )
 

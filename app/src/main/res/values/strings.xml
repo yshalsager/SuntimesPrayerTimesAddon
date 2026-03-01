@@ -53,7 +53,9 @@
     <string name='language_system'>System</string>
 
     <string name='missing_permission'>Missing permission: %1$s</string>
+    <string name='missing_permission_reinstall'>Missing host access (%1$s). Reinstall or update this addon after installing SuntimesWidget.</string>
     <string name='grant_permission'>Grant permission</string>
+    <string name='reinstall_addon_action'>Reinstall Addon</string>
     <string name='hijri_out_of_range'>The selected Hijri method does not support this date range.</string>
     <string name='language_english'>English</string>
     <string name='language_arabic'>Arabic</string>
@@ -79,6 +81,7 @@
     <string name='host_alarms_title'>Host alarms</string>
     <string name='host_alarms_summary'>Open host alarms screen</string>
     <string name='open_in_host'>Open</string>
+    <string name='install_host_action'>Install</string>
     <string name='export_label'>Export</string>
     <string name='import_label'>Import</string>
     <string name='export_prayer_alarm_preset_title'>Prayer alarm preset</string>
@@ -96,6 +99,17 @@
     <string name='settings_backup_export_failed'>Failed to export settings backup</string>
     <string name='settings_backup_restore_success'>Settings restored (%1$d)</string>
     <string name='settings_backup_restore_failed'>Failed to restore settings backup</string>
+    <string name='about_title'>About app</string>
+    <string name='about_version_title'>Version</string>
+    <string name='about_contribute_title'>Contribute</string>
+    <string name='about_contribute_summary'>Source code and pull requests</string>
+    <string name='about_bugs_title'>Bugs</string>
+    <string name='about_bugs_summary'>Report issues and track fixes</string>
+    <string name='about_support_title'>Donate</string>
+    <string name='about_support_summary'>Donate to support development</string>
+    <string name='about_contribute_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon</string>
+    <string name='about_bugs_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon/issues</string>
+    <string name='about_support_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon</string>
 
     <string name='makruh_preset_title'>Makruh preset</string>
     <string name='makruh_preset_shafi'>Shafi</string>

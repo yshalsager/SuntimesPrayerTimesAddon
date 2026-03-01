@@ -7,7 +7,9 @@
     <string name='language_system'>النظام</string>
 
     <string name='missing_permission'>صلاحية مفقودة: %1$s</string>
+    <string name='missing_permission_reinstall'>الوصول إلى المضيف مفقود (%1$s). أعد تثبيت الملحق أو حدّثه بعد تثبيت SuntimesWidget.</string>
     <string name='grant_permission'>منح الصلاحية</string>
+    <string name='reinstall_addon_action'>إعادة تثبيت الملحق</string>
     <string name='hijri_out_of_range'>طريقة التاريخ الهجري المحددة لا تدعم هذا النطاق الزمني.</string>
     <string name='language_english'>الإنجليزية</string>
     <string name='language_arabic'>العربية</string>
@@ -65,6 +67,7 @@
     <string name='host_alarms_title'>منبّهات المضيف</string>
     <string name='host_alarms_summary'>فتح شاشة منبّهات التطبيق المضيف</string>
     <string name='open_in_host'>فتح</string>
+    <string name='install_host_action'>تثبيت</string>
     <string name='export_label'>تصدير</string>
     <string name='import_label'>استيراد</string>
     <string name='export_prayer_alarm_preset_title'>إعداد منبّهات الصلاة</string>
@@ -82,6 +85,17 @@
     <string name='settings_backup_export_failed'>فشل تصدير نسخة إعدادات احتياطية</string>
     <string name='settings_backup_restore_success'>تمت استعادة الإعدادات (%1$d)</string>
     <string name='settings_backup_restore_failed'>فشلت استعادة نسخة الإعدادات الاحتياطية</string>
+    <string name='about_title'>حول التطبيق</string>
+    <string name='about_version_title'>الإصدار</string>
+    <string name='about_contribute_title'>المساهمة</string>
+    <string name='about_contribute_summary'>الكود المصدري والمساهمة بالتطوير</string>
+    <string name='about_bugs_title'>الأعطال</string>
+    <string name='about_bugs_summary'>الإبلاغ عن المشاكل ومتابعة إصلاحها</string>
+    <string name='about_support_title'>ادعم</string>
+    <string name='about_support_summary'>ادعم تطوير التطبيق</string>
+    <string name='about_contribute_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon</string>
+    <string name='about_bugs_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon/issues</string>
+    <string name='about_support_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon</string>
 
     <string name='makruh_preset_title'>إعداد أوقات النهي</string>
     <string name='makruh_sunrise_minutes_title'>نهاية نهي الشروق</string>

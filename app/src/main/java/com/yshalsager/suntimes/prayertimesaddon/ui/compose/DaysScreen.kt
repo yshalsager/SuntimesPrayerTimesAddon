@@ -46,7 +46,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 
 @Composable
-fun DaysScreen(vm: DaysViewModel, on_back: () -> Unit) {
+fun DaysScreen(vm: DaysViewModel, on_back: () -> Unit, on_install_host: () -> Unit, on_reinstall_addon: () -> Unit) {
     val ctx = LocalContext.current
 
     val permission_request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -102,7 +102,9 @@ fun DaysScreen(vm: DaysViewModel, on_back: () -> Unit) {
             state = state,
             list_state = list_state,
             padding = padding,
-            on_request_permission = { perm -> permission_request.launch(perm) }
+            on_request_permission = { perm -> permission_request.launch(perm) },
+            on_install_host = on_install_host,
+            on_reinstall_addon = on_reinstall_addon
         )
     }
 }
@@ -113,8 +115,11 @@ private fun DaysContent(
     state: DaysUiState,
     list_state: LazyListState,
     padding: PaddingValues,
-    on_request_permission: (String) -> Unit
+    on_request_permission: (String) -> Unit,
+    on_install_host: () -> Unit,
+    on_reinstall_addon: () -> Unit
 ) {
+    val ctx = LocalContext.current
     Column(Modifier.padding(padding)) {
         if (state.error != null) {
             Card(
@@ -129,7 +134,19 @@ private fun DaysContent(
                     if (perm != null) {
                         Spacer(Modifier.height(10.dp))
                         Button(onClick = { on_request_permission(perm) }) {
-                            Text(text = androidx.compose.ui.platform.LocalContext.current.getString(R.string.grant_permission))
+                            Text(text = ctx.getString(R.string.grant_permission))
+                        }
+                    }
+                    if (state.error == ctx.getString(R.string.no_host_found)) {
+                        Spacer(Modifier.height(10.dp))
+                        Button(onClick = on_install_host) {
+                            Text(text = ctx.getString(R.string.install_host_action))
+                        }
+                    }
+                    if (state.show_reinstall_addon) {
+                        Spacer(Modifier.height(10.dp))
+                        Button(onClick = on_reinstall_addon) {
+                            Text(text = ctx.getString(R.string.reinstall_addon_action))
                         }
                     }
                 }
