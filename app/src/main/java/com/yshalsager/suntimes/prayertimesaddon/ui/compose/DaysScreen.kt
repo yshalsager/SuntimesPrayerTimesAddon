@@ -277,6 +277,8 @@ private fun LazyListState.visible_range(): Pair<Int, Int>? {
 @Composable
 private fun ProhibitedRow(item: DayItem) {
     val ctx = LocalContext.current
+    val light_color = MaterialTheme.colorScheme.primary
+    val heavy_color = MaterialTheme.colorScheme.onSurfaceVariant
     val labels = listOf(
         Triple(ctx.getString(R.string.prohibited_dawn), item.prohibited_dawn, true),
         Triple(ctx.getString(R.string.prohibited_sunrise), item.prohibited_sunrise, false),
@@ -287,10 +289,10 @@ private fun ProhibitedRow(item: DayItem) {
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         labels.forEach { (label, range, is_light) ->
-            val label_color = if (is_light) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
+            val item_color = if (is_light) light_color else heavy_color
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = label, style = MaterialTheme.typography.labelSmall, color = label_color, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(text = range ?: "--", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = label, style = MaterialTheme.typography.labelSmall, color = item_color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text = range ?: "--", style = MaterialTheme.typography.bodySmall, color = item_color, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
