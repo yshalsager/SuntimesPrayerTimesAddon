@@ -44,6 +44,7 @@ class MainActivity : ThemedActivity() {
     private val request_code_permissions = 1001
     private val ui = Handler(Looper.getMainLooper())
     private var tick: Runnable? = null
+    private var refresh_id = 0
 
     private var center_day_start: Long? = null
     private var next_time_millis: Long? = null
@@ -103,6 +104,7 @@ class MainActivity : ThemedActivity() {
     private fun refresh_home() {
         tick?.let(ui::removeCallbacks)
         tick = null
+        val this_refresh_id = ++refresh_id
 
         val host = HostResolver.ensure_default_selected(this)
         if (host == null) {
@@ -121,11 +123,13 @@ class MainActivity : ThemedActivity() {
             try {
                 val computed = compute_home(host)
                 ui.post {
+                    if (this_refresh_id != refresh_id) return@post
                     apply_computed(computed)
                     start_tick(host)
                 }
             } catch (_: ArithmeticException) {
                 ui.post {
+                    if (this_refresh_id != refresh_id) return@post
                     state = state.copy(error = getString(R.string.hijri_out_of_range))
                 }
             }
