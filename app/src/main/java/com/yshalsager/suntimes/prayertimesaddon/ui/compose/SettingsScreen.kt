@@ -38,6 +38,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.SettingsBackup
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingDropdown
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingInlineTextField
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingRow
@@ -49,6 +50,9 @@ import com.yshalsager.suntimes.prayertimesaddon.widget.WidgetUpdate
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import org.json.JSONArray
 import org.json.JSONObject
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SettingsRoot(on_back: () -> Unit) {
@@ -104,6 +108,33 @@ private fun SettingsContent(
 
     var hijri_variant by rememberSaveable { mutableStateOf(Prefs.get_hijri_variant(ctx)) }
     var hijri_day_offset by rememberSaveable { mutableStateOf(Prefs.get_hijri_day_offset(ctx).toString()) }
+
+    fun reload_state_from_prefs() {
+        host_event_authority = Prefs.get_host_event_authority(ctx) ?: HostResolver.ensure_default_selected(ctx) ?: ""
+        language = Prefs.get_language(ctx)
+        theme = Prefs.get_theme(ctx)
+        palette = Prefs.get_palette(ctx)
+        gregorian_date_format = Prefs.get_gregorian_date_format(ctx)
+        method_preset = Prefs.get_method_preset(ctx)
+        fajr_angle_text = Prefs.get_fajr_angle(ctx).toString()
+        isha_mode = Prefs.get_isha_mode(ctx)
+        isha_angle_text = Prefs.get_isha_angle(ctx).toString()
+        isha_fixed_minutes_text = Prefs.get_isha_fixed_minutes(ctx).toString()
+        asr_factor = Prefs.get_asr_factor(ctx).toString()
+        maghrib_offset_minutes_text = Prefs.get_maghrib_offset_minutes(ctx).toString()
+        makruh_preset = Prefs.get_makruh_preset(ctx)
+        makruh_sunrise_minutes = Prefs.get_makruh_sunrise_minutes(ctx).toString()
+        makruh_angle_text = Prefs.get_makruh_angle(ctx).toString()
+        zawal_minutes_text = Prefs.get_zawal_minutes(ctx).toString()
+        days_month_basis = Prefs.get_days_month_basis(ctx)
+        days_show_hijri = Prefs.get_days_show_hijri(ctx)
+        days_show_prohibited = Prefs.get_days_show_prohibited(ctx)
+        days_show_night = Prefs.get_days_show_night_portions(ctx)
+        widget_show_prohibited = Prefs.get_widget_show_prohibited(ctx)
+        widget_show_night = Prefs.get_widget_show_night_portions(ctx)
+        hijri_variant = Prefs.get_hijri_variant(ctx)
+        hijri_day_offset = Prefs.get_hijri_day_offset(ctx).toString()
+    }
 
     fun sync_method_fields() {
         fajr_angle_text = Prefs.get_fajr_angle(ctx).toString()
@@ -187,6 +218,44 @@ private fun SettingsContent(
         val ok = write_prayer_alarm_preset(ctx, uri)
         val msg = if (ok) ctx.getString(R.string.alarm_preset_export_success) else ctx.getString(R.string.alarm_preset_export_failed)
         Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    val create_settings_backup_launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val ok = write_settings_backup(ctx, uri)
+        val msg = if (ok) ctx.getString(R.string.settings_backup_export_success) else ctx.getString(R.string.settings_backup_export_failed)
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+    }
+
+    val open_settings_backup_launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        val raw = read_settings_backup(ctx, uri)
+        if (raw == null) {
+            Toast.makeText(ctx, ctx.getString(R.string.settings_backup_restore_failed), Toast.LENGTH_SHORT).show()
+            return@rememberLauncherForActivityResult
+        }
+        val result = SettingsBackup.import_json(ctx, raw)
+        if (!result.ok) {
+            Toast.makeText(ctx, ctx.getString(R.string.settings_backup_restore_failed), Toast.LENGTH_SHORT).show()
+            return@rememberLauncherForActivityResult
+        }
+        if (result.applied_count > 0) {
+            reload_state_from_prefs()
+            refresh_host_location()
+            val locales = if (language == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(language)
+            AppCompatDelegate.setApplicationLocales(locales)
+            val mode =
+                when (theme) {
+                    Prefs.theme_light -> AppCompatDelegate.MODE_NIGHT_NO
+                    Prefs.theme_dark -> AppCompatDelegate.MODE_NIGHT_YES
+                    else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                }
+            AppCompatDelegate.setDefaultNightMode(mode)
+            WidgetUpdate.request(ctx)
+        }
+        val msg = ctx.getString(R.string.settings_backup_restore_success, result.applied_count)
+        Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
+        if (result.applied_count > 0) activity?.recreate()
     }
 
     LaunchedEffect(host_event_authority) {
@@ -567,6 +636,37 @@ private fun SettingsContent(
                 )
             }
         }
+
+        item { Spacer(Modifier.height(12.dp)) }
+
+        item {
+            SettingsSection(ctx.getString(R.string.settings_backup_restore_title)) {
+                SettingRow(
+                    title = ctx.getString(R.string.settings_backup_title),
+                    subtitle = ctx.getString(R.string.settings_backup_summary),
+                    on_click = { create_settings_backup_launcher.launch(settings_backup_filename(ctx)) },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.export_label),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+                SettingRow(
+                    title = ctx.getString(R.string.settings_restore_title),
+                    subtitle = ctx.getString(R.string.settings_restore_summary),
+                    on_click = { open_settings_backup_launcher.launch(arrayOf("application/json", "text/plain")) },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.import_label),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+            }
+        }
     }
 }
 
@@ -693,14 +793,36 @@ private fun hijri_offset_label(ctx: android.content.Context, v: String): String 
     hijri_offset_options(ctx).firstOrNull { it.first == v }?.second ?: v
 
 private fun write_prayer_alarm_preset(ctx: android.content.Context, uri: Uri): Boolean {
-    val json = prayer_alarm_preset_json(ctx)
+    return write_text_to_uri(ctx, uri, prayer_alarm_preset_json(ctx))
+}
+
+private fun write_settings_backup(ctx: android.content.Context, uri: Uri): Boolean {
+    return write_text_to_uri(ctx, uri, SettingsBackup.export_json(ctx))
+}
+
+private fun write_text_to_uri(ctx: android.content.Context, uri: Uri, text: String): Boolean {
     val out = ctx.contentResolver.openOutputStream(uri) ?: return false
     return try {
-        out.bufferedWriter().use { it.write(json) }
+        out.bufferedWriter().use { it.write(text) }
         true
     } catch (_: Exception) {
         false
     }
+}
+
+private fun read_settings_backup(ctx: android.content.Context, uri: Uri): String? {
+    val input = ctx.contentResolver.openInputStream(uri) ?: return null
+    return try {
+        input.bufferedReader().use { it.readText() }
+    } catch (_: Exception) {
+        null
+    }
+}
+
+private fun settings_backup_filename(ctx: android.content.Context): String {
+    val base = ctx.getString(R.string.settings_backup_filename)
+    val ts = SimpleDateFormat("yyyyMMddHHmm", Locale.US).format(Date())
+    return "$base-$ts.json"
 }
 
 private fun prayer_alarm_preset_json(ctx: android.content.Context): String {

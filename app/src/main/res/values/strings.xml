@@ -80,11 +80,22 @@
     <string name='host_alarms_summary'>Open host alarms screen</string>
     <string name='open_in_host'>Open</string>
     <string name='export_label'>Export</string>
+    <string name='import_label'>Import</string>
     <string name='export_prayer_alarm_preset_title'>Prayer alarm preset</string>
     <string name='export_prayer_alarm_preset_summary'>Export an importable host alarms preset file</string>
     <string name='prayer_alarm_preset_filename'>prayer-alarms-preset.txt</string>
     <string name='alarm_preset_export_success'>Alarm preset exported</string>
     <string name='alarm_preset_export_failed'>Failed to export alarm preset</string>
+    <string name='settings_backup_restore_title'>Backup &amp; restore</string>
+    <string name='settings_backup_title'>Backup settings</string>
+    <string name='settings_backup_summary'>Export app settings to a JSON file</string>
+    <string name='settings_restore_title'>Restore settings</string>
+    <string name='settings_restore_summary'>Import app settings from a backup file</string>
+    <string name='settings_backup_filename'>suntimes-prayertimes-addon-settings-backup</string>
+    <string name='settings_backup_export_success'>Settings backup exported</string>
+    <string name='settings_backup_export_failed'>Failed to export settings backup</string>
+    <string name='settings_backup_restore_success'>Settings restored (%1$d)</string>
+    <string name='settings_backup_restore_failed'>Failed to restore settings backup</string>
 
     <string name='makruh_preset_title'>Makruh preset</string>
     <string name='makruh_preset_shafi'>Shafi</string>

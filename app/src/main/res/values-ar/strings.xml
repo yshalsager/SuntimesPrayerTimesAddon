@@ -66,11 +66,22 @@
     <string name='host_alarms_summary'>فتح شاشة منبّهات التطبيق المضيف</string>
     <string name='open_in_host'>فتح</string>
     <string name='export_label'>تصدير</string>
+    <string name='import_label'>استيراد</string>
     <string name='export_prayer_alarm_preset_title'>إعداد منبّهات الصلاة</string>
     <string name='export_prayer_alarm_preset_summary'>تصدير ملف إعداد جاهز للاستيراد في منبّهات المضيف</string>
     <string name='prayer_alarm_preset_filename'>prayer-alarms-preset.txt</string>
     <string name='alarm_preset_export_success'>تم تصدير إعداد المنبّهات</string>
     <string name='alarm_preset_export_failed'>فشل تصدير إعداد المنبّهات</string>
+    <string name='settings_backup_restore_title'>النسخ الاحتياطي والاستعادة</string>
+    <string name='settings_backup_title'>نسخ الإعدادات احتياطيًا</string>
+    <string name='settings_backup_summary'>تصدير إعدادات التطبيق إلى ملف JSON</string>
+    <string name='settings_restore_title'>استعادة الإعدادات</string>
+    <string name='settings_restore_summary'>استيراد إعدادات التطبيق من ملف نسخ احتياطي</string>
+    <string name='settings_backup_filename'>suntimes-prayertimes-addon-settings-backup</string>
+    <string name='settings_backup_export_success'>تم تصدير نسخة إعدادات احتياطية</string>
+    <string name='settings_backup_export_failed'>فشل تصدير نسخة إعدادات احتياطية</string>
+    <string name='settings_backup_restore_success'>تمت استعادة الإعدادات (%1$d)</string>
+    <string name='settings_backup_restore_failed'>فشلت استعادة نسخة الإعدادات الاحتياطية</string>
 
     <string name='makruh_preset_title'>إعداد أوقات النهي</string>
     <string name='makruh_sunrise_minutes_title'>نهاية نهي الشروق</string>
