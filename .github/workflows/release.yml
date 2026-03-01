@@ -49,6 +49,11 @@ on:
           - production
           - beta
           - internal
+      skip_screenshots:
+        description: 'Skip screenshot generation step'
+        required: true
+        default: false
+        type: boolean
   push:
     tags:
       - 'v*.*.*'
@@ -235,6 +240,7 @@ jobs:
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
 
   screenshots_refresh:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_screenshots }}
     uses: ./.github/workflows/screenshots.yml
     permissions:
       contents: write
@@ -245,6 +251,7 @@ jobs:
 
   build:
     needs: [version, screenshots_refresh]
+    if: ${{ needs.version.result == 'success' && (needs.screenshots_refresh.result == 'success' || needs.screenshots_refresh.result == 'skipped') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
