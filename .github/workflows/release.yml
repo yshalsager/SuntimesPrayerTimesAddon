@@ -197,7 +197,7 @@ jobs:
             [tools]
             java = "temurin-17.0.18+8"
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       - name: Decode signing keystore
         shell: bash
