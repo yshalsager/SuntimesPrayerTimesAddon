@@ -172,6 +172,7 @@ class PrayerTimesProvider : ContentProvider() {
         selectionArgs: Array<String>?
     ): Long? {
         val now = selectionArgs?.getOrNull(0)?.toLongOrNull() ?: System.currentTimeMillis()
+        val alarm_offset = selectionArgs?.getOrNull(1)?.toLongOrNull() ?: 0L
         val fajr_query = AddonEventMapper.map_event(context, AddonEvent.prayer_fajr) ?: return null
         val tz =
             HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(java.util.TimeZone::getTimeZone)
@@ -215,7 +216,7 @@ class PrayerTimesProvider : ContentProvider() {
                 else -> return null
             }
 
-            if (t >= now || attempt == 1) return t
+            if (t + alarm_offset >= now || attempt == 1) return t
             fajr_alarm_now = fajr + 60_000L
         }
 
