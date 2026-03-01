@@ -75,7 +75,7 @@ object Prefs {
         put_bool(context, k_days_show_hijri, v)
 
     fun get_days_month_basis(context: Context): String =
-        get_str(context, k_days_month_basis, days_month_basis_gregorian)
+        get_str(context, k_days_month_basis, days_month_basis_hijri)
 
     fun set_days_month_basis(context: Context, v: String) =
         put_str(context, k_days_month_basis, v)
