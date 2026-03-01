@@ -39,6 +39,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.SettingsBackup
+import com.yshalsager.suntimes.prayertimesaddon.core.open_url as open_external_url
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingDropdown
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingInlineTextField
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingRow
@@ -211,6 +212,10 @@ private fun SettingsContent(
                 pm.getLaunchIntentForPackage(host_package)?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)?.let(ctx::startActivity)
             }
         }
+    }
+
+    fun open_url(url: String) {
+        open_external_url(ctx, url)
     }
 
     val create_preset_file_launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
@@ -667,7 +672,62 @@ private fun SettingsContent(
                 )
             }
         }
+
+        item { Spacer(Modifier.height(12.dp)) }
+
+        item {
+            SettingsSection(ctx.getString(R.string.about_title)) {
+                SettingRow(
+                    title = ctx.getString(R.string.about_version_title),
+                    subtitle = app_version_label(ctx)
+                )
+
+                SettingRow(
+                    title = ctx.getString(R.string.about_contribute_title),
+                    subtitle = ctx.getString(R.string.about_contribute_summary),
+                    on_click = { open_url(ctx.getString(R.string.about_contribute_url)) },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.open_in_host),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+
+                SettingRow(
+                    title = ctx.getString(R.string.about_bugs_title),
+                    subtitle = ctx.getString(R.string.about_bugs_summary),
+                    on_click = { open_url(ctx.getString(R.string.about_bugs_url)) },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.open_in_host),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+
+                SettingRow(
+                    title = ctx.getString(R.string.about_support_title),
+                    subtitle = ctx.getString(R.string.about_support_summary),
+                    on_click = { open_url(ctx.getString(R.string.about_support_url)) },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.open_in_host),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+            }
+        }
     }
+}
+
+private fun app_version_label(ctx: android.content.Context): String {
+    val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+    return "v${info.versionName} (${info.longVersionCode})"
 }
 
 private fun language_options(ctx: android.content.Context): List<Pair<String, String>> =
