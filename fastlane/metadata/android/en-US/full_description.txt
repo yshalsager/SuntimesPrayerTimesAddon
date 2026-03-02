@@ -1,6 +1,7 @@
 Prayer Times Addon extends SuntimesWidget with prayer, makruh, and night events.
 
 Features:
+
 - Home timeline with day swipe
 - Calendar cards for daily prayer windows
 - Exportable alarms integration with Suntimes host
