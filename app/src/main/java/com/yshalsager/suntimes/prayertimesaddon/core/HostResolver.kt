@@ -77,8 +77,7 @@ object HostResolver {
             } catch (_: Exception) {
                 return false
             }
-        val base = info.protectionLevel and PermissionInfo.PROTECTION_MASK_BASE
-        return base == PermissionInfo.PROTECTION_DANGEROUS
+        return info.protection == PermissionInfo.PROTECTION_DANGEROUS
     }
 
     @Suppress("DEPRECATION")

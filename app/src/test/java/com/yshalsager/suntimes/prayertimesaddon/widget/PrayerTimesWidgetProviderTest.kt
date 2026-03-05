@@ -9,6 +9,7 @@ import android.content.pm.ProviderInfo
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
+import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import com.yshalsager.suntimes.prayertimesaddon.R
@@ -94,6 +95,13 @@ class PrayerTimesWidgetProviderTest {
     private fun create_widget_and_provider(): Pair<Int, PrayerTimesWidgetProvider> {
         val shadow_widget_manager = shadowOf(app_widget_manager)
         val widget_id = shadow_widget_manager.createWidget(PrayerTimesWidgetProvider::class.java, R.layout.widget_prayer_times)
+        app_widget_manager.updateAppWidgetOptions(
+            widget_id,
+            Bundle().apply {
+                putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 250)
+                putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 140)
+            }
+        )
         val provider = shadow_widget_manager.getAppWidgetProviderFor(widget_id) as PrayerTimesWidgetProvider
         return widget_id to provider
     }
