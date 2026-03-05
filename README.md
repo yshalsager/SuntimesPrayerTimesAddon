@@ -10,7 +10,8 @@ Prayer times, prohibited (makruh) windows, and night portions as a **SuntimesWid
 
 This project intentionally avoids implementing astronomical algorithms: it delegates solar/shadow calculations to the installed **SuntimesWidget** app via its exported `ContentProvider`s.
 
-> Disclaimer: This project was developed with heavy use of AI assistance. Most of the code was generated or edited with OpenAI's Codex 5.3 model.
+> [!CAUTION]
+> **Disclaimer:** This project was developed with heavy use of AI assistance. Most of the code was generated or edited with OpenAI's Codex 5.3 model.
 
 ## Screenshots
 
