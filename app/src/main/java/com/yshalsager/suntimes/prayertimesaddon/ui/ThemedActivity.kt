@@ -33,5 +33,5 @@ open class ThemedActivity : AppCompatActivity() {
     }
 
     private fun prefs_sig(): String =
-        listOf(Prefs.get_palette(this), Prefs.get_theme(this), Prefs.get_language(this)).joinToString("|")
+        listOf(Prefs.get_palette(this), Prefs.get_theme(this)).joinToString("|")
 }

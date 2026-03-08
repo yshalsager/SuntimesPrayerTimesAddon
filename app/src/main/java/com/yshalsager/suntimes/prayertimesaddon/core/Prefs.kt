@@ -32,7 +32,6 @@ object Prefs {
     private const val k_gregorian_date_format = "gregorian_date_format"
     private const val k_hijri_variant = "hijri_variant"
     private const val k_hijri_day_offset = "hijri_day_offset"
-    private const val k_language = "language"
     private const val k_theme = "theme"
     private const val k_palette = "palette"
     private const val k_host_event_authority = "host_event_authority"
@@ -109,12 +108,6 @@ object Prefs {
 
     fun set_hijri_day_offset(context: Context, v: Int) =
         put_str(context, k_hijri_day_offset, v.coerceIn(-2, 2).toString())
-
-    fun get_language(context: Context): String =
-        get_str(context, k_language, "system")
-
-    fun set_language(context: Context, v: String) =
-        put_str(context, k_language, v)
 
     fun get_theme(context: Context): String =
         get_str(context, k_theme, theme_system)

@@ -26,7 +26,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.os.LocaleListCompat
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -39,6 +38,8 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.SettingsBackup
+import com.yshalsager.suntimes.prayertimesaddon.core.app_language_locales
+import com.yshalsager.suntimes.prayertimesaddon.core.current_app_language
 import com.yshalsager.suntimes.prayertimesaddon.core.open_url as open_external_url
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingDropdown
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingInlineTextField
@@ -81,7 +82,7 @@ private fun SettingsContent(
     var host_event_authority by rememberSaveable { mutableStateOf(HostResolver.ensure_default_selected(ctx) ?: "") }
     var host_location_label by remember { mutableStateOf(ctx.getString(R.string.unknown_location)) }
 
-    var language by rememberSaveable { mutableStateOf(Prefs.get_language(ctx)) }
+    var language by rememberSaveable { mutableStateOf(current_app_language()) }
     var theme by rememberSaveable { mutableStateOf(Prefs.get_theme(ctx)) }
     var palette by rememberSaveable { mutableStateOf(Prefs.get_palette(ctx)) }
     var gregorian_date_format by rememberSaveable { mutableStateOf(Prefs.get_gregorian_date_format(ctx)) }
@@ -112,7 +113,7 @@ private fun SettingsContent(
 
     fun reload_state_from_prefs() {
         host_event_authority = Prefs.get_host_event_authority(ctx) ?: HostResolver.ensure_default_selected(ctx) ?: ""
-        language = Prefs.get_language(ctx)
+        language = current_app_language()
         theme = Prefs.get_theme(ctx)
         palette = Prefs.get_palette(ctx)
         gregorian_date_format = Prefs.get_gregorian_date_format(ctx)
@@ -247,8 +248,7 @@ private fun SettingsContent(
         if (result.applied_count > 0) {
             reload_state_from_prefs()
             refresh_host_location()
-            val locales = if (language == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(language)
-            AppCompatDelegate.setApplicationLocales(locales)
+            AppCompatDelegate.setApplicationLocales(app_language_locales(language))
             val mode =
                 when (theme) {
                     Prefs.theme_light -> AppCompatDelegate.MODE_NIGHT_NO
@@ -288,10 +288,7 @@ private fun SettingsContent(
                     options = language_options(ctx),
                     on_select = { v ->
                         language = v
-                        Prefs.set_language(ctx, v)
-                        val locales =
-                            if (v == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(v)
-                        AppCompatDelegate.setApplicationLocales(locales)
+                        AppCompatDelegate.setApplicationLocales(app_language_locales(v))
                         WidgetUpdate.request(ctx)
                         activity?.recreate()
                     }

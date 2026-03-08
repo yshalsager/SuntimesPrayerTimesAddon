@@ -9,7 +9,6 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
-import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.ui.DaysActivity
 import com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity
 import com.yshalsager.suntimes.prayertimesaddon.ui.SettingsActivity
@@ -49,14 +48,11 @@ class FastlaneScreenshotsTest {
     private fun apply_locale(locale_tag: String) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val lang = if (locale_tag.startsWith("ar")) "ar" else "en"
-        val intent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        ActivityScenario.launch<Activity>(intent).use { scenario ->
-            scenario.onActivity { activity ->
-                Prefs.set_language(activity, lang)
-                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(lang))
-            }
-            SystemClock.sleep(400)
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(lang))
         }
+        val intent = Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        ActivityScenario.launch<Activity>(intent).use { SystemClock.sleep(400) }
     }
 
     private fun capture(activity_class: Class<out Activity>, name: String, wait_millis: Long) {

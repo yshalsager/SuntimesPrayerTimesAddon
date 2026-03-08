@@ -1,6 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
+import androidx.appcompat.app.AppCompatDelegate
 import org.json.JSONObject
 
 object SettingsBackup {
@@ -99,7 +100,7 @@ object SettingsBackup {
             "gregorian_date_format" to Prefs.get_gregorian_date_format(context),
             "hijri_variant" to Prefs.get_hijri_variant(context),
             "hijri_day_offset" to Prefs.get_hijri_day_offset(context),
-            "language" to Prefs.get_language(context),
+            "language" to current_app_language(),
             "theme" to Prefs.get_theme(context),
             "palette" to Prefs.get_palette(context),
             "method_preset" to Prefs.get_method_preset(context),
@@ -121,12 +122,16 @@ object SettingsBackup {
     private fun apply_values(context: Context, values: Map<String, Any>): Int {
         val editor = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit()
         values.forEach { (key, value) ->
+            if (key == "language") return@forEach
             when (value) {
                 is Boolean -> editor.putBoolean(key, value)
                 else -> editor.putString(key, value.toString())
             }
         }
         editor.apply()
+        (values["language"] as? String)?.let {
+            AppCompatDelegate.setApplicationLocales(app_language_locales(it))
+        }
         return values.size
     }
 

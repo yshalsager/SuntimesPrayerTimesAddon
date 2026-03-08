@@ -2,7 +2,6 @@ package com.yshalsager.suntimes.prayertimesaddon
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import net.time4j.android.ApplicationStarter
 
@@ -22,9 +21,5 @@ class PrayerTimesApplication : android.app.Application() {
                 else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
             }
         AppCompatDelegate.setDefaultNightMode(night_mode)
-
-        val lang = Prefs.get_language(this)
-        val locales = if (lang == "system") LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(lang)
-        AppCompatDelegate.setApplicationLocales(locales)
     }
 }
