@@ -34,7 +34,7 @@ class HostResolverTest {
 
     @Test
     fun ensure_default_selected_returns_existing_when_provider_resolves() {
-        register_provider(ad_hoc_authority, context.packageName)
+        register_provider(context.packageName)
         Prefs.set_host_event_authority(context, ad_hoc_authority)
 
         val selected = HostResolver.ensure_default_selected(context)
@@ -113,10 +113,10 @@ class HostResolverTest {
         shadow_package_manager.addOrUpdateProvider(provider)
     }
 
-    private fun register_provider(authority: String, package_name: String) {
+    private fun register_provider(package_name: String) {
         val provider =
             ProviderInfo().apply {
-                this.authority = authority
+                this.authority = ad_hoc_authority
                 this.packageName = package_name
                 this.applicationInfo = context.applicationInfo
                 this.name = "$package_name.TestProvider"

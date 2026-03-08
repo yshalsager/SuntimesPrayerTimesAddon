@@ -8,12 +8,13 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.text.TextUtils
 import android.text.format.DateFormat
 import android.view.View
 import android.widget.RemoteViews
+import androidx.core.content.edit
 import androidx.core.content.ContextCompat
 import androidx.core.os.ConfigurationCompat
+import androidx.core.text.layoutDirection
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
@@ -110,7 +111,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val method = format_method_summary(context)
         val summary = "$location \u00b7 $method"
 
-        val rtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL
+        val rtl = locale.layoutDirection == View.LAYOUT_DIRECTION_RTL
         val row_dir = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
 
         val is_friday =
@@ -136,7 +137,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
         val fajr_next =
             if (!widget_show_night) null
-            else query_addon_time(context, AddonEvent.prayer_fajr, add_days(day_start, 1, tz))
+            else query_addon_time(context, AddonEvent.prayer_fajr, next_day_start(day_start, tz))
         val night = if (!widget_show_night) null else calc_night(maghrib, fajr_next)
         val night_times =
             if (!widget_show_night) emptyList()
@@ -262,7 +263,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                 if (night_ok) night_times.forEach { add(it) }
 
                 // Midnight rollover
-                add(add_days(day_start, 1, tz) + 120_000L)
+                add(next_day_start(day_start, tz) + 120_000L)
             }
 
         schedule_next(context, now, candidates)
@@ -369,10 +370,10 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             timeInMillis
         }
 
-    private fun add_days(day_start: Long, days: Int, tz: TimeZone): Long =
+    private fun next_day_start(day_start: Long, tz: TimeZone): Long =
         Calendar.getInstance(tz).run {
             timeInMillis = day_start
-            add(Calendar.DAY_OF_YEAR, days)
+            add(Calendar.DAY_OF_YEAR, 1)
             timeInMillis
         }
 
@@ -399,7 +400,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val existing = prefs.getString(pref_alarm_token, null)
         if (!existing.isNullOrBlank()) return existing
         val created = UUID.randomUUID().toString()
-        prefs.edit().putString(pref_alarm_token, created).apply()
+        prefs.edit { putString(pref_alarm_token, created) }
         return created
     }
 

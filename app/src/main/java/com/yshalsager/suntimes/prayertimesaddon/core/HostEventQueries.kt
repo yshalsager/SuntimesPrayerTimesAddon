@@ -1,7 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import kotlin.math.abs
 import kotlin.math.atan
 import kotlin.math.tan
@@ -28,7 +28,7 @@ object HostEventQueries {
     private val sunpos_dec_cache = Lru<SunPosKey, Double?>(64)
 
     fun host_event_exists(context: Context, host_event_authority: String, event_id: String): Boolean {
-        val uri = Uri.parse("content://$host_event_authority/${AlarmEventContract.query_event_info}/$event_id")
+        val uri = "content://$host_event_authority/${AlarmEventContract.query_event_info}/$event_id".toUri()
         return try {
             context.contentResolver.query(uri, arrayOf(AlarmEventContract.column_event_name), null, null, null)
         } catch (_: SecurityException) {
@@ -74,7 +74,7 @@ object HostEventQueries {
             if (host_event_time_cache.containsKey(key)) return host_event_time_cache[key]
         }
 
-        val host_uri = Uri.parse("content://$host_event_authority/${AlarmEventContract.query_event_calc}/$base_event_id")
+        val host_uri = "content://$host_event_authority/${AlarmEventContract.query_event_calc}/$base_event_id".toUri()
         val base = try {
             context.contentResolver.query(host_uri, AlarmEventContract.query_event_calc_projection, selection, selectionArgs, null)
         } catch (_: SecurityException) {
@@ -159,7 +159,7 @@ object HostEventQueries {
             if (sunpos_dec_cache.containsKey(key)) return sunpos_dec_cache[key]
         }
 
-        val uri = Uri.parse("content://$calc_authority/${CalculatorConfigContract.query_sunpos}/$at_millis")
+        val uri = "content://$calc_authority/${CalculatorConfigContract.query_sunpos}/$at_millis".toUri()
         val v = try {
             context.contentResolver.query(uri, CalculatorConfigContract.projection_sunpos_dec, null, null, null)
         } catch (_: SecurityException) {

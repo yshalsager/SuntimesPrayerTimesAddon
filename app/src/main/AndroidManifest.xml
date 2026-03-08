@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
-<manifest xmlns:android='http://schemas.android.com/apk/res/android'>
+<manifest xmlns:android='http://schemas.android.com/apk/res/android'
+    xmlns:tools='http://schemas.android.com/tools'>
 
     <uses-permission android:name='suntimes.permission.READ_CALCULATOR' />
     <uses-permission android:name='suntimes.permission.ADDON' />
@@ -22,7 +23,8 @@
         android:label='@string/app_name'
         android:localeConfig='@xml/locales_config'
         android:supportsRtl='true'
-        android:theme='@style/Theme.PrayerTimesAddon'>
+        android:theme='@style/Theme.PrayerTimesAddon'
+        tools:targetApi='tiramisu'>
 
         <provider
             android:name='.provider.PrayerTimesProvider'

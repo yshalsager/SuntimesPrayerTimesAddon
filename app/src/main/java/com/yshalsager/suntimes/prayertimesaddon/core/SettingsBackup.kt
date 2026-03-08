@@ -1,6 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
+import androidx.core.content.edit
 import androidx.appcompat.app.AppCompatDelegate
 import org.json.JSONObject
 
@@ -120,15 +121,15 @@ object SettingsBackup {
     }
 
     private fun apply_values(context: Context, values: Map<String, Any>): Int {
-        val editor = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit()
-        values.forEach { (key, value) ->
-            if (key == "language") return@forEach
-            when (value) {
-                is Boolean -> editor.putBoolean(key, value)
-                else -> editor.putString(key, value.toString())
+        context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit {
+            values.forEach { (key, value) ->
+                if (key == "language") return@forEach
+                when (value) {
+                    is Boolean -> putBoolean(key, value)
+                    else -> putString(key, value.toString())
+                }
             }
         }
-        editor.apply()
         (values["language"] as? String)?.let {
             AppCompatDelegate.setApplicationLocales(app_language_locales(it))
         }

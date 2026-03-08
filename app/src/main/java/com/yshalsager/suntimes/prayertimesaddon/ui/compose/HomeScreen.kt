@@ -45,7 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -133,7 +133,9 @@ fun HomeScreen(
     on_open_alarm: (String) -> Unit,
     on_shift_day: (Int) -> Unit
 ) {
-    val ctx = LocalContext.current
+    val no_host_found = stringResource(R.string.no_host_found)
+    val install_host_action = stringResource(R.string.install_host_action)
+    val reinstall_addon_action = stringResource(R.string.reinstall_addon_action)
     val pager_state = rememberPagerState(initialPage = 1, pageCount = { 3 })
     var override_center_day by remember { mutableStateOf<HomeDayUiState?>(null) }
     val latest_state by rememberUpdatedState(state)
@@ -196,11 +198,11 @@ fun HomeScreen(
                         )
                     }
                 }
-                if (state.error == ctx.getString(R.string.no_host_found)) {
+                if (state.error == no_host_found) {
                     item {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             Button(onClick = on_install_host) {
-                                Text(text = ctx.getString(R.string.install_host_action))
+                                Text(text = install_host_action)
                             }
                         }
                     }
@@ -209,7 +211,7 @@ fun HomeScreen(
                     item {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             Button(onClick = on_reinstall_addon) {
-                                Text(text = ctx.getString(R.string.reinstall_addon_action))
+                                Text(text = reinstall_addon_action)
                             }
                         }
                     }
@@ -581,7 +583,7 @@ private fun WindowCard(item: HomeItemUi.Window) {
                 )
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = stringResourceCompat(tag),
+                    text = stringResource(tag),
                     color = on_container.copy(alpha = 0.65f),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold
@@ -656,7 +658,7 @@ private fun NowCard(item: HomeItemUi.Now) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResourceCompat(R.string.now),
+                text = stringResource(R.string.now),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold
@@ -670,10 +672,4 @@ private fun NowCard(item: HomeItemUi.Now) {
             )
         }
     }
-}
-
-@Composable
-private fun stringResourceCompat(id: Int): String {
-    // Avoid pulling in extra compose-resources helpers; this keeps deps small.
-    return androidx.compose.ui.platform.LocalContext.current.getString(id)
 }

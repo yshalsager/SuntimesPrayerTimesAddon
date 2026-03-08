@@ -1,6 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
+import androidx.core.content.edit
 
 object Prefs {
     const val isha_mode_angle = "angle"
@@ -50,8 +51,13 @@ object Prefs {
     private fun sp(context: Context) = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
 
     private fun get_str(context: Context, key: String, def: String): String = sp(context).getString(key, def) ?: def
-    private fun put_str(context: Context, key: String, v: String) = sp(context).edit().putString(key, v).apply()
-    private fun put_bool(context: Context, key: String, v: Boolean) = sp(context).edit().putBoolean(key, v).apply()
+    private fun put_str(context: Context, key: String, v: String) = sp(context).edit {putString(key, v)}
+    private fun put_bool(context: Context, key: String, v: Boolean) = sp(context).edit {
+        putBoolean(
+            key,
+            v
+        )
+    }
     private fun get_double(context: Context, key: String, def: Double): Double = get_str(context, key, def.toString()).toDoubleOrNull() ?: def
     private fun get_int(context: Context, key: String, def: Int): Int = get_str(context, key, def.toString()).toIntOrNull() ?: def
 
@@ -182,8 +188,7 @@ object Prefs {
         put_str(context, k_makruh_angle, angle.toString())
 
     fun get_makruh_sunrise_minutes(context: Context): Int {
-        val minutes = get_int(context, k_makruh_sunrise_minutes, 15)
-        return when (minutes) {
+        return when (val minutes = get_int(context, k_makruh_sunrise_minutes, 15)) {
             10, 15, 20 -> minutes
             else -> 15
         }

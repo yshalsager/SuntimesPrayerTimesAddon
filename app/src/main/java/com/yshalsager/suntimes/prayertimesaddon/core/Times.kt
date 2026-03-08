@@ -1,7 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
-import android.net.Uri
+import androidx.core.net.toUri
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 
 data class NightPortions(val midpoint: Long, val last_third: Long, val last_sixth: Long)
@@ -25,7 +25,7 @@ fun calc_night(maghrib_prev: Long?, fajr: Long?): NightPortions? {
 
 fun query_host_sun(context: Context, host_event_authority: String, at_millis: Long): SunTimes? {
     val calc_authority = HostConfigReader.calc_authority_from_event_authority(host_event_authority) ?: return null
-    val uri = Uri.parse("content://$calc_authority/${CalculatorConfigContract.query_sun}/$at_millis")
+    val uri = "content://$calc_authority/${CalculatorConfigContract.query_sun}/$at_millis".toUri()
     return try {
         context.contentResolver.query(uri, CalculatorConfigContract.projection_sun_basic, null, null, null)
     } catch (_: SecurityException) {
@@ -63,7 +63,7 @@ fun query_host_addon_time(context: Context, host_event_authority: String, event:
 fun query_addon_time(context: Context, event: AddonEvent, alarm_now: Long): Long? {
     val selection = event_calc_selection
     val selection_args = event_calc_args(alarm_now)
-    val uri = Uri.parse("content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_calc}/${event.event_id}")
+    val uri = "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_calc}/${event.event_id}".toUri()
     return try {
         context.contentResolver.query(
             uri,

@@ -41,6 +41,7 @@ import android.os.Handler
 import android.os.Looper
 import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
+import androidx.core.net.toUri
 
 class MainActivity : ThemedActivity() {
     companion object {
@@ -126,7 +127,7 @@ class MainActivity : ThemedActivity() {
             else -> return
         }
         incoming_intent.action = null
-        setIntent(incoming_intent)
+        intent = incoming_intent
     }
 
     private fun refresh_home() {
@@ -166,7 +167,7 @@ class MainActivity : ThemedActivity() {
                 ui.post {
                     if (this_refresh_id != refresh_id) return@post
                     apply_computed(computed)
-                    start_tick(host)
+                    start_tick()
                 }
             } catch (_: ArithmeticException) {
                 ui.post {
@@ -297,7 +298,6 @@ class MainActivity : ThemedActivity() {
 
             val sunrise = sun_today?.sunrise ?: q(AddonEvent.makruh_sunrise_start)
             val sunrise_end = q(AddonEvent.makruh_sunrise_end)
-            val zawal_end = dhuhr
             val zawal_start = if (sun_today?.noon != null) sun_today.noon - Prefs.get_zawal_minutes(this) * 60_000L else q(AddonEvent.makruh_zawal_start)
             val sunset_start = q(AddonEvent.makruh_sunset_start)
             val sunset_end = sun_today?.sunset ?: q(AddonEvent.makruh_sunset_end)
@@ -371,7 +371,7 @@ class MainActivity : ThemedActivity() {
             listOf(
                 true to Triple(R.string.prohibited_dawn, fajr, sunrise),
                 false to Triple(R.string.prohibited_sunrise, sunrise, sunrise_end),
-                false to Triple(R.string.prohibited_zawal, zawal_start, zawal_end),
+                false to Triple(R.string.prohibited_zawal, zawal_start, dhuhr),
                 true to Triple(R.string.prohibited_after_asr, asr, sunset_start),
                 false to Triple(R.string.prohibited_sunset, sunset_start, sunset_end)
             ).forEach { (is_light, spec) ->
@@ -425,8 +425,7 @@ class MainActivity : ThemedActivity() {
 
             val next_ui = if (!is_today || next_prayer == null) null else {
                 val nt = next_prayer.second
-                val pt = prev_prayer_time
-                val progress = if (pt != null && nt > pt) ((now - pt).toFloat() / (nt - pt).toFloat()).coerceIn(0f, 1f) else 0f
+                val progress = if (prev_prayer_time != null && nt > prev_prayer_time) ((now - prev_prayer_time).toFloat() / (nt - prev_prayer_time).toFloat()).coerceIn(0f, 1f) else 0f
                 NextPrayerUi(
                     label = getString(R.string.next_prayer_label, prayer_label(next_prayer.first, nt)),
                     time = time_only(nt),
@@ -485,7 +484,8 @@ class MainActivity : ThemedActivity() {
         val host_event_authority = HostResolver.ensure_default_selected(this) ?: return
         val host_package = packageManager.resolveContentProvider(host_event_authority, 0)?.packageName ?: return
         val component = ComponentName(host_package, "com.forrestguice.suntimeswidget.alarmclock.ui.AlarmClockActivity")
-        val event_uri = Uri.parse("content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}/$event_id").toString()
+        val event_uri =
+            "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}/$event_id".toUri().toString()
 
         val intent = Intent(AlarmClock.ACTION_SET_ALARM)
             .setComponent(component)
@@ -511,7 +511,7 @@ class MainActivity : ThemedActivity() {
         loc = c.loc
     }
 
-    private fun start_tick(host: String) {
+    private fun start_tick() {
         tick?.let(ui::removeCallbacks)
 
         fun same_day_start(millis: Long): Long {

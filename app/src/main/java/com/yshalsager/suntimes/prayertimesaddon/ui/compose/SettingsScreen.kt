@@ -1,3 +1,5 @@
+@file:android.annotation.SuppressLint("LocalContextGetResourceValueCall")
+
 package com.yshalsager.suntimes.prayertimesaddon.ui.compose
 
 import android.app.Activity
@@ -5,6 +7,7 @@ import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -724,7 +727,8 @@ private fun SettingsContent(
 
 private fun app_version_label(ctx: android.content.Context): String {
     val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
-    return "v${info.versionName} (${info.longVersionCode})"
+    val version_code = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
+    return "v${info.versionName} ($version_code)"
 }
 
 private fun language_options(ctx: android.content.Context): List<Pair<String, String>> =

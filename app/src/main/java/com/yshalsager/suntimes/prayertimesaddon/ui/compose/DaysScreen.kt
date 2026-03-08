@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.DayItem
 import com.yshalsager.suntimes.prayertimesaddon.core.DayMeta
@@ -47,7 +48,7 @@ import kotlinx.coroutines.flow.filterNotNull
 
 @Composable
 fun DaysScreen(vm: DaysViewModel, on_back: () -> Unit, on_install_host: () -> Unit, on_reinstall_addon: () -> Unit) {
-    val ctx = LocalContext.current
+    LocalContext.current
 
     val permission_request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) vm.load(force = true)
@@ -57,6 +58,8 @@ fun DaysScreen(vm: DaysViewModel, on_back: () -> Unit, on_install_host: () -> Un
     val skel = state.skeleton
     val list_state = rememberLazyListState()
     var did_scroll_to_today by rememberSaveable { mutableStateOf(false) }
+    val days_title = stringResource(R.string.days_title)
+    val nav_cancel = stringResource(android.R.string.cancel)
 
     LaunchedEffect(skel?.days?.size, skel?.today_pos) {
         if (did_scroll_to_today) return@LaunchedEffect
@@ -70,28 +73,28 @@ fun DaysScreen(vm: DaysViewModel, on_back: () -> Unit, on_install_host: () -> Un
 
     LaunchedEffect(skel?.days?.size) {
         if (skel == null) return@LaunchedEffect
-        snapshotFlow<Pair<Int, Int>?> { list_state.visible_range() }
+        snapshotFlow { list_state.visible_range() }
             .filterNotNull()
             .distinctUntilChanged()
             .collect { range: Pair<Int, Int> -> vm.ensure_range_loaded(range.first, range.second) }
     }
 
     AppScaffold(
-        title = state.title.ifBlank { ctx.getString(R.string.days_title) },
-        nav_content_description = ctx.getString(android.R.string.cancel),
+        title = state.title.ifBlank { days_title },
+        nav_content_description = nav_cancel,
         on_nav = on_back,
         actions = {
             IconButton(onClick = { vm.shift_month(-1) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = ctx.getString(R.string.prev_month),
+                    contentDescription = stringResource(R.string.prev_month),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
             IconButton(onClick = { vm.shift_month(1) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = ctx.getString(R.string.next_month),
+                    contentDescription = stringResource(R.string.next_month),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
@@ -119,7 +122,10 @@ private fun DaysContent(
     on_install_host: () -> Unit,
     on_reinstall_addon: () -> Unit
 ) {
-    val ctx = LocalContext.current
+    val no_host_found = stringResource(R.string.no_host_found)
+    val grant_permission = stringResource(R.string.grant_permission)
+    val install_host_action = stringResource(R.string.install_host_action)
+    val reinstall_addon_action = stringResource(R.string.reinstall_addon_action)
     Column(Modifier.padding(padding)) {
         if (state.error != null) {
             Card(
@@ -134,19 +140,19 @@ private fun DaysContent(
                     if (perm != null) {
                         Spacer(Modifier.height(10.dp))
                         Button(onClick = { on_request_permission(perm) }) {
-                            Text(text = ctx.getString(R.string.grant_permission))
+                            Text(text = grant_permission)
                         }
                     }
-                    if (state.error == ctx.getString(R.string.no_host_found)) {
+                    if (state.error == no_host_found) {
                         Spacer(Modifier.height(10.dp))
                         Button(onClick = on_install_host) {
-                            Text(text = ctx.getString(R.string.install_host_action))
+                            Text(text = install_host_action)
                         }
                     }
                     if (state.show_reinstall_addon) {
                         Spacer(Modifier.height(10.dp))
                         Button(onClick = on_reinstall_addon) {
-                            Text(text = ctx.getString(R.string.reinstall_addon_action))
+                            Text(text = reinstall_addon_action)
                         }
                     }
                 }
@@ -170,6 +176,7 @@ private fun DaysContent(
 @Composable
 private fun DayCard(meta: DayMeta, item: DayItem?) {
     val ctx = LocalContext.current
+    val today = stringResource(R.string.today)
     val month_basis = Prefs.get_days_month_basis(ctx)
     val show_night = item?.let { it.night_midpoint != null && it.night_last_third != null && it.night_last_sixth != null } ?: false
     val has_prohibited =
@@ -216,7 +223,7 @@ private fun DayCard(meta: DayMeta, item: DayItem?) {
                 }
                 if (item?.is_today == true || meta.is_today) {
                     Text(
-                        text = ctx.getString(R.string.today),
+                        text = today,
                         modifier = Modifier.padding(start = 8.dp),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
@@ -251,15 +258,19 @@ private fun DayCard(meta: DayMeta, item: DayItem?) {
 
 @Composable
 private fun PrayerRow(is_friday: Boolean, fajr: String, duha: String?, dhuhr: String, asr: String, maghrib: String, isha: String) {
-    val ctx = LocalContext.current
-    val dhuhr_label = if (is_friday) ctx.getString(R.string.event_prayer_jummah) else ctx.getString(R.string.event_prayer_dhuhr)
+    val fajr_label = stringResource(R.string.event_prayer_fajr)
+    val duha_label = stringResource(R.string.event_prayer_duha)
+    val dhuhr_label = if (is_friday) stringResource(R.string.event_prayer_jummah) else stringResource(R.string.event_prayer_dhuhr)
+    val asr_label = stringResource(R.string.event_prayer_asr)
+    val maghrib_label = stringResource(R.string.event_prayer_maghrib)
+    val isha_label = stringResource(R.string.event_prayer_isha)
     val labels = buildList {
-        add(Triple(ctx.getString(R.string.event_prayer_fajr), fajr, false))
-        if (duha != null) add(Triple(ctx.getString(R.string.event_prayer_duha), duha, true))
+        add(Triple(fajr_label, fajr, false))
+        if (duha != null) add(Triple(duha_label, duha, true))
         add(Triple(dhuhr_label, dhuhr, false))
-        add(Triple(ctx.getString(R.string.event_prayer_asr), asr, false))
-        add(Triple(ctx.getString(R.string.event_prayer_maghrib), maghrib, false))
-        add(Triple(ctx.getString(R.string.event_prayer_isha), isha, false))
+        add(Triple(asr_label, asr, false))
+        add(Triple(maghrib_label, maghrib, false))
+        add(Triple(isha_label, isha, false))
     }
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -293,15 +304,14 @@ private fun LazyListState.visible_range(): Pair<Int, Int>? {
 
 @Composable
 private fun ProhibitedRow(item: DayItem) {
-    val ctx = LocalContext.current
     val light_color = MaterialTheme.colorScheme.primary
     val heavy_color = MaterialTheme.colorScheme.onSurfaceVariant
     val labels = listOf(
-        Triple(ctx.getString(R.string.prohibited_dawn), item.prohibited_dawn, true),
-        Triple(ctx.getString(R.string.prohibited_sunrise), item.prohibited_sunrise, false),
-        Triple(ctx.getString(R.string.prohibited_zawal), item.prohibited_zawal, false),
-        Triple(ctx.getString(R.string.prohibited_after_asr), item.prohibited_after_asr, true),
-        Triple(ctx.getString(R.string.prohibited_sunset), item.prohibited_sunset, false)
+        Triple(stringResource(R.string.prohibited_dawn), item.prohibited_dawn, true),
+        Triple(stringResource(R.string.prohibited_sunrise), item.prohibited_sunrise, false),
+        Triple(stringResource(R.string.prohibited_zawal), item.prohibited_zawal, false),
+        Triple(stringResource(R.string.prohibited_after_asr), item.prohibited_after_asr, true),
+        Triple(stringResource(R.string.prohibited_sunset), item.prohibited_sunset, false)
     )
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -317,11 +327,10 @@ private fun ProhibitedRow(item: DayItem) {
 
 @Composable
 private fun NightRow(item: DayItem) {
-    val ctx = LocalContext.current
     val labels = listOf(
-        ctx.getString(R.string.night_midpoint) to item.night_midpoint,
-        ctx.getString(R.string.night_last_third) to item.night_last_third,
-        ctx.getString(R.string.night_last_sixth) to item.night_last_sixth
+        stringResource(R.string.night_midpoint) to item.night_midpoint,
+        stringResource(R.string.night_last_third) to item.night_last_third,
+        stringResource(R.string.night_last_sixth) to item.night_last_sixth
     )
 
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {

@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 
@@ -41,5 +42,5 @@ fun EventPickerScreen(
 
 @Composable
 private fun title_for(item: AddonEvent): String {
-    return androidx.compose.ui.platform.LocalContext.current.getString(item.title_res)
+    return stringResource(item.title_res)
 }
