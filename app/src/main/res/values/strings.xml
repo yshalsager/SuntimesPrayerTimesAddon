@@ -139,7 +139,6 @@
     <string name='next_month'>Next month</string>
     <string name='next_prayer_label'>Next Prayer: %1$s</string>
     <string name='in_countdown'>in %1$s</string>
-    <string name='prohibited_tag'>Prohibited</string>
     <string name='prohibited_tag_light'>Prohibited</string>
     <string name='prohibited_tag_heavy'>Prohibited</string>
     <string name='duration_minutes'>%1$d min duration</string>
@@ -171,7 +170,7 @@
     <string name='widget_show_prohibited_title'>Show prohibited times</string>
     <string name='widget_show_night_portions_title'>Show night portions</string>
     <string name='widget_prayer_times_today'>Prayer Times (Today)</string>
-    <string name='widget_prayer_times_today_desc'>Todays prayer times</string>
+    <string name='widget_prayer_times_today_desc'>Today\'s prayer times</string>
 
     <string name='no_host_found'>No SuntimesWidget host found (install SuntimesWidget first).</string>
     <string name='unknown_location'>Unknown location</string>

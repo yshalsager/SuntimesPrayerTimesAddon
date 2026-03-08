@@ -204,13 +204,12 @@ fun build_day_item(
         if (!show_prohibited) null
         else if (sun?.noon != null) sun.noon - Prefs.get_zawal_minutes(context) * 60_000L
         else q(AddonEvent.makruh_zawal_start)
-    val zawal_end = dhuhr
     val sunset_start = if (!show_prohibited) null else q(AddonEvent.makruh_sunset_start)
     val sunset = if (!show_prohibited) null else sun?.sunset ?: q(AddonEvent.makruh_sunset_end)
 
     val prohibited_dawn = if (!show_prohibited) null else range(fajr, sunrise)
     val prohibited_sunrise = if (!show_prohibited) null else range(sunrise, sunrise_end)
-    val prohibited_zawal = if (!show_prohibited) null else range(zawal_start, zawal_end)
+    val prohibited_zawal = if (!show_prohibited) null else range(zawal_start, dhuhr)
     val prohibited_after_asr = if (!show_prohibited) null else range(asr, sunset_start)
     val prohibited_sunset = if (!show_prohibited) null else range(sunset_start, sunset)
 

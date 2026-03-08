@@ -69,7 +69,7 @@ class PrayerTimesProvider : ContentProvider() {
     private fun query_types(context: Context, projection: Array<String>?): Cursor {
         val cols = projection ?: AlarmEventContract.query_event_types_projection
         val c = MatrixCursor(cols)
-        for (t in AddonEventType.values()) {
+        for (t in AddonEventType.entries) {
             val row = arrayOfNulls<Any>(cols.size)
             cols.indices.forEach { i ->
                 row[i] = when (cols[i]) {
@@ -90,7 +90,7 @@ class PrayerTimesProvider : ContentProvider() {
     ): Cursor {
         val cols = projection ?: AlarmEventContract.query_event_info_projection
         val c = MatrixCursor(cols)
-        for (e in AddonEvent.values()) {
+        for (e in AddonEvent.entries) {
             if (event_id == null || e.event_id == event_id) c.addRow(event_info_row(context, cols, e))
         }
         return c
@@ -130,7 +130,7 @@ class PrayerTimesProvider : ContentProvider() {
         val c = MatrixCursor(cols)
 
         val selected = HostResolver.ensure_default_selected(context) ?: return c
-        val addon_event = AddonEvent.values().firstOrNull { it.event_id == addon_event_id } ?: return c
+        val addon_event = AddonEvent.entries.firstOrNull { it.event_id == addon_event_id } ?: return c
 
         if (addon_event.type == AddonEventType.night) {
             val t = calc_night_event_time(context, selected, addon_event, selection, selectionArgs)
@@ -139,12 +139,10 @@ class PrayerTimesProvider : ContentProvider() {
         }
 
         val host_query = AddonEventMapper.map_event(context, addon_event) ?: return c
-
-        var t: Long? = null
-        if (addon_event == AddonEvent.prayer_asr || addon_event == AddonEvent.makruh_after_asr_start) {
-            t = HostEventQueries.query_asr_time(context, selected, selection, selectionArgs)
+        var t = if (addon_event == AddonEvent.prayer_asr || addon_event == AddonEvent.makruh_after_asr_start) {
+            HostEventQueries.query_asr_time(context, selected, selection, selectionArgs)
         } else {
-            t = HostEventQueries.query_host_event_time(context, selected, host_query.base_event_id, host_query.delta_millis, selection, selectionArgs)
+            HostEventQueries.query_host_event_time(context, selected, host_query.base_event_id, host_query.delta_millis, selection, selectionArgs)
         }
 
         if (t != null) c.addRow(calc_row(cols, addon_event, t))

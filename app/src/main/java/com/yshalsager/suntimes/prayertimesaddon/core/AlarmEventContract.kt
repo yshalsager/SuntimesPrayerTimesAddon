@@ -1,7 +1,6 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 object AlarmEventContract {
-    const val required_permission = "suntimes.permission.READ_CALCULATOR"
 
     const val column_config_provider = "provider"
 

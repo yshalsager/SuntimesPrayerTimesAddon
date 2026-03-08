@@ -97,10 +97,6 @@
     <string name='about_bugs_summary'>الإبلاغ عن المشاكل ومتابعة إصلاحها</string>
     <string name='about_support_title'>ادعم</string>
     <string name='about_support_summary'>ادعم تطوير التطبيق</string>
-    <string name='about_contribute_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon</string>
-    <string name='about_bugs_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon/issues</string>
-    <string name='about_support_url' translatable='false'>https://github.com/yshalsager/SuntimesPrayerTimesAddon</string>
-
     <string name='makruh_preset_title'>إعداد أوقات النهي</string>
     <string name='makruh_sunrise_minutes_title'>نهاية نهي الشروق</string>
     <string name='makruh_sunrise_minutes_10'>بعد الشروق بـ ١٠ دقائق</string>
@@ -136,7 +132,6 @@
     <string name='next_month'>الشهر التالي</string>
     <string name='next_prayer_label'>الصلاة القادمة: %1$s</string>
     <string name='in_countdown'>بعد %1$s</string>
-    <string name='prohibited_tag'>وقت نهي</string>
     <string name='prohibited_tag_light'>وقت نهي</string>
     <string name='prohibited_tag_heavy'>وقت نهي</string>
     <string name='duration_minutes'>المدة %1$d دقيقة</string>
