@@ -28,7 +28,7 @@
 
         <provider
             android:name='.provider.PrayerTimesProvider'
-            android:authorities='com.yshalsager.suntimes.prayertimesaddon.event.provider'
+            android:authorities='${applicationId}.event.provider'
             android:exported='true' />
 
         <activity
@@ -41,7 +41,7 @@
             </intent-filter>
             <meta-data
                 android:name='EventInfoProvider'
-                android:value='content://com.yshalsager.suntimes.prayertimesaddon.event.provider' />
+                android:value='content://${applicationId}.event.provider' />
         </activity>
 
         <activity
@@ -97,7 +97,7 @@
                 <action android:name='android.intent.action.TIMEZONE_CHANGED' />
                 <action android:name='android.intent.action.DATE_CHANGED' />
                 <action android:name='android.intent.action.LOCALE_CHANGED' />
-                <action android:name='com.yshalsager.suntimes.prayertimesaddon.action.WIDGET_ALARM' />
+                <action android:name='${applicationId}.action.WIDGET_ALARM' />
             </intent-filter>
 
             <meta-data

@@ -23,6 +23,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix '.debug'
+        }
+
         release {
             minifyEnabled true
             shrinkResources = true
@@ -32,6 +36,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {

@@ -17,6 +17,7 @@ import androidx.core.os.ConfigurationCompat
 import androidx.core.text.layoutDirection
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
+import com.yshalsager.suntimes.prayertimesaddon.core.AppIds
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
@@ -405,7 +406,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        const val action_alarm = "com.yshalsager.suntimes.prayertimesaddon.action.WIDGET_ALARM"
+        val action_alarm = AppIds.action_widget_alarm
         private const val extra_alarm_token = "alarm_token"
         private const val pref_alarm_token = "widget_alarm_token"
     }

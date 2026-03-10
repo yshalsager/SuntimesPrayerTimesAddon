@@ -11,6 +11,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEventMapper
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEventType
 import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
+import com.yshalsager.suntimes.prayertimesaddon.core.AppIds
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostEventQueries
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
@@ -21,7 +22,7 @@ import java.util.Calendar
 
 class PrayerTimesProvider : ContentProvider() {
     companion object {
-        const val authority = "com.yshalsager.suntimes.prayertimesaddon.event.provider"
+        val authority = AppIds.event_provider_authority
 
         private const val match_events = 1
         private const val match_event = 2
