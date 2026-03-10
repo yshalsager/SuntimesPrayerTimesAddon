@@ -6,9 +6,9 @@
 [![Design](https://img.shields.io/badge/Material-Material%203-757575)](https://m3.material.io/)
 [![minSdk](https://img.shields.io/badge/minSdk-23-2ea44f)](https://developer.android.com/about/versions/android-6.0)
 
-مواقيت الصلاة، أوقات النهي (المكروه) وأجزاء الليل كـ **Addon** لتطبيق **SuntimesWidget** وكـ **مصدر تقاويم** لتطبيقات Suntimes.
+مواقيت الصلاة، أوقات النهي (المكروه) وأجزاء الليل كـ **Addon** لتطبيق **[SuntimesWidget](https://forrestguice.github.io/Suntimes/download/)** وكـ **مصدر تقاويم** لتطبيق **[Suntimes Calendars](https://forrestguice.github.io/Suntimes/help/addons/suntimescalendars/)**.
 
-هذا المشروع يتجنب عمداً تنفيذ الخوارزميات الفلكية: بدلاً من ذلك يقوم بتفويض حسابات الشمس/الظل إلى تطبيق **SuntimesWidget** المثبت عبر `ContentProvider` المصدّرة منه.
+هذا المشروع يتجنب عمداً تنفيذ الخوارزميات الفلكية: بدلاً من ذلك يقوم بتفويض حسابات الشمس/الظل إلى تطبيق **[SuntimesWidget](https://forrestguice.github.io/Suntimes/download/)** المثبت عبر `ContentProvider` المصدّرة منه.
 
 > [!CAUTION]
 > **تنبيه:** تم تطوير هذا المشروع مع اعتماد كبير على مساعدات الذكاء الاصطناعي. معظم الشيفرة تم توليدها أو تعديلها باستخدام نموذج Codex 5.3 من OpenAI.

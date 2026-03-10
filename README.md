@@ -6,9 +6,9 @@
 [![Design](https://img.shields.io/badge/Material-Material%203-757575)](https://m3.material.io/)
 [![minSdk](https://img.shields.io/badge/minSdk-23-2ea44f)](https://developer.android.com/about/versions/android-6.0)
 
-Prayer times, prohibited (makruh) windows, and night portions as a **SuntimesWidget addon** and **Suntimes calendar source**.
+Prayer times, prohibited (makruh) windows, and night portions as a **[SuntimesWidget](https://forrestguice.github.io/Suntimes/download/) addon** and **[Suntimes Calendars](https://forrestguice.github.io/Suntimes/help/addons/suntimescalendars/) source**.
 
-This project intentionally avoids implementing astronomical algorithms: it delegates solar/shadow calculations to the installed **SuntimesWidget** app via its exported `ContentProvider`s.
+This project intentionally avoids implementing astronomical algorithms: it delegates solar/shadow calculations to the installed **[SuntimesWidget](https://forrestguice.github.io/Suntimes/download/)** app via its exported `ContentProvider`s.
 
 > [!CAUTION]
 > **Disclaimer:** This project was developed with heavy use of AI assistance. Most of the code was generated or edited with OpenAI's Codex 5.3 model.
