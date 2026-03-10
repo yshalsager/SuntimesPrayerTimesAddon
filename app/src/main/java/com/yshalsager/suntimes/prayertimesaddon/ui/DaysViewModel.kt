@@ -1,6 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.ui
 
 import android.app.Application
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
@@ -31,6 +32,39 @@ data class DaysUiState(
     val required_permission: String? = null,
     val show_reinstall_addon: Boolean = false
 )
+
+internal fun build_days_sig(
+    ctx: Context,
+    host: String,
+    month_anchor: Long?,
+    show_prohibited: Boolean,
+    show_night: Boolean,
+    show_hijri_effective: Boolean,
+    month_basis: String,
+    hijri_variant: String,
+    hijri_offset: Int
+): String =
+    listOf(
+        host,
+        month_anchor?.toString() ?: "",
+        show_prohibited.toString(),
+        show_night.toString(),
+        show_hijri_effective.toString(),
+        month_basis,
+        hijri_variant,
+        hijri_offset.toString(),
+        Prefs.get_gregorian_date_format(ctx),
+        Prefs.get_method_preset(ctx),
+        Prefs.get_fajr_angle(ctx).toString(),
+        Prefs.get_isha_mode(ctx),
+        Prefs.get_isha_angle(ctx).toString(),
+        Prefs.get_isha_fixed_minutes(ctx).toString(),
+        Prefs.get_asr_factor(ctx).toString(),
+        Prefs.get_maghrib_offset_minutes(ctx).toString(),
+        Prefs.get_makruh_angle(ctx).toString(),
+        Prefs.get_makruh_sunrise_minutes(ctx).toString(),
+        Prefs.get_zawal_minutes(ctx).toString()
+    ).joinToString("|")
 
 class DaysViewModel(app: Application) : AndroidViewModel(app) {
     private val main = Handler(Looper.getMainLooper())
@@ -83,26 +117,7 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
         val hijri_offset = Prefs.get_hijri_day_offset(ctx)
 
         val show_hijri_effective = show_hijri || month_basis == Prefs.days_month_basis_hijri
-        val sig =
-            listOf(
-                host,
-                month_anchor?.toString() ?: "",
-                show_prohibited.toString(),
-                show_night.toString(),
-                show_hijri_effective.toString(),
-                month_basis,
-                hijri_variant,
-                hijri_offset.toString(),
-                Prefs.get_method_preset(ctx),
-                Prefs.get_fajr_angle(ctx).toString(),
-                Prefs.get_isha_mode(ctx),
-                Prefs.get_isha_angle(ctx).toString(),
-                Prefs.get_isha_fixed_minutes(ctx).toString(),
-                Prefs.get_asr_factor(ctx).toString(),
-                Prefs.get_maghrib_offset_minutes(ctx).toString(),
-                Prefs.get_makruh_angle(ctx).toString(),
-                Prefs.get_zawal_minutes(ctx).toString()
-            ).joinToString("|")
+        val sig = build_days_sig(ctx, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
 
         if (!force && sig == last_sig && (state.loading || state.skeleton != null)) return
 

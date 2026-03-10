@@ -52,7 +52,12 @@ fun query_host_addon_time(context: Context, host_event_authority: String, event:
 
     if (event.type == AddonEventType.night) return null
 
-    if (event == AddonEvent.prayer_asr) {
+    if (event == AddonEvent.prayer_duha || event == AddonEvent.makruh_sunrise_end) {
+        val sunrise = query_host_sun(context, host_event_authority, alarm_now)?.sunrise ?: return null
+        return sunrise + Prefs.get_makruh_sunrise_minutes(context) * 60_000L
+    }
+
+    if (event == AddonEvent.prayer_asr || event == AddonEvent.makruh_after_asr_start) {
         return HostEventQueries.query_asr_time(context, host_event_authority, selection, selection_args)
     }
 
