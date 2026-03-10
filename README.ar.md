@@ -6,7 +6,7 @@
 [![Design](https://img.shields.io/badge/Material-Material%203-757575)](https://m3.material.io/)
 [![minSdk](https://img.shields.io/badge/minSdk-23-2ea44f)](https://developer.android.com/about/versions/android-6.0)
 
-مواقيت الصلاة، أوقات النهي (المكروه) وأجزاء الليل كـ **Addon** لتطبيق **SuntimesWidget**.
+مواقيت الصلاة، أوقات النهي (المكروه) وأجزاء الليل كـ **Addon** لتطبيق **SuntimesWidget** وكـ **مصدر تقاويم** لتطبيقات Suntimes.
 
 هذا المشروع يتجنب عمداً تنفيذ الخوارزميات الفلكية: بدلاً من ذلك يقوم بتفويض حسابات الشمس/الظل إلى تطبيق **SuntimesWidget** المثبت عبر `ContentProvider` المصدّرة منه.
 
@@ -63,9 +63,14 @@
   - الصلاة (الفجر، الضحى، الظهر/الجمعة، العصر، المغرب، العشاء)
   - حدود/نوافذ أوقات النهي (المكروه)
   - أجزاء الليل (منتصف الليل، الثلث الأخير، السدس الأخير)
+- يوفّر ثلاثة تقاويم للقراءة فقط يمكن لتطبيقات تقاويم Suntimes اكتشافها:
+  - `prayers`
+  - `makruh`
+  - `night`
 - يمكن الضغط على الصلاة/حدث الليل داخل Home لفتح محرّر منبّهات المضيف مع اختيار الحدث مسبقاً (منبّهات الأحداث تتتبع تغيّر المواقيت تلقائياً، ويمكن ضبط الإزاحة +/-30 دقيقة من واجهة المضيف).
 - يطبّق تمييزاً بصرياً لمستويات أوقات النهي (خفيف: من الفجر/بعد العصر، شديد: الشروق/الاستواء/الغروب) في الخط الزمني وبطاقات التقويم وملصقات الودجت.
 - يوفّر ويدجت على الشاشة الرئيسية ("Prayer Times (Today)") بنفس نموذج بطاقة اليوم.
+- يوفّر اختصارات للتطبيق تفتح Days و Settings عبر روابط عميقة `prayertimes://shortcuts/...`.
 - يدعم الإنجليزية + العربية وواجهات RTL.
 - يدعم وضع الثيم (النظام/فاتح/داكن) + اختيار Palette:
   - Parchment / Sapphire / Rose
@@ -81,7 +86,7 @@
 
 التطبيق مقسّم إلى:
 - `core/*`: اكتشاف المضيف، العقود (contracts)، خرائط معرّفات الأحداث، وتحويرات/مشتقات صغيرة (أجزاء الليل، التاريخ الهجري)
-- `provider/*`: `ContentProvider` الخاص بالإضافة (للتكامل مع SuntimesWidget)
+- `provider/*`: `ContentProvider` الخاصة بالإضافة للتكامل مع المنبّهات وتغذية التقاويم
 - `ui/*` و`ui/compose/*`: واجهات Compose (Home/Days/Settings/Event Picker)
 - `widget/*`: ويدجت RemoteViews + جدولة التحديثات
 
@@ -109,6 +114,11 @@
 |  - used by SuntimesWidget alarms          |
 |  - also used by widget + UI for eventCalc |
 |                                           |
+| Calendar Provider (exported)              |
+|  - content://...calendar.provider/...     |
+|  - used by Suntimes calendar discovery    |
+|  - exposes prayers/makruh/night feeds     |
+|                                           |
 | Widget (RemoteViews)                      |
 |  - reads prefs + provider results         |
 +-------------------------------------------+
@@ -125,22 +135,49 @@
 
 ## تكامل المضيف (Addon Contracts)
 
-يكتشف SuntimesWidget الإضافات عبر Activity مُصدّرة تستقبل `suntimes.action.ADDON_EVENT` وتحتوي على `meta-data` يشير إلى URI الخاص بالـ provider.
+يكتشف Suntimes هذا التطبيق عبر سطحين مُصدّرين:
+- اكتشاف إضافة المنبّهات عبر `suntimes.action.ADDON_EVENT`
+- اكتشاف التقاويم عبر `suntimes.action.ADD_CALENDAR`
 
 هذا المشروع يوفّر:
 - `AddonRegistrationActivity` (واجهة اكتشاف بسيطة)
 - `PrayerTimesProvider` (مُصدّر) يطبق نفس عقد مزود الأحداث الذي يتوقعه SuntimesWidget
 - `EventPickerActivity` لـ `suntimes.action.PICK_EVENT`
+- `CalendarDiscoveryAlias` لاكتشاف التقاويم
+- `PrayerTimesCalendarProvider` (مُصدّر) لعرض تقاويم الصلاة/المكروه/الليل
 
-### الـ Provider المُصدّر
+يتم اشتقاق الـ authorities والإجراءات الداخلية من `${applicationId}`، لذلك يمكن تثبيت نسختي debug وrelease معاً بدون تعارض في الـ authorities أو الـ actions.
+
+### مزود الأحداث
 
 Authority:
-- `com.yshalsager.suntimes.prayertimesaddon.event.provider`
+- `${applicationId}.event.provider`
 
 Paths:
 - `content://.../eventTypes`
 - `content://.../eventInfo/<eventId>`
 - `content://.../eventCalc/<eventId>`
+
+### مزود التقاويم
+
+Authority:
+- `${applicationId}.calendar.provider`
+
+مراجع الاكتشاف:
+- `content://.../calendar.provider/prayers/`
+- `content://.../calendar.provider/makruh/`
+- `content://.../calendar.provider/night/`
+
+المسارات المدعومة:
+- `content://.../<source>/calendarInfo`
+- `content://.../<source>/calendarContent/<windowStart>-<windowEnd>`
+- `content://.../<source>/calendarTemplateStrings`
+- `content://.../<source>/calendarTemplateFlags`
+
+سلوك التقاويم:
+- `prayers` يصدّر أحداثاً نقطية للفجر والضحى والظهر/الجمعة والعصر والمغرب والعشاء
+- `makruh` يصدّر أحداثاً على شكل نطاقات لفترات الفجر والشروق والزوال وما بعد العصر والغروب
+- `night` يصدّر أحداثاً نقطية لمنتصف الليل والثلث الأخير والسدس الأخير
 
 ### الأحداث المتاحة
 
@@ -223,8 +260,14 @@ Paths:
 # Build debug APK
 mise x java -- ./gradlew :app:assembleDebug
 
+# Build release APK
+mise x java -- ./gradlew :app:assembleRelease
+
 # Run unit tests
 mise x java -- ./gradlew :app:testDebugUnitTest
+
+# Run instrumentation screenshots on a connected emulator/device
+mise x java -- ./gradlew :app:connectedDebugAndroidTest
 ```
 
 ## هيكل المشروع

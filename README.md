@@ -6,7 +6,7 @@
 [![Design](https://img.shields.io/badge/Material-Material%203-757575)](https://m3.material.io/)
 [![minSdk](https://img.shields.io/badge/minSdk-23-2ea44f)](https://developer.android.com/about/versions/android-6.0)
 
-Prayer times, prohibited (makruh) windows, and night portions as a **SuntimesWidget addon**.
+Prayer times, prohibited (makruh) windows, and night portions as a **SuntimesWidget addon** and **Suntimes calendar source**.
 
 This project intentionally avoids implementing astronomical algorithms: it delegates solar/shadow calculations to the installed **SuntimesWidget** app via its exported `ContentProvider`s.
 
@@ -63,9 +63,14 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
   - prayers (Fajr, Duha, Dhuhr/Jumu'ah, Asr, Maghrib, Isha)
   - prohibited (makruh) boundaries and windows
   - night portions (midpoint, last third, last sixth)
+- Exposes three read-only calendars to Suntimes calendar clients:
+  - `prayers`
+  - `makruh`
+  - `night`
 - Tap a prayer/night item on Home to open the host alarm editor prefilled for that event (event-based alarms automatically track changing prayer times; offsets like +/-30m are supported by the host UI).
 - Uses distinct makruh levels in UI (light: dawn/after-asr, heavy: sunrise/zawal/sunset) across timeline, calendar cards, and widget labels.
 - Provides an Android home-screen widget ("Prayer Times (Today)") with the same day-card model.
+- Provides app shortcuts for Days and Settings via `prayertimes://shortcuts/...` deep links.
 - Supports English + Arabic and RTL.
 - Supports theme mode (System/Light/Dark) + palette selection:
   - Parchment / Sapphire / Rose
@@ -81,7 +86,7 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
 
 The app is split into:
 - `core/*`: host discovery, provider contracts, event-id mapping, and small derived calculations (night portions, Hijri date)
-- `provider/*`: addon `ContentProvider` implementation for SuntimesWidget integration
+- `provider/*`: addon `ContentProvider` implementations for alarms and calendar feeds
 - `ui/*` and `ui/compose/*`: Compose UI (Home/Days/Settings/Event Picker)
 - `widget/*`: RemoteViews widget and update scheduling
 
@@ -109,6 +114,11 @@ The app is split into:
 |  - used by SuntimesWidget alarms          |
 |  - also used by widget for eventCalc      |
 |                                           |
+| Calendar Provider (exported)              |
+|  - content://...calendar.provider/...     |
+|  - used by Suntimes calendar discovery    |
+|  - exposes prayers/makruh/night feeds     |
+|                                           |
 | Widget (RemoteViews)                      |
 |  - reads prefs + provider results         |
 +-------------------------------------------+
@@ -125,22 +135,49 @@ The only non-host math intentionally left is a **compatibility fallback** for As
 
 ## Host Integration (Addon Contracts)
 
-SuntimesWidget discovers addons via an exported Activity with `suntimes.action.ADDON_EVENT` and metadata pointing to a provider URI.
+Suntimes discovers this app through two exported addon surfaces:
+- alarm/event discovery via `suntimes.action.ADDON_EVENT`
+- calendar discovery via `suntimes.action.ADD_CALENDAR`
 
 This project provides:
 - `AddonRegistrationActivity` (discovery stub)
 - `PrayerTimesProvider` (exported) implementing the same event-provider contract SuntimesWidget expects
 - `EventPickerActivity` for `suntimes.action.PICK_EVENT`
+- `CalendarDiscoveryAlias` for Suntimes calendar discovery
+- `PrayerTimesCalendarProvider` (exported) exposing prayer/makruh/night calendars
 
-### Exported Provider
+Authorities and internal app actions are derived from `${applicationId}`, so debug and release variants can be installed side by side without authority/action collisions.
+
+### Event Provider
 
 Authority:
-- `com.yshalsager.suntimes.prayertimesaddon.event.provider`
+- `${applicationId}.event.provider`
 
 Paths:
 - `content://.../eventTypes`
 - `content://.../eventInfo/<eventId>`
 - `content://.../eventCalc/<eventId>`
+
+### Calendar Provider
+
+Authority:
+- `${applicationId}.calendar.provider`
+
+Discovery references:
+- `content://.../calendar.provider/prayers/`
+- `content://.../calendar.provider/makruh/`
+- `content://.../calendar.provider/night/`
+
+Supported paths:
+- `content://.../<source>/calendarInfo`
+- `content://.../<source>/calendarContent/<windowStart>-<windowEnd>`
+- `content://.../<source>/calendarTemplateStrings`
+- `content://.../<source>/calendarTemplateFlags`
+
+Calendar behavior:
+- `prayers` exports point events for Fajr, Duha, Dhuhr/Jumu'ah, Asr, Maghrib, and Isha
+- `makruh` exports range events for dawn, sunrise, zawal, after-Asr, and sunset windows
+- `night` exports point events for midpoint, last third, and last sixth
 
 ### Exposed Events
 
@@ -223,8 +260,14 @@ Useful commands:
 # Build debug APK
 mise x java -- ./gradlew :app:assembleDebug
 
+# Build release APK
+mise x java -- ./gradlew :app:assembleRelease
+
 # Run unit tests
 mise x java -- ./gradlew :app:testDebugUnitTest
+
+# Run instrumentation screenshots on a connected emulator/device
+mise x java -- ./gradlew :app:connectedDebugAndroidTest
 ```
 
 ## Project Layout
