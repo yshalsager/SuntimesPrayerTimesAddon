@@ -31,6 +31,12 @@
             android:authorities='${applicationId}.event.provider'
             android:exported='true' />
 
+        <provider
+            android:name='.provider.PrayerTimesCalendarProvider'
+            android:authorities='${applicationId}.calendar.provider'
+            android:exported='true'
+            tools:ignore='ExportedContentProvider' />
+
         <activity
             android:name='.ui.AddonRegistrationActivity'
             android:exported='true'
@@ -85,6 +91,19 @@
                     android:pathPrefix='/settings' />
             </intent-filter>
         </activity>
+
+        <activity-alias
+            android:name='.ui.CalendarDiscoveryAlias'
+            android:exported='true'
+            android:targetActivity='.ui.MainActivity'>
+            <intent-filter>
+                <action android:name='suntimes.action.ADD_CALENDAR' />
+                <category android:name='suntimes.SUNTIMES_CALENDAR' />
+            </intent-filter>
+            <meta-data
+                android:name='SuntimesCalendarReference'
+                android:value='content://${applicationId}.calendar.provider/prayers/ | content://${applicationId}.calendar.provider/makruh/ | content://${applicationId}.calendar.provider/night/' />
+        </activity-alias>
 
         <activity
             android:name='.ui.SettingsActivity'

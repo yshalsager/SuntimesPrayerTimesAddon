@@ -168,6 +168,9 @@
     <string name='widget_show_night_portions_title'>إظهار تقسيم الليل</string>
     <string name='widget_prayer_times_today'>مواقيت الصلاة (اليوم)</string>
     <string name='widget_prayer_times_today_desc'>مواقيت الصلاة لليوم</string>
+    <string name='calendar_prayers_title'>مواقيت الصلاة</string>
+    <string name='calendar_makruh_title'>أوقات النهي</string>
+    <string name='calendar_night_title'>أجزاء الليل</string>
 
     <string name='no_host_found'>لم يتم العثور على SuntimesWidget (ثبّت التطبيق أولاً).</string>
     <string name='unknown_location'>موقع غير معروف</string>

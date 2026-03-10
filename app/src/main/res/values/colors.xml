@@ -18,4 +18,8 @@
     <color name='surface_muted'>#F1ECE1</color>
     <color name='surface_night'>#E6F0EE</color>
     <color name='surface_prohibited'>#F3ECDD</color>
+
+    <color name='calendar_prayers'>#2E7D32</color>
+    <color name='calendar_makruh'>#E65100</color>
+    <color name='calendar_night'>#1565C0</color>
 </resources>

@@ -171,6 +171,9 @@
     <string name='widget_show_night_portions_title'>Show night portions</string>
     <string name='widget_prayer_times_today'>Prayer Times (Today)</string>
     <string name='widget_prayer_times_today_desc'>Today\'s prayer times</string>
+    <string name='calendar_prayers_title'>Prayer Times</string>
+    <string name='calendar_makruh_title'>Prohibited Times</string>
+    <string name='calendar_night_title'>Night Portions</string>
 
     <string name='no_host_found'>No SuntimesWidget host found (install SuntimesWidget first).</string>
     <string name='unknown_location'>Unknown location</string>
