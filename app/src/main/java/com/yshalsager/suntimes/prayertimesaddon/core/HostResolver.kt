@@ -1,6 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
+import android.net.Uri
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.PermissionInfo
@@ -51,8 +52,7 @@ object HostResolver {
     fun ensure_default_selected(context: Context): String? {
         val existing = Prefs.get_host_event_authority(context)
         if (!existing.isNullOrBlank()) {
-            val provider = resolve_content_provider(context.packageManager, existing)
-            if (provider != null) return existing
+            if (provider_exists(context, existing)) return existing
         }
         return choose_default_host(context)
     }
@@ -99,5 +99,14 @@ object HostResolver {
     @Suppress("DEPRECATION")
     private fun resolve_content_provider(pm: PackageManager, authority: String): ProviderInfo? {
         return pm.resolveContentProvider(authority, 0)
+    }
+
+    private fun provider_exists(context: Context, authority: String): Boolean {
+        if (resolve_content_provider(context.packageManager, authority) != null) return true
+        return try {
+            context.contentResolver.acquireUnstableContentProviderClient(Uri.parse("content://$authority"))?.use { true } == true
+        } catch (_: SecurityException) {
+            false
+        }
     }
 }
