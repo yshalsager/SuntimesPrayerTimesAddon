@@ -45,8 +45,8 @@ import androidx.core.net.toUri
 
 class MainActivity : ThemedActivity() {
     companion object {
-        private const val action_open_days = "com.yshalsager.suntimes.prayertimesaddon.action.OPEN_DAYS"
-        private const val action_open_settings = "com.yshalsager.suntimes.prayertimesaddon.action.OPEN_SETTINGS"
+        private val shortcut_days_uri = Uri.parse("prayertimes://shortcuts/days")
+        private val shortcut_settings_uri = Uri.parse("prayertimes://shortcuts/settings")
     }
 
     private val request_code_permissions = 1001
@@ -121,12 +121,12 @@ class MainActivity : ThemedActivity() {
     }
 
     private fun handle_shortcut_action(incoming_intent: Intent?) {
-        when (incoming_intent?.action) {
-            action_open_days -> startActivity(Intent(this, DaysActivity::class.java))
-            action_open_settings -> startActivity(Intent(this, SettingsActivity::class.java))
+        when (incoming_intent?.data) {
+            shortcut_days_uri -> startActivity(Intent(this, DaysActivity::class.java))
+            shortcut_settings_uri -> startActivity(Intent(this, SettingsActivity::class.java))
             else -> return
         }
-        incoming_intent.action = null
+        incoming_intent.data = null
         intent = incoming_intent
     }
 

@@ -68,6 +68,22 @@
                 <action android:name='android.intent.action.MAIN' />
                 <category android:name='android.intent.category.LAUNCHER' />
             </intent-filter>
+            <intent-filter>
+                <action android:name='android.intent.action.VIEW' />
+                <category android:name='android.intent.category.DEFAULT' />
+                <data
+                    android:scheme='prayertimes'
+                    android:host='shortcuts'
+                    android:pathPrefix='/days' />
+            </intent-filter>
+            <intent-filter>
+                <action android:name='android.intent.action.VIEW' />
+                <category android:name='android.intent.category.DEFAULT' />
+                <data
+                    android:scheme='prayertimes'
+                    android:host='shortcuts'
+                    android:pathPrefix='/settings' />
+            </intent-filter>
         </activity>
 
         <activity

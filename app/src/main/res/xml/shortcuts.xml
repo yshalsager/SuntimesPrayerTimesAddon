@@ -9,8 +9,8 @@
         android:shortcutShortLabel='@string/shortcut_days_short'
         android:shortcutLongLabel='@string/shortcut_days_long'>
         <intent
-            android:action='com.yshalsager.suntimes.prayertimesaddon.action.OPEN_DAYS'
-            android:targetPackage='com.yshalsager.suntimes.prayertimesaddon'
+            android:action='android.intent.action.VIEW'
+            android:data='prayertimes://shortcuts/days'
             android:targetClass='com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity' />
     </shortcut>
 
@@ -21,8 +21,8 @@
         android:shortcutShortLabel='@string/shortcut_settings_short'
         android:shortcutLongLabel='@string/shortcut_settings_long'>
         <intent
-            android:action='com.yshalsager.suntimes.prayertimesaddon.action.OPEN_SETTINGS'
-            android:targetPackage='com.yshalsager.suntimes.prayertimesaddon'
+            android:action='android.intent.action.VIEW'
+            android:data='prayertimes://shortcuts/settings'
             android:targetClass='com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity' />
     </shortcut>
 </shortcuts>
