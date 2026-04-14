@@ -17,6 +17,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostEventQueries
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
+import com.yshalsager.suntimes.prayertimesaddon.core.query_host_eid_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
 import java.util.Calendar
 
@@ -135,6 +136,13 @@ class PrayerTimesProvider : ContentProvider() {
 
         if (addon_event.type == AddonEventType.night) {
             val t = calc_night_event_time(context, selected, addon_event, selection, selectionArgs)
+            if (t != null) c.addRow(calc_row(cols, addon_event, t))
+            return c
+        }
+
+        if (addon_event == AddonEvent.prayer_eid_start || addon_event == AddonEvent.prayer_eid_end) {
+            val alarm_now = selectionArgs?.getOrNull(0)?.toLongOrNull() ?: System.currentTimeMillis()
+            val t = query_host_eid_time(context, selected, addon_event, alarm_now, selection, selectionArgs)
             if (t != null) c.addRow(calc_row(cols, addon_event, t))
             return c
         }

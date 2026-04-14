@@ -9,6 +9,8 @@
 
     <string name='event_prayer_fajr'>Fajr</string>
     <string name='event_prayer_duha'>Duha</string>
+    <string name='event_prayer_eid_start'>Eid (Start)</string>
+    <string name='event_prayer_eid_end'>Eid (End)</string>
     <string name='event_prayer_dhuhr'>Dhuhr</string>
     <string name='event_prayer_jummah'>Jumu\'ah</string>
     <string name='event_prayer_asr'>Asr</string>

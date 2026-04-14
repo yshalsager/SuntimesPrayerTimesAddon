@@ -1,13 +1,19 @@
-package com.yshalsager.suntimes.prayertimesaddon.core
+package com.yshalsager.suntimes.prayertimesaddon.provider
 
 import android.content.Context
 import android.content.pm.ProviderInfo
+import android.database.Cursor
+import android.net.Uri
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostEventProvider
+import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
+import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
+import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
+import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,20 +28,24 @@ import java.util.TimeZone
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
-class TimesTest {
+class PrayerTimesProviderTest {
     private lateinit var context: Context
 
     @Before
     fun set_up() {
         context = RuntimeEnvironment.getApplication()
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
+
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
         HostConfigReader.clear_cache()
-        Prefs.set_asr_factor(context, 1)
+        Prefs.set_host_event_authority(context, host_event_authority)
 
+        Robolectric.setupContentProvider(PrayerTimesProvider::class.java, PrayerTimesProvider.authority)
         Robolectric.setupContentProvider(FakeHostEventProvider::class.java, host_event_authority)
         Robolectric.setupContentProvider(FakeHostCalcProvider::class.java, host_calc_authority)
 
-        shadowOf(context.packageManager).addOrUpdateProvider(
+        val shadow_package_manager = shadowOf(context.packageManager)
+        shadow_package_manager.addOrUpdateProvider(
             ProviderInfo().apply {
                 authority = host_event_authority
                 packageName = context.packageName
@@ -43,7 +53,7 @@ class TimesTest {
                 applicationInfo = context.applicationInfo
             }
         )
-        shadowOf(context.packageManager).addOrUpdateProvider(
+        shadow_package_manager.addOrUpdateProvider(
             ProviderInfo().apply {
                 authority = host_calc_authority
                 packageName = context.packageName
@@ -54,34 +64,50 @@ class TimesTest {
     }
 
     @Test
-    fun query_host_addon_time_uses_host_shadow_ratio_event_for_asr() {
-        val day_start = 0L
-
-        val asr = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_asr, day_start)
-
-        assertEquals(15 * 60 * 60 * 1000L + 30 * 60 * 1000L, asr)
-    }
-
-    @Test
-    fun query_host_addon_time_returns_eid_start_and_end_on_eid_day() {
+    fun eid_event_calc_has_rows_on_eid_day() {
         val day_start = find_eid_day_start()
 
-        val eid_start = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_start, day_start)
-        val eid_end = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_end, day_start)
+        query_event_calc("PRAYER_EID_START", day_start).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
 
-        assertEquals(day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L, eid_start)
-        assertEquals(day_start + 12 * 60 * 60 * 1000L, eid_end)
+        query_event_calc("PRAYER_EID_END", day_start).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start + 12 * 60 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
     }
 
     @Test
-    fun query_host_addon_time_returns_null_for_eid_events_on_non_eid_day() {
+    fun eid_event_calc_is_empty_on_non_eid_day() {
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
 
-        val eid_start = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_start, day_start)
-        val eid_end = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_end, day_start)
+        query_event_calc("PRAYER_EID_START", day_start).use { cursor -> assertEquals(0, cursor.count) }
+        query_event_calc("PRAYER_EID_END", day_start).use { cursor -> assertEquals(0, cursor.count) }
+    }
 
-        assertNull(eid_start)
-        assertNull(eid_end)
+    @Test
+    fun event_info_lists_eid_events() {
+        val uri = Uri.parse("content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}")
+        context.contentResolver.query(uri, arrayOf(AlarmEventContract.column_event_name), null, null, null)!!.use { cursor ->
+            val names = ArrayList<String>()
+            while (cursor.moveToNext()) names.add(cursor.getString(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_name)))
+            assertTrue(names.contains("PRAYER_EID_START"))
+            assertTrue(names.contains("PRAYER_EID_END"))
+        }
+    }
+
+    private fun query_event_calc(event_id: String, day_start: Long): Cursor {
+        val uri = Uri.parse("content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_calc}/$event_id")
+        return context.contentResolver.query(uri, null, null, arrayOf(day_start.toString(), "0", "false", "[]"), null)!!
     }
 
     private fun find_eid_day_start(): Long {

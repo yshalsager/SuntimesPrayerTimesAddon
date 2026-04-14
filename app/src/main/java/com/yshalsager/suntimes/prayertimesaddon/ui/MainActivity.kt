@@ -290,6 +290,8 @@ class MainActivity : ThemedActivity() {
 
             val fajr = q(AddonEvent.prayer_fajr)
             val duha = q(AddonEvent.prayer_duha)
+            val eid_start = q(AddonEvent.prayer_eid_start)
+            val eid_end = q(AddonEvent.prayer_eid_end)
             val asr = q(AddonEvent.prayer_asr)
             val isha = q(AddonEvent.prayer_isha)
 
@@ -316,6 +318,8 @@ class MainActivity : ThemedActivity() {
             val timeline_prayers = listOf(
                 AddonEvent.prayer_fajr to fajr,
                 AddonEvent.prayer_duha to duha,
+                AddonEvent.prayer_eid_start to eid_start,
+                AddonEvent.prayer_eid_end to eid_end,
                 AddonEvent.prayer_dhuhr to dhuhr,
                 AddonEvent.prayer_asr to asr,
                 AddonEvent.prayer_maghrib to maghrib,
@@ -339,7 +343,7 @@ class MainActivity : ThemedActivity() {
                 if (t == null) return@forEach
                 val is_next = is_today && next_prayer != null && event == next_prayer.first && t == next_prayer.second
                 val is_passed = is_today && t < now && !is_next
-                val is_optional = event == AddonEvent.prayer_duha
+                val is_optional = event == AddonEvent.prayer_duha || event == AddonEvent.prayer_eid_start || event == AddonEvent.prayer_eid_end
                 items.add(
                     HomeItemUi.Prayer(
                         sort_time = t,
@@ -349,7 +353,7 @@ class MainActivity : ThemedActivity() {
                         countdown =
                             when {
                                 is_next -> getString(R.string.in_countdown, format_countdown(t - now))
-                                is_optional -> duha_subtitle
+                                event == AddonEvent.prayer_duha -> duha_subtitle
                                 else -> null
                             },
                         is_next = is_next,

@@ -20,6 +20,7 @@ import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.PrayerTimesCalendarContract
+import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -33,6 +34,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowPackageManager
 import java.util.Calendar
+import java.util.Locale
 import java.util.TimeZone
 
 @RunWith(RobolectricTestRunner::class)
@@ -118,6 +120,18 @@ class PrayerTimesCalendarProviderTest {
     }
 
     @Test
+    fun prayers_calendar_includes_eid_events_on_eid_day() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        val day_start = find_eid_day_start()
+
+        val titles = query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
+            .read_strings(CalendarContract.Events.TITLE)
+
+        assertTrue(titles.contains(context.getString(R.string.event_prayer_eid_start)))
+        assertTrue(titles.contains(context.getString(R.string.event_prayer_eid_end)))
+    }
+
+    @Test
     fun makruh_calendar_returns_ranges() {
         Prefs.set_host_event_authority(context, host_event_authority)
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
@@ -199,6 +213,17 @@ class PrayerTimesCalendarProviderTest {
             set(Calendar.MILLISECOND, 0)
             timeInMillis
         }
+
+    private fun find_eid_day_start(): Long {
+        val tz = TimeZone.getTimeZone("UTC")
+        val from = utc_day_start(2026, Calendar.JANUARY, 1)
+        repeat(730) { idx ->
+            val day_start = from + idx * day_millis
+            val hijri = hijri_for_day(day_start, tz, Locale.getDefault(), Prefs.get_hijri_variant(context), Prefs.get_hijri_day_offset(context))
+            if ((hijri.month == 10 && hijri.day == 1) || (hijri.month == 12 && hijri.day == 10)) return day_start
+        }
+        throw AssertionError("No Eid day found in search range")
+    }
 
     private fun Cursor.read_strings(column: String): List<String> {
         moveToPosition(-1)

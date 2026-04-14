@@ -27,6 +27,8 @@ private data class PrayerTimesCalendarDay(
     val is_friday: Boolean,
     val fajr: Long?,
     val duha: Long?,
+    val eid_start: Long?,
+    val eid_end: Long?,
     val dhuhr: Long?,
     val asr: Long?,
     val maghrib: Long?,
@@ -128,6 +130,8 @@ private fun day_events_for_source(
             buildList {
                 day.fajr?.let { add(point_event(meta, context.getString(R.string.event_prayer_fajr), it)) }
                 day.duha?.let { add(point_event(meta, context.getString(R.string.event_prayer_duha), it)) }
+                day.eid_start?.let { add(point_event(meta, context.getString(R.string.event_prayer_eid_start), it)) }
+                day.eid_end?.let { add(point_event(meta, context.getString(R.string.event_prayer_eid_end), it)) }
                 day.dhuhr?.let {
                     val title = if (day.is_friday) context.getString(R.string.event_prayer_jummah) else context.getString(R.string.event_prayer_dhuhr)
                     add(point_event(meta, title, it))
@@ -169,6 +173,8 @@ private fun build_calendar_day(context: Context, host: String, tz: TimeZone, day
 
     val fajr = q(AddonEvent.prayer_fajr)
     val duha = q(AddonEvent.prayer_duha)
+    val eid_start = q(AddonEvent.prayer_eid_start)
+    val eid_end = q(AddonEvent.prayer_eid_end)
     val dhuhr = sun?.noon ?: q(AddonEvent.prayer_dhuhr)
     val asr = q(AddonEvent.prayer_asr)
     val maghrib = sun?.sunset?.plus(maghrib_offset_ms) ?: q(AddonEvent.prayer_maghrib)
@@ -187,6 +193,8 @@ private fun build_calendar_day(context: Context, host: String, tz: TimeZone, day
         is_friday = is_friday,
         fajr = fajr,
         duha = duha,
+        eid_start = eid_start,
+        eid_end = eid_end,
         dhuhr = dhuhr,
         asr = asr,
         maghrib = maghrib,

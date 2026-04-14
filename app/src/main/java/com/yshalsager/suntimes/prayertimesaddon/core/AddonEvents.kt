@@ -16,6 +16,8 @@ enum class AddonEvent(
 ) {
     prayer_fajr("PRAYER_FAJR", R.string.event_prayer_fajr, AddonEventType.prayer),
     prayer_duha("PRAYER_DUHA", R.string.event_prayer_duha, AddonEventType.prayer),
+    prayer_eid_start("PRAYER_EID_START", R.string.event_prayer_eid_start, AddonEventType.prayer),
+    prayer_eid_end("PRAYER_EID_END", R.string.event_prayer_eid_end, AddonEventType.prayer),
     prayer_dhuhr("PRAYER_DHUHR", R.string.event_prayer_dhuhr, AddonEventType.prayer),
     prayer_asr("PRAYER_ASR", R.string.event_prayer_asr, AddonEventType.prayer),
     prayer_maghrib("PRAYER_MAGHRIB", R.string.event_prayer_maghrib, AddonEventType.prayer),
@@ -64,6 +66,8 @@ object HostEventIds {
 }
 
 object AddonEventMapper {
+    const val eid_start_offset_millis = 15L * 60_000L
+
     fun map_event(context: Context, addon_event: AddonEvent): HostQuery? {
         return when (addon_event) {
             AddonEvent.prayer_fajr ->
@@ -72,6 +76,8 @@ object AddonEventMapper {
                 val delta = Prefs.get_makruh_sunrise_minutes(context) * 60_000L
                 HostQuery("SUNRISE", delta_millis = delta)
             }
+            AddonEvent.prayer_eid_start -> HostQuery("SUNRISE", delta_millis = eid_start_offset_millis)
+            AddonEvent.prayer_eid_end -> HostQuery("NOON")
 
             AddonEvent.prayer_dhuhr -> HostQuery("NOON")
             AddonEvent.prayer_asr -> HostQuery(HostEventIds.shadow_ratio(Prefs.get_asr_factor(context)))
