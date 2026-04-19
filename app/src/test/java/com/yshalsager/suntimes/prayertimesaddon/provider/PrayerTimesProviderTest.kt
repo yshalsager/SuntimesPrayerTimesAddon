@@ -88,6 +88,31 @@ class PrayerTimesProviderTest {
     }
 
     @Test
+    fun eid_event_calc_uses_location_selection_for_sun_query() {
+        val day_start = find_eid_day_start()
+        val selection = "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
+        val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+
+        query_event_calc("PRAYER_EID_START", selection, selection_args).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
+
+        query_event_calc("PRAYER_EID_END", selection, selection_args).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start + 12 * 60 * 60 * 1000L + 30 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
+    }
+
+    @Test
     fun eid_event_calc_is_empty_on_non_eid_day() {
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
 
@@ -147,9 +172,29 @@ class PrayerTimesProviderTest {
         }
     }
 
+    @Test
+    fun night_event_calc_uses_location_selection_for_sun_query() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val selection = "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
+        val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+
+        query_event_calc("NIGHT_MIDPOINT", selection, selection_args).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start - 15 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
+    }
+
     private fun query_event_calc(event_id: String, day_start: Long): Cursor {
+        return query_event_calc(event_id, null, arrayOf(day_start.toString(), "0", "false", "[]"))
+    }
+
+    private fun query_event_calc(event_id: String, selection: String?, selection_args: Array<String>): Cursor {
         val uri = Uri.parse("content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_calc}/$event_id")
-        return context.contentResolver.query(uri, null, null, arrayOf(day_start.toString(), "0", "false", "[]"), null)!!
+        return context.contentResolver.query(uri, null, selection, selection_args, null)!!
     }
 
     private fun event_info_names(): List<String> {

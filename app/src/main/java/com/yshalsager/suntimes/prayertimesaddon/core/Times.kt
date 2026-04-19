@@ -65,11 +65,11 @@ fun query_host_eid_time(
         HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(TimeZone::getTimeZone)
             ?: TimeZone.getDefault()
     val day_start = day_start_at(alarm_now, tz)
-    val sun = query_host_sun(context, host_event_authority, day_start)
     val eid_selection_args =
         selection_args?.clone()?.also { args ->
             if (args.isNotEmpty()) args[0] = day_start.toString()
         } ?: selection_args
+    val sun = query_host_sun(context, host_event_authority, day_start, selection, eid_selection_args)
     return when (event) {
         AddonEvent.prayer_eid_start -> {
             val sunrise =
@@ -102,11 +102,17 @@ fun calc_night(maghrib_prev: Long?, fajr: Long?): NightPortions? {
     return NightPortions(maghrib_prev + night_len / 2, fajr - night_len / 3, fajr - night_len / 6)
 }
 
-fun query_host_sun(context: Context, host_event_authority: String, at_millis: Long): SunTimes? {
+fun query_host_sun(
+    context: Context,
+    host_event_authority: String,
+    at_millis: Long,
+    selection: String? = null,
+    selection_args: Array<String>? = null
+): SunTimes? {
     val calc_authority = HostConfigReader.calc_authority_from_event_authority(host_event_authority) ?: return null
     val uri = "content://$calc_authority/${CalculatorConfigContract.query_sun}/$at_millis".toUri()
     return try {
-        context.contentResolver.query(uri, CalculatorConfigContract.projection_sun_basic, null, null, null)
+        context.contentResolver.query(uri, CalculatorConfigContract.projection_sun_basic, selection, selection_args, null)
     } catch (_: SecurityException) {
         null
     }?.use { c ->

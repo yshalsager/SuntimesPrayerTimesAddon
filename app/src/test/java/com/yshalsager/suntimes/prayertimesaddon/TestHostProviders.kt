@@ -105,7 +105,7 @@ class FakeHostCalcProvider : ContentProvider() {
         if (path.isEmpty()) return null
         return when (path[0]) {
             CalculatorConfigContract.query_config -> query_config(projection)
-            CalculatorConfigContract.query_sun -> query_sun(path.getOrNull(1), projection)
+            CalculatorConfigContract.query_sun -> query_sun(path.getOrNull(1), projection, selection_args)
             CalculatorConfigContract.query_sunpos -> query_sunpos(projection)
             else -> null
         }
@@ -134,18 +134,19 @@ class FakeHostCalcProvider : ContentProvider() {
         return c
     }
 
-    private fun query_sun(at_millis_segment: String?, projection: Array<String>?): Cursor {
+    private fun query_sun(at_millis_segment: String?, projection: Array<String>?, selection_args: Array<String>?): Cursor {
         val cols = projection ?: CalculatorConfigContract.projection_sun_basic
         val c = MatrixCursor(cols)
         val at_millis = at_millis_segment?.toLongOrNull() ?: System.currentTimeMillis()
         val day_start = at_millis - Math.floorMod(at_millis, day_millis)
+        val location_shift = if (selection_args?.getOrNull(4) == "55.0") 30L * 60L * 1000L else 0L
         val row = arrayOfNulls<Any>(cols.size)
         cols.indices.forEach { i ->
             row[i] =
                 when (cols[i]) {
-                    CalculatorConfigContract.column_sun_noon -> day_start + 12 * 60 * 60 * 1000L
-                    CalculatorConfigContract.column_sunrise -> day_start + 6 * 60 * 60 * 1000L
-                    CalculatorConfigContract.column_sunset -> day_start + 18 * 60 * 60 * 1000L
+                    CalculatorConfigContract.column_sun_noon -> day_start + 12 * 60 * 60 * 1000L + location_shift
+                    CalculatorConfigContract.column_sunrise -> day_start + 6 * 60 * 60 * 1000L + location_shift
+                    CalculatorConfigContract.column_sunset -> day_start + 18 * 60 * 60 * 1000L + location_shift
                     else -> null
                 }
         }

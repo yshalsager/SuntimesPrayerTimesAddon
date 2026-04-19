@@ -216,7 +216,14 @@ class PrayerTimesProvider : ContentProvider() {
                 add(Calendar.DAY_OF_YEAR, -1)
                 timeInMillis
             }
-            val sunset = query_host_sun(context, host_event_authority, maghrib_day_start)?.sunset ?: return null
+            val sunset =
+                query_host_sun(
+                    context,
+                    host_event_authority,
+                    maghrib_day_start,
+                    selection,
+                    with_now(maghrib_day_start) ?: selectionArgs
+                )?.sunset ?: return null
             val maghrib = sunset + Prefs.get_maghrib_offset_minutes(context) * 60_000L
             val night = calc_night(maghrib, fajr) ?: return null
 
