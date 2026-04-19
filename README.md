@@ -59,6 +59,11 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
 ## What This App Does
 
 - Shows a timeline on Home with infinite left/right day paging and a month/day-card list (Days/Calendar).
+- Lets you save multiple locations (up to `10`) and manage them in Settings (add/edit/delete/reorder).
+- Home supports location switching from the title/location selector and remembers your choice.
+- Days follows the same selected location as Home (shared context), including timezone and day-boundary behavior.
+- Provides an all-locations cards screen with full daily times for saved locations (prayers + makruh + night portions).
+- Each saved location can use either global settings or its own custom calculation profile (method + makruh + hijri + extra Fajr/Isha settings).
 - Exposes events to **SuntimesWidget Alarms**:
   - prayers (Fajr, optional extra Fajr #1, Duha, Eid start/end on Eid days, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, optional extra Isha #1)
   - prohibited (makruh) boundaries and windows
@@ -74,7 +79,7 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
   - `prayers`
   - `makruh`
   - `night`
-- Tap a prayer/night item on Home to open the host alarm editor prefilled for that event (event-based alarms automatically track changing prayer times; offsets like +/-30m are supported by the host UI).
+- Tap a prayer/night item on Home to open the host alarm editor prefilled for that event and selected location context (event-based alarms automatically track changing prayer times; offsets like +/-30m are supported by the host UI).
 - Uses distinct makruh levels in UI (light: dawn/after-asr, heavy: sunrise/zawal/sunset) across timeline, calendar cards, and widget labels.
 - Provides an Android home-screen widget ("Prayer Times (Today)") with the same day-card model.
 - Provides app shortcuts for Days and Settings via `prayertimes://shortcuts/...` deep links.
@@ -166,8 +171,11 @@ Paths:
 - `content://.../eventCalc/<eventId>`
 
 Location overrides (per query / per alarm):
-- `eventCalc/<eventId>` supports host-style location fields in `selection` / `selectionArgs` (`latitude`, `longitude`, optional `altitude`, plus `alarm_now`).
+- `eventInfo` supports additive query param `saved_location_id` to scope optional-event visibility/titles (extra Fajr/Isha) to a saved location profile.
+- `eventCalc/<eventId>` supports additive location scoping with query param `saved_location_id`.
+- `eventCalc/<eventId>` also supports host-style location fields in `selection` / `selectionArgs` (`latitude`, `longitude`, optional `altitude`, plus `alarm_now`).
 - For sun-based addon events, the returned time is computed for the overridden location when these fields are provided.
+- Resolution precedence: `saved_location_id` -> coordinate match -> host global default.
 - If no location fields are passed, calculations use the currently selected host/default location.
 
 ### Calendar Provider
@@ -185,6 +193,13 @@ Supported paths:
 - `content://.../<source>/calendarContent/<windowStart>-<windowEnd>`
 - `content://.../<source>/calendarTemplateStrings`
 - `content://.../<source>/calendarTemplateFlags`
+
+Location scoping:
+- Calendar queries support additive query param `saved_location_id`.
+- Calendar queries also support coordinate fallback through host-style `selectionArgs` location fields.
+- Resolution precedence matches event provider: `saved_location_id` -> coordinate match -> host global default.
+- Without location scope inputs, calendar output stays host-global (backward compatible).
+- Scoped calendar content uses the selected location timezone in `EVENT_TIMEZONE`.
 
 Calendar behavior:
 - `prayers` exports point events for Fajr, optional extra Fajr #1, Duha, Eid start/end, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, and optional extra Isha #1
@@ -222,8 +237,13 @@ Makruh boundaries:
 - Host selection:
   - Auto-detect stable/nightly/legacy installs.
   - Persist the selected event-provider authority.
-  - Open the host location picker UI from Settings (so you can choose from the host's saved locations without duplicating a location database in the addon).
   - Open the host alarms screen from Settings.
+- Saved locations:
+  - Save up to `10` locations inside the addon.
+  - Add by importing the current host location or by manual entry.
+  - Edit/delete/reorder saved locations.
+  - Timezone picker with search and timezone mismatch warning.
+  - Per-location calc mode: inherit global settings or use a custom location profile.
 - Prayer method:
   - Presets + custom
   - Fajr angle
@@ -251,6 +271,7 @@ Makruh boundaries:
 - Alarms & backup:
   - Export a host-importable prayer alarm preset file (includes Duha and only enabled extra Fajr/Isha slots)
   - Export/import addon settings as JSON backup
+  - Backup includes saved locations + Home/Days selected location + per-location profiles
   - Backup preserves raw custom labels for extra slots so localized defaults still work after restore
 - UI:
   - Language: system / English / Arabic
@@ -264,6 +285,7 @@ Widget name:
 
 Notes:
 - Widgets use RemoteViews, so theming is applied by setting background resources + text colors at update time.
+- Each widget instance can be configured for Host (global) or one saved location; widget selection is independent from Home/Days selection.
 - Update scheduling is “best effort”: we update on app settings changes and schedule an alarm for the next meaningful boundary (next prayer / prohibited boundary / midnight rollover).
 
 ## Tooling
