@@ -131,28 +131,56 @@ fun query_host_sun(
     }
 }
 
-fun query_host_addon_time(context: Context, host_event_authority: String, event: AddonEvent, alarm_now: Long): Long? {
-    val selection = event_calc_selection
-    val selection_args = event_calc_args(alarm_now)
+fun query_host_addon_time(
+    context: Context,
+    host_event_authority: String,
+    event: AddonEvent,
+    alarm_now: Long,
+    selection: String? = null,
+    selection_args: Array<String>? = null
+): Long? {
+    val effective_selection = selection ?: event_calc_selection
+    val effective_selection_args = selection_args ?: event_calc_args(alarm_now)
 
     if (event.type == AddonEventType.night) return null
     if (!is_addon_event_enabled(context, event)) return null
 
     if (event == AddonEvent.prayer_eid_start || event == AddonEvent.prayer_eid_end) {
-        return query_host_eid_time(context, host_event_authority, event, alarm_now, selection, selection_args)
+        return query_host_eid_time(
+            context,
+            host_event_authority,
+            event,
+            alarm_now,
+            effective_selection,
+            effective_selection_args
+        )
     }
 
     if (event == AddonEvent.prayer_duha || event == AddonEvent.makruh_sunrise_end) {
-        val sunrise = query_host_sun(context, host_event_authority, alarm_now)?.sunrise ?: return null
+        val sunrise =
+            query_host_sun(
+                context,
+                host_event_authority,
+                alarm_now,
+                effective_selection,
+                effective_selection_args
+            )?.sunrise ?: return null
         return sunrise + Prefs.get_makruh_sunrise_minutes(context) * 60_000L
     }
 
     if (event == AddonEvent.prayer_asr || event == AddonEvent.makruh_after_asr_start) {
-        return HostEventQueries.query_asr_time(context, host_event_authority, selection, selection_args)
+        return HostEventQueries.query_asr_time(context, host_event_authority, effective_selection, effective_selection_args)
     }
 
     val host_query = AddonEventMapper.map_event(context, event) ?: return null
-    return HostEventQueries.query_host_event_time(context, host_event_authority, host_query.base_event_id, host_query.delta_millis, selection, selection_args)
+    return HostEventQueries.query_host_event_time(
+        context,
+        host_event_authority,
+        host_query.base_event_id,
+        host_query.delta_millis,
+        effective_selection,
+        effective_selection_args
+    )
 }
 
 fun query_addon_time(context: Context, event: AddonEvent, alarm_now: Long): Long? {

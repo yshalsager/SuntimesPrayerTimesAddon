@@ -108,6 +108,43 @@ class TimesTest {
         assertNull(isha_extra)
     }
 
+    @Test
+    fun query_host_addon_time_uses_location_selection_for_sun_based_events() {
+        val day_start = find_eid_day_start()
+        val selection =
+            "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
+        val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+
+        val duha = query_host_addon_time(
+            context,
+            host_event_authority,
+            AddonEvent.prayer_duha,
+            day_start,
+            selection,
+            selection_args
+        )
+        val eid_start = query_host_addon_time(
+            context,
+            host_event_authority,
+            AddonEvent.prayer_eid_start,
+            day_start,
+            selection,
+            selection_args
+        )
+        val eid_end = query_host_addon_time(
+            context,
+            host_event_authority,
+            AddonEvent.prayer_eid_end,
+            day_start,
+            selection,
+            selection_args
+        )
+
+        assertEquals(day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, duha)
+        assertEquals(day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, eid_start)
+        assertEquals(day_start + 12 * 60 * 60 * 1000L + 30 * 60 * 1000L, eid_end)
+    }
+
     private fun find_eid_day_start(): Long {
         val tz = TimeZone.getTimeZone("UTC")
         val from = utc_day_start(2026, Calendar.JANUARY, 1)
