@@ -6,6 +6,7 @@ import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostEventProvider
 import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
+import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
@@ -31,10 +32,20 @@ class TimesTest {
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
         HostConfigReader.clear_cache()
         Prefs.set_asr_factor(context, 1)
+        Prefs.set_host_event_authority(context, host_event_authority)
 
+        Robolectric.setupContentProvider(PrayerTimesProvider::class.java, PrayerTimesProvider.authority)
         Robolectric.setupContentProvider(FakeHostEventProvider::class.java, host_event_authority)
         Robolectric.setupContentProvider(FakeHostCalcProvider::class.java, host_calc_authority)
 
+        shadowOf(context.packageManager).addOrUpdateProvider(
+            ProviderInfo().apply {
+                authority = PrayerTimesProvider.authority
+                packageName = context.packageName
+                name = PrayerTimesProvider::class.java.name
+                applicationInfo = context.applicationInfo
+            }
+        )
         shadowOf(context.packageManager).addOrUpdateProvider(
             ProviderInfo().apply {
                 authority = host_event_authority
@@ -143,6 +154,26 @@ class TimesTest {
         assertEquals(day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, duha)
         assertEquals(day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, eid_start)
         assertEquals(day_start + 12 * 60 * 60 * 1000L + 30 * 60 * 1000L, eid_end)
+    }
+
+    @Test
+    fun query_addon_time_uses_location_selection_end_to_end() {
+        val eid_day_start = find_eid_day_start()
+        val selection =
+            "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
+        val eid_selection_args = arrayOf(eid_day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+
+        val eid_start = query_addon_time(context, AddonEvent.prayer_eid_start, eid_day_start, selection, eid_selection_args)
+        val eid_end = query_addon_time(context, AddonEvent.prayer_eid_end, eid_day_start, selection, eid_selection_args)
+
+        assertEquals(eid_day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, eid_start)
+        assertEquals(eid_day_start + 12 * 60 * 60 * 1000L + 30 * 60 * 1000L, eid_end)
+
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val night_selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+        val night_midpoint = query_addon_time(context, AddonEvent.night_midpoint, day_start, selection, night_selection_args)
+
+        assertEquals(day_start - 15 * 60 * 1000L, night_midpoint)
     }
 
     private fun find_eid_day_start(): Long {

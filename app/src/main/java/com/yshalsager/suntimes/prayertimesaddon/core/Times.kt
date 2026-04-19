@@ -183,16 +183,22 @@ fun query_host_addon_time(
     )
 }
 
-fun query_addon_time(context: Context, event: AddonEvent, alarm_now: Long): Long? {
-    val selection = event_calc_selection
-    val selection_args = event_calc_args(alarm_now)
+fun query_addon_time(
+    context: Context,
+    event: AddonEvent,
+    alarm_now: Long,
+    selection: String? = null,
+    selection_args: Array<String>? = null
+): Long? {
+    val effective_selection = selection ?: event_calc_selection
+    val effective_selection_args = selection_args ?: event_calc_args(alarm_now)
     val uri = "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_calc}/${event.event_id}".toUri()
     return try {
         context.contentResolver.query(
             uri,
             AlarmEventContract.query_event_calc_projection,
-            selection,
-            selection_args,
+            effective_selection,
+            effective_selection_args,
             null
         )?.use { c ->
             val i_time = c.getColumnIndex(AlarmEventContract.column_event_timemillis)
