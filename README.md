@@ -165,6 +165,11 @@ Paths:
 - `content://.../eventInfo/<eventId>`
 - `content://.../eventCalc/<eventId>`
 
+Location overrides (per query / per alarm):
+- `eventCalc/<eventId>` supports host-style location fields in `selection` / `selectionArgs` (`latitude`, `longitude`, optional `altitude`, plus `alarm_now`).
+- For sun-based addon events, the returned time is computed for the overridden location when these fields are provided.
+- If no location fields are passed, calculations use the currently selected host/default location.
+
 ### Calendar Provider
 
 Authority:

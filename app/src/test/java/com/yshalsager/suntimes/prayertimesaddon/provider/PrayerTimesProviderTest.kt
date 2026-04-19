@@ -188,6 +188,56 @@ class PrayerTimesProviderTest {
         }
     }
 
+    @Test
+    fun eid_event_calc_differs_between_two_location_overrides() {
+        val day_start = find_eid_day_start()
+        val selection = "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
+        val default_location = arrayOf(day_start.toString(), "0", "false", "[]", "30.0", "31.0", "0.0")
+        val shifted_location = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+
+        var t_default: Long? = null
+        query_event_calc("PRAYER_EID_START", selection, default_location).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            t_default = cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+        }
+
+        var t_shifted: Long? = null
+        query_event_calc("PRAYER_EID_START", selection, shifted_location).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            t_shifted = cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+        }
+
+        assertEquals(day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L, t_default)
+        assertEquals(day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, t_shifted)
+    }
+
+    @Test
+    fun night_event_calc_differs_between_two_location_overrides() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val selection = "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
+        val default_location = arrayOf(day_start.toString(), "0", "false", "[]", "30.0", "31.0", "0.0")
+        val shifted_location = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+
+        var t_default: Long? = null
+        query_event_calc("NIGHT_MIDPOINT", selection, default_location).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            t_default = cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+        }
+
+        var t_shifted: Long? = null
+        query_event_calc("NIGHT_MIDPOINT", selection, shifted_location).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            t_shifted = cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+        }
+
+        assertEquals(day_start - 30 * 60 * 1000L, t_default)
+        assertEquals(day_start - 15 * 60 * 1000L, t_shifted)
+    }
+
     private fun query_event_calc(event_id: String, day_start: Long): Cursor {
         return query_event_calc(event_id, null, arrayOf(day_start.toString(), "0", "false", "[]"))
     }
