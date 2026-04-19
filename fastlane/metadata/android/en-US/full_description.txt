@@ -5,6 +5,8 @@ Features:
 - Home timeline with day swipe
 - Calendar cards for daily prayer windows
 - Exportable alarms integration with Suntimes host
+- Eid prayer window events on Eid days only (start = sunrise + 15m, end = zawal/noon)
+- Optional extra Fajr and extra Isha slots with custom angle and custom label
 - Today widget with prayer, prohibited, and night rows
 - English and Arabic UI with RTL support
 

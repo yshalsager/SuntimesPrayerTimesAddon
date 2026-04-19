@@ -60,9 +60,16 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
 
 - Shows a timeline on Home with infinite left/right day paging and a month/day-card list (Days/Calendar).
 - Exposes events to **SuntimesWidget Alarms**:
-  - prayers (Fajr, Duha, Dhuhr/Jumu'ah, Asr, Maghrib, Isha)
+  - prayers (Fajr, optional extra Fajr #1, Duha, Eid start/end on Eid days, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, optional extra Isha #1)
   - prohibited (makruh) boundaries and windows
   - night portions (midpoint, last third, last sixth)
+- Supports Eid prayer time window events on Eid days only:
+  - `Eid start = sunrise + 15 minutes`
+  - `Eid end = zawal (solar noon)`
+- Supports one optional additional Fajr slot and one optional additional Isha slot:
+  - each has its own angle
+  - each has a user-editable custom label
+  - both are disabled by default and hidden from event picker/provider when disabled
 - Exposes three read-only calendars to Suntimes calendar clients:
   - `prayers`
   - `makruh`
@@ -175,7 +182,7 @@ Supported paths:
 - `content://.../<source>/calendarTemplateFlags`
 
 Calendar behavior:
-- `prayers` exports point events for Fajr, Duha, Dhuhr/Jumu'ah, Asr, Maghrib, and Isha
+- `prayers` exports point events for Fajr, optional extra Fajr #1, Duha, Eid start/end, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, and optional extra Isha #1
 - `makruh` exports range events for dawn, sunrise, zawal, after-Asr, and sunset windows
 - `night` exports point events for midpoint, last third, and last sixth
 
@@ -183,11 +190,15 @@ Calendar behavior:
 
 Prayers:
 - `PRAYER_FAJR`
+- `PRAYER_FAJR_EXTRA_1` (optional; hidden when disabled)
 - `PRAYER_DUHA`
+- `PRAYER_EID_START` (Eid days only)
+- `PRAYER_EID_END` (Eid days only)
 - `PRAYER_DHUHR` (displayed as **Jumu'ah** on Friday)
 - `PRAYER_ASR`
 - `PRAYER_MAGHRIB`
 - `PRAYER_ISHA`
+- `PRAYER_ISHA_EXTRA_1` (optional; hidden when disabled)
 
 Night:
 - `NIGHT_MIDPOINT`
@@ -212,6 +223,9 @@ Makruh boundaries:
   - Presets + custom
   - Fajr angle
   - Isha mode (angle / fixed minutes)
+  - Additional Fajr #1 (disabled by default): enable switch + custom angle + custom label
+  - Additional Isha #1 (disabled by default): enable switch + custom angle + custom label
+  - Additional Isha #1 is always angle-based (independent from global Isha fixed-minutes mode)
   - Asr factor (Shafi=1 / Hanafi=2)
   - Maghrib offset
 - Makruh:
@@ -230,8 +244,9 @@ Makruh boundaries:
   - Toggle night row
   - Uses separate toggles from Calendar (not shared)
 - Alarms & backup:
-  - Export a host-importable prayer alarm preset file (includes Duha)
+  - Export a host-importable prayer alarm preset file (includes Duha and only enabled extra Fajr/Isha slots)
   - Export/import addon settings as JSON backup
+  - Backup preserves raw custom labels for extra slots so localized defaults still work after restore
 - UI:
   - Language: system / English / Arabic
   - Theme mode: system / light / dark
@@ -250,6 +265,7 @@ Notes:
 
 This repo is intended to be built with:
 - Gradle Wrapper (`./gradlew`)
+- Gradle Wrapper distribution: `9.4.1`
 - [`mise`](https://mise.jdx.dev/) for tool/version management (optional but recommended)
 - Release builds enable R8 shrinking/optimization (`minifyEnabled`, `shrinkResources`, optimized ProGuard rules)
 - Release automation is available via GitHub Actions (`.github/workflows/release.yml`) with dry-run, tag/release flow, signed APK validation, and generated release notes
