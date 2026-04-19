@@ -54,4 +54,40 @@ class DaysViewModelTest {
 
         assertNotEquals(first, second)
     }
+
+    @Test
+    fun build_days_sig_changes_when_extra_fajr_label_changes() {
+        val host = "com.test.host.event.provider"
+        val month_anchor = 123L
+        val show_prohibited = true
+        val show_night = true
+        val show_hijri_effective = true
+        val month_basis = Prefs.days_month_basis_gregorian
+        val hijri_variant = Prefs.hijri_variant_umalqura
+        val hijri_offset = 0
+
+        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        Prefs.set_extra_fajr_1_label(context, "Fajr Secondary")
+        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+
+        assertNotEquals(first, second)
+    }
+
+    @Test
+    fun build_days_sig_changes_when_extra_isha_enable_flag_changes() {
+        val host = "com.test.host.event.provider"
+        val month_anchor = 123L
+        val show_prohibited = true
+        val show_night = true
+        val show_hijri_effective = true
+        val month_basis = Prefs.days_month_basis_gregorian
+        val hijri_variant = Prefs.hijri_variant_umalqura
+        val hijri_offset = 0
+
+        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        Prefs.set_extra_isha_1_enabled(context, true)
+        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+
+        assertNotEquals(first, second)
+    }
 }

@@ -36,6 +36,7 @@
     <string name='shortcut_settings_long'>فتح الإعدادات</string>
 
     <string name='event_prayer_fajr'>الفجر</string>
+    <string name='event_prayer_fajr_extra_1'>الفجر (إضافي ١)</string>
     <string name='event_prayer_duha'>الضحى</string>
     <string name='event_prayer_eid_start'>العيد (البداية)</string>
     <string name='event_prayer_eid_end'>العيد (النهاية)</string>
@@ -44,6 +45,7 @@
     <string name='event_prayer_asr'>العصر</string>
     <string name='event_prayer_maghrib'>المغرب</string>
     <string name='event_prayer_isha'>العشاء</string>
+    <string name='event_prayer_isha_extra_1'>العشاء (إضافي ١)</string>
 
     <string name='event_makruh_dawn_start'>وقت نهي (بداية من الفجر)</string>
     <string name='event_makruh_sunrise_start'>وقت نهي (بداية الشروق)</string>
@@ -66,6 +68,12 @@
     <string name='isha_fixed_minutes_title'>دقائق العشاء الثابتة</string>
     <string name='asr_factor_title'>نسبة ظل العصر</string>
     <string name='maghrib_offset_title'>إزاحة المغرب (دقائق)</string>
+    <string name='extra_fajr_1_enabled_title'>تفعيل الفجر الإضافي ١</string>
+    <string name='extra_fajr_1_angle_title'>زاوية الفجر الإضافي ١</string>
+    <string name='extra_fajr_1_label_title'>تسمية الفجر الإضافي ١</string>
+    <string name='extra_isha_1_enabled_title'>تفعيل العشاء الإضافي ١</string>
+    <string name='extra_isha_1_angle_title'>زاوية العشاء الإضافي ١</string>
+    <string name='extra_isha_1_label_title'>تسمية العشاء الإضافي ١</string>
 
     <string name='host_title'>مضيف SuntimesWidget</string>
     <string name='host_summary'>اختر نسخة SuntimesWidget المثبتة للاستعلام عنها</string>

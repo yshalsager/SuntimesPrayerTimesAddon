@@ -40,6 +40,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 import com.yshalsager.suntimes.prayertimesaddon.core.SettingsBackup
 import com.yshalsager.suntimes.prayertimesaddon.core.app_language_locales
 import com.yshalsager.suntimes.prayertimesaddon.core.current_app_language
@@ -92,9 +93,15 @@ private fun SettingsContent(
 
     var method_preset by rememberSaveable { mutableStateOf(Prefs.get_method_preset(ctx)) }
     var fajr_angle_text by rememberSaveable { mutableStateOf(Prefs.get_fajr_angle(ctx).toString()) }
+    var extra_fajr_1_enabled by rememberSaveable { mutableStateOf(Prefs.get_extra_fajr_1_enabled(ctx)) }
+    var extra_fajr_1_angle_text by rememberSaveable { mutableStateOf(Prefs.get_extra_fajr_1_angle(ctx).toString()) }
+    var extra_fajr_1_label_text by rememberSaveable { mutableStateOf(Prefs.get_extra_fajr_1_label(ctx)) }
     var isha_mode by rememberSaveable { mutableStateOf(Prefs.get_isha_mode(ctx)) }
     var isha_angle_text by rememberSaveable { mutableStateOf(Prefs.get_isha_angle(ctx).toString()) }
     var isha_fixed_minutes_text by rememberSaveable { mutableStateOf(Prefs.get_isha_fixed_minutes(ctx).toString()) }
+    var extra_isha_1_enabled by rememberSaveable { mutableStateOf(Prefs.get_extra_isha_1_enabled(ctx)) }
+    var extra_isha_1_angle_text by rememberSaveable { mutableStateOf(Prefs.get_extra_isha_1_angle(ctx).toString()) }
+    var extra_isha_1_label_text by rememberSaveable { mutableStateOf(Prefs.get_extra_isha_1_label(ctx)) }
     var asr_factor by rememberSaveable { mutableStateOf(Prefs.get_asr_factor(ctx).toString()) }
     var maghrib_offset_minutes_text by rememberSaveable { mutableStateOf(Prefs.get_maghrib_offset_minutes(ctx).toString()) }
 
@@ -122,9 +129,15 @@ private fun SettingsContent(
         gregorian_date_format = Prefs.get_gregorian_date_format(ctx)
         method_preset = Prefs.get_method_preset(ctx)
         fajr_angle_text = Prefs.get_fajr_angle(ctx).toString()
+        extra_fajr_1_enabled = Prefs.get_extra_fajr_1_enabled(ctx)
+        extra_fajr_1_angle_text = Prefs.get_extra_fajr_1_angle(ctx).toString()
+        extra_fajr_1_label_text = Prefs.get_extra_fajr_1_label(ctx)
         isha_mode = Prefs.get_isha_mode(ctx)
         isha_angle_text = Prefs.get_isha_angle(ctx).toString()
         isha_fixed_minutes_text = Prefs.get_isha_fixed_minutes(ctx).toString()
+        extra_isha_1_enabled = Prefs.get_extra_isha_1_enabled(ctx)
+        extra_isha_1_angle_text = Prefs.get_extra_isha_1_angle(ctx).toString()
+        extra_isha_1_label_text = Prefs.get_extra_isha_1_label(ctx)
         asr_factor = Prefs.get_asr_factor(ctx).toString()
         maghrib_offset_minutes_text = Prefs.get_maghrib_offset_minutes(ctx).toString()
         makruh_preset = Prefs.get_makruh_preset(ctx)
@@ -445,6 +458,36 @@ private fun SettingsContent(
                     keyboard_type = KeyboardType.Decimal
                 )
 
+                SettingSwitch(
+                    title = ctx.getString(R.string.extra_fajr_1_enabled_title),
+                    checked = extra_fajr_1_enabled,
+                    on_checked_change = {
+                        extra_fajr_1_enabled = it
+                        Prefs.set_extra_fajr_1_enabled(ctx, it)
+                    }
+                )
+
+                if (extra_fajr_1_enabled) {
+                    SettingInlineTextField(
+                        title = ctx.getString(R.string.extra_fajr_1_angle_title),
+                        value = extra_fajr_1_angle_text,
+                        on_value_change = { v ->
+                            extra_fajr_1_angle_text = v
+                            v.toDoubleOrNull()?.let { Prefs.set_extra_fajr_1_angle(ctx, it) }
+                        },
+                        keyboard_type = KeyboardType.Decimal
+                    )
+
+                    SettingTextField(
+                        title = ctx.getString(R.string.extra_fajr_1_label_title),
+                        value = extra_fajr_1_label_text,
+                        on_value_change = { v ->
+                            extra_fajr_1_label_text = v
+                            Prefs.set_extra_fajr_1_label(ctx, v)
+                        }
+                    )
+                }
+
                 SettingDropdown(
                     title = ctx.getString(R.string.isha_mode_title),
                     value_label = isha_mode_label(ctx, isha_mode),
@@ -478,6 +521,36 @@ private fun SettingsContent(
                             set_custom_method()
                         },
                         keyboard_type = KeyboardType.Decimal
+                    )
+                }
+
+                SettingSwitch(
+                    title = ctx.getString(R.string.extra_isha_1_enabled_title),
+                    checked = extra_isha_1_enabled,
+                    on_checked_change = {
+                        extra_isha_1_enabled = it
+                        Prefs.set_extra_isha_1_enabled(ctx, it)
+                    }
+                )
+
+                if (extra_isha_1_enabled) {
+                    SettingInlineTextField(
+                        title = ctx.getString(R.string.extra_isha_1_angle_title),
+                        value = extra_isha_1_angle_text,
+                        on_value_change = { v ->
+                            extra_isha_1_angle_text = v
+                            v.toDoubleOrNull()?.let { Prefs.set_extra_isha_1_angle(ctx, it) }
+                        },
+                        keyboard_type = KeyboardType.Decimal
+                    )
+
+                    SettingTextField(
+                        title = ctx.getString(R.string.extra_isha_1_label_title),
+                        value = extra_isha_1_label_text,
+                        on_value_change = { v ->
+                            extra_isha_1_label_text = v
+                            Prefs.set_extra_isha_1_label(ctx, v)
+                        }
                     )
                 }
 
@@ -888,15 +961,24 @@ private fun settings_backup_filename(ctx: android.content.Context): String {
 
 private fun prayer_alarm_preset_json(ctx: android.content.Context): String {
     val repeat_days = "[1,2,3,4,5,6,7]"
-    val events =
-        listOf(
+    val events = buildList {
+        addAll(
+            listOf(
             AddonEvent.prayer_fajr to ctx.getString(R.string.event_prayer_fajr),
             AddonEvent.prayer_duha to ctx.getString(R.string.event_prayer_duha),
             AddonEvent.prayer_dhuhr to ctx.getString(R.string.event_prayer_dhuhr),
             AddonEvent.prayer_asr to ctx.getString(R.string.event_prayer_asr),
             AddonEvent.prayer_maghrib to ctx.getString(R.string.event_prayer_maghrib),
             AddonEvent.prayer_isha to ctx.getString(R.string.event_prayer_isha)
+            )
         )
+        if (Prefs.get_extra_fajr_1_enabled(ctx)) {
+            add(AddonEvent.prayer_fajr_extra_1 to addon_event_title(ctx, AddonEvent.prayer_fajr_extra_1))
+        }
+        if (Prefs.get_extra_isha_1_enabled(ctx)) {
+            add(AddonEvent.prayer_isha_extra_1 to addon_event_title(ctx, AddonEvent.prayer_isha_extra_1))
+        }
+    }
 
     val arr = JSONArray()
     events.forEach { (event, label) ->

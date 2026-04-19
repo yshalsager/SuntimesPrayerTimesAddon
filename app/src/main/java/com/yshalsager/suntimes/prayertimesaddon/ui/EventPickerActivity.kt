@@ -8,6 +8,7 @@ import androidx.core.net.toUri
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
+import com.yshalsager.suntimes.prayertimesaddon.core.visible_addon_events
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.AppScaffold
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.EventPickerScreen
@@ -19,7 +20,7 @@ class EventPickerActivity : ThemedActivity() {
 
         setContent {
             PrayerTimesTheme {
-                val items = remember { AddonEvent.entries }
+                val items = remember { visible_addon_events(this@EventPickerActivity) }
                 AppScaffold(
                     title = getString(R.string.picker_title),
                     nav_content_description = getString(android.R.string.cancel),

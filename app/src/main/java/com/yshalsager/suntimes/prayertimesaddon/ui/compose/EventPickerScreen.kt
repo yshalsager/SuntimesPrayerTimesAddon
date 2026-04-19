@@ -10,10 +10,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
+import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 
 @Composable
 fun EventPickerScreen(
@@ -42,5 +43,6 @@ fun EventPickerScreen(
 
 @Composable
 private fun title_for(item: AddonEvent): String {
-    return stringResource(item.title_res)
+    val context = LocalContext.current
+    return addon_event_title(context, item)
 }

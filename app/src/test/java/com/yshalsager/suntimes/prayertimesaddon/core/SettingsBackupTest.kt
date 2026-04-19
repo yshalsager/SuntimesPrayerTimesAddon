@@ -1,12 +1,28 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
+import android.content.Context
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [33])
 class SettingsBackupTest {
+    private lateinit var context: Context
+
+    @Before
+    fun set_up() {
+        context = RuntimeEnvironment.getApplication()
+        context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
+    }
+
     @Test
     fun encode_parse_roundtrip_preserves_values() {
         val values = linkedMapOf<String, Any>(
@@ -15,7 +31,13 @@ class SettingsBackupTest {
             "days_show_hijri" to false,
             "hijri_day_offset" to 2,
             "fajr_angle" to 16.2,
+            "extra_fajr_1_enabled" to true,
+            "extra_fajr_1_angle" to 18.3,
+            "extra_fajr_1_label" to "Fajr Secondary",
             "asr_factor" to 2,
+            "extra_isha_1_enabled" to true,
+            "extra_isha_1_angle" to 17.8,
+            "extra_isha_1_label" to "Isha Secondary",
             "makruh_sunrise_minutes" to 20,
             "host_event_authority" to "com.forrestguice.suntimeswidget.event.provider"
         )
@@ -30,7 +52,13 @@ class SettingsBackupTest {
         assertEquals(false, restored["days_show_hijri"])
         assertEquals(2, restored["hijri_day_offset"])
         assertEquals(16.2, restored["fajr_angle"])
+        assertEquals(true, restored["extra_fajr_1_enabled"])
+        assertEquals(18.3, restored["extra_fajr_1_angle"])
+        assertEquals("Fajr Secondary", restored["extra_fajr_1_label"])
         assertEquals(2, restored["asr_factor"])
+        assertEquals(true, restored["extra_isha_1_enabled"])
+        assertEquals(17.8, restored["extra_isha_1_angle"])
+        assertEquals("Isha Secondary", restored["extra_isha_1_label"])
         assertEquals(20, restored["makruh_sunrise_minutes"])
         assertEquals("com.forrestguice.suntimeswidget.event.provider", restored["host_event_authority"])
         assertEquals(0, parsed.skipped_count)
@@ -224,5 +252,18 @@ class SettingsBackupTest {
         assertEquals(Prefs.theme_dark, parsed!!.values["theme"])
         assertEquals(false, parsed.values.containsKey("isha_fixed_minutes"))
         assertEquals(1, parsed.skipped_count)
+    }
+
+    @Test
+    fun export_preserves_blank_extra_labels_as_blank() {
+        Prefs.set_extra_fajr_1_label(context, "")
+        Prefs.set_extra_isha_1_label(context, "")
+
+        val raw = SettingsBackup.export_json(context)
+        val parsed = SettingsBackup.parse_json(raw)
+
+        assertNotNull(parsed)
+        assertEquals("", parsed!!.values["extra_fajr_1_label"])
+        assertEquals("", parsed.values["extra_isha_1_label"])
     }
 }

@@ -13,6 +13,7 @@ import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -105,9 +106,59 @@ class PrayerTimesProviderTest {
         }
     }
 
+    @Test
+    fun event_info_hides_extra_fajr_and_isha_when_disabled() {
+        val names = event_info_names()
+
+        assertFalse(names.contains("PRAYER_FAJR_EXTRA_1"))
+        assertFalse(names.contains("PRAYER_ISHA_EXTRA_1"))
+    }
+
+    @Test
+    fun event_info_includes_extra_fajr_and_isha_when_enabled() {
+        Prefs.set_extra_fajr_1_enabled(context, true)
+        Prefs.set_extra_isha_1_enabled(context, true)
+
+        val names = event_info_names()
+
+        assertTrue(names.contains("PRAYER_FAJR_EXTRA_1"))
+        assertTrue(names.contains("PRAYER_ISHA_EXTRA_1"))
+    }
+
+    @Test
+    fun extra_fajr_and_isha_calc_rows_require_enable_flag() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        query_event_calc("PRAYER_FAJR_EXTRA_1", day_start).use { cursor -> assertEquals(0, cursor.count) }
+        query_event_calc("PRAYER_ISHA_EXTRA_1", day_start).use { cursor -> assertEquals(0, cursor.count) }
+
+        Prefs.set_extra_fajr_1_enabled(context, true)
+        Prefs.set_extra_isha_1_enabled(context, true)
+
+        query_event_calc("PRAYER_FAJR_EXTRA_1", day_start).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(day_start + 5 * 60 * 60 * 1000L, cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis)))
+        }
+        query_event_calc("PRAYER_ISHA_EXTRA_1", day_start).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(day_start + 19 * 60 * 60 * 1000L + 30 * 60 * 1000L, cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis)))
+        }
+    }
+
     private fun query_event_calc(event_id: String, day_start: Long): Cursor {
         val uri = Uri.parse("content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_calc}/$event_id")
         return context.contentResolver.query(uri, null, null, arrayOf(day_start.toString(), "0", "false", "[]"), null)!!
+    }
+
+    private fun event_info_names(): List<String> {
+        val uri = Uri.parse("content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}")
+        context.contentResolver.query(uri, arrayOf(AlarmEventContract.column_event_name), null, null, null)!!.use { cursor ->
+            val names = ArrayList<String>()
+            while (cursor.moveToNext()) names.add(cursor.getString(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_name)))
+            return names
+        }
     }
 
     private fun find_eid_day_start(): Long {

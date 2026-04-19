@@ -15,6 +15,7 @@ enum class AddonEvent(
     val type: AddonEventType
 ) {
     prayer_fajr("PRAYER_FAJR", R.string.event_prayer_fajr, AddonEventType.prayer),
+    prayer_fajr_extra_1("PRAYER_FAJR_EXTRA_1", R.string.event_prayer_fajr_extra_1, AddonEventType.prayer),
     prayer_duha("PRAYER_DUHA", R.string.event_prayer_duha, AddonEventType.prayer),
     prayer_eid_start("PRAYER_EID_START", R.string.event_prayer_eid_start, AddonEventType.prayer),
     prayer_eid_end("PRAYER_EID_END", R.string.event_prayer_eid_end, AddonEventType.prayer),
@@ -22,6 +23,7 @@ enum class AddonEvent(
     prayer_asr("PRAYER_ASR", R.string.event_prayer_asr, AddonEventType.prayer),
     prayer_maghrib("PRAYER_MAGHRIB", R.string.event_prayer_maghrib, AddonEventType.prayer),
     prayer_isha("PRAYER_ISHA", R.string.event_prayer_isha, AddonEventType.prayer),
+    prayer_isha_extra_1("PRAYER_ISHA_EXTRA_1", R.string.event_prayer_isha_extra_1, AddonEventType.prayer),
 
     night_midpoint("NIGHT_MIDPOINT", R.string.night_midpoint, AddonEventType.night),
     night_last_third("NIGHT_LAST_THIRD", R.string.night_last_third, AddonEventType.night),
@@ -72,6 +74,8 @@ object AddonEventMapper {
         return when (addon_event) {
             AddonEvent.prayer_fajr ->
                 HostQuery(HostEventIds.sun_elevation(-Prefs.get_fajr_angle(context), rising = true))
+            AddonEvent.prayer_fajr_extra_1 ->
+                HostQuery(HostEventIds.sun_elevation(-Prefs.get_extra_fajr_1_angle(context), rising = true))
             AddonEvent.prayer_duha -> {
                 val delta = Prefs.get_makruh_sunrise_minutes(context) * 60_000L
                 HostQuery("SUNRISE", delta_millis = delta)
@@ -95,6 +99,8 @@ object AddonEventMapper {
 
                 else -> HostQuery(HostEventIds.sun_elevation(-Prefs.get_isha_angle(context), rising = false))
             }
+            AddonEvent.prayer_isha_extra_1 ->
+                HostQuery(HostEventIds.sun_elevation(-Prefs.get_extra_isha_1_angle(context), rising = false))
 
             AddonEvent.makruh_dawn_start ->
                 HostQuery(HostEventIds.sun_elevation(-Prefs.get_fajr_angle(context), rising = true))

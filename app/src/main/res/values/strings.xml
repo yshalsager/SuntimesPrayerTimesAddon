@@ -8,6 +8,7 @@
     <string name='event_type_night'>Night</string>
 
     <string name='event_prayer_fajr'>Fajr</string>
+    <string name='event_prayer_fajr_extra_1'>Fajr (Extra 1)</string>
     <string name='event_prayer_duha'>Duha</string>
     <string name='event_prayer_eid_start'>Eid (Start)</string>
     <string name='event_prayer_eid_end'>Eid (End)</string>
@@ -16,6 +17,7 @@
     <string name='event_prayer_asr'>Asr</string>
     <string name='event_prayer_maghrib'>Maghrib</string>
     <string name='event_prayer_isha'>Isha</string>
+    <string name='event_prayer_isha_extra_1'>Isha (Extra 1)</string>
 
     <string name='event_makruh_dawn_start'>Makruh (Dawn start)</string>
     <string name='event_makruh_sunrise_start'>Makruh (Sunrise start)</string>
@@ -53,6 +55,12 @@
     <string name='asr_factor_1'>Shafi (x1)</string>
     <string name='asr_factor_2'>Hanafi (x2)</string>
     <string name='maghrib_offset_title'>Maghrib offset minutes</string>
+    <string name='extra_fajr_1_enabled_title'>Enable additional Fajr #1</string>
+    <string name='extra_fajr_1_angle_title'>Additional Fajr #1 angle</string>
+    <string name='extra_fajr_1_label_title'>Additional Fajr #1 label</string>
+    <string name='extra_isha_1_enabled_title'>Enable additional Isha #1</string>
+    <string name='extra_isha_1_angle_title'>Additional Isha #1 angle</string>
+    <string name='extra_isha_1_label_title'>Additional Isha #1 label</string>
 
     <string name='general_title'>General</string>
     <string name='language_title'>Language</string>

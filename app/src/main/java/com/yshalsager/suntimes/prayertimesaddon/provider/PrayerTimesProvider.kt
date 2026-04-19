@@ -16,9 +16,12 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostEventQueries
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
+import com.yshalsager.suntimes.prayertimesaddon.core.is_addon_event_enabled
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_eid_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
+import com.yshalsager.suntimes.prayertimesaddon.core.visible_addon_events
 import java.util.Calendar
 
 class PrayerTimesProvider : ContentProvider() {
@@ -92,14 +95,14 @@ class PrayerTimesProvider : ContentProvider() {
     ): Cursor {
         val cols = projection ?: AlarmEventContract.query_event_info_projection
         val c = MatrixCursor(cols)
-        for (e in AddonEvent.entries) {
+        for (e in visible_addon_events(context)) {
             if (event_id == null || e.event_id == event_id) c.addRow(event_info_row(context, cols, e))
         }
         return c
     }
 
     private fun event_info_row(context: Context, cols: Array<String>, e: AddonEvent): Array<Any?> {
-        val title = context.getString(e.title_res)
+        val title = addon_event_title(context, e)
         val row = arrayOfNulls<Any>(cols.size)
         for (i in cols.indices) {
             row[i] = when (cols[i]) {
@@ -133,6 +136,7 @@ class PrayerTimesProvider : ContentProvider() {
 
         val selected = HostResolver.ensure_default_selected(context) ?: return c
         val addon_event = AddonEvent.entries.firstOrNull { it.event_id == addon_event_id } ?: return c
+        if (!is_addon_event_enabled(context, addon_event)) return c
 
         if (addon_event.type == AddonEventType.night) {
             val t = calc_night_event_time(context, selected, addon_event, selection, selectionArgs)

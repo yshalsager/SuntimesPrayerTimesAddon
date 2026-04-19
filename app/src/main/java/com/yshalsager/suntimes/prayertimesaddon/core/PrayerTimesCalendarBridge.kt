@@ -26,6 +26,7 @@ data class PrayerTimesCalendarEvent(
 private data class PrayerTimesCalendarDay(
     val is_friday: Boolean,
     val fajr: Long?,
+    val fajr_extra_1: Long?,
     val duha: Long?,
     val eid_start: Long?,
     val eid_end: Long?,
@@ -33,6 +34,7 @@ private data class PrayerTimesCalendarDay(
     val asr: Long?,
     val maghrib: Long?,
     val isha: Long?,
+    val isha_extra_1: Long?,
     val sunrise: Long?,
     val sunrise_end: Long?,
     val zawal_start: Long?,
@@ -128,17 +130,19 @@ private fun day_events_for_source(
     return when (source) {
         PrayerTimesCalendarSource.prayers ->
             buildList {
-                day.fajr?.let { add(point_event(meta, context.getString(R.string.event_prayer_fajr), it)) }
-                day.duha?.let { add(point_event(meta, context.getString(R.string.event_prayer_duha), it)) }
-                day.eid_start?.let { add(point_event(meta, context.getString(R.string.event_prayer_eid_start), it)) }
-                day.eid_end?.let { add(point_event(meta, context.getString(R.string.event_prayer_eid_end), it)) }
+                day.fajr?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_fajr), it)) }
+                day.fajr_extra_1?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_fajr_extra_1), it)) }
+                day.duha?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_duha), it)) }
+                day.eid_start?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_eid_start), it)) }
+                day.eid_end?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_eid_end), it)) }
                 day.dhuhr?.let {
                     val title = if (day.is_friday) context.getString(R.string.event_prayer_jummah) else context.getString(R.string.event_prayer_dhuhr)
                     add(point_event(meta, title, it))
                 }
-                day.asr?.let { add(point_event(meta, context.getString(R.string.event_prayer_asr), it)) }
-                day.maghrib?.let { add(point_event(meta, context.getString(R.string.event_prayer_maghrib), it)) }
-                day.isha?.let { add(point_event(meta, context.getString(R.string.event_prayer_isha), it)) }
+                day.asr?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_asr), it)) }
+                day.maghrib?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_maghrib), it)) }
+                day.isha?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_isha), it)) }
+                day.isha_extra_1?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_isha_extra_1), it)) }
             }
 
         PrayerTimesCalendarSource.makruh ->
@@ -172,6 +176,7 @@ private fun build_calendar_day(context: Context, host: String, tz: TimeZone, day
     fun q(event: AddonEvent) = query_host_addon_time(context, host, event, day_start)
 
     val fajr = q(AddonEvent.prayer_fajr)
+    val fajr_extra_1 = q(AddonEvent.prayer_fajr_extra_1)
     val duha = q(AddonEvent.prayer_duha)
     val eid_start = q(AddonEvent.prayer_eid_start)
     val eid_end = q(AddonEvent.prayer_eid_end)
@@ -179,6 +184,7 @@ private fun build_calendar_day(context: Context, host: String, tz: TimeZone, day
     val asr = q(AddonEvent.prayer_asr)
     val maghrib = sun?.sunset?.plus(maghrib_offset_ms) ?: q(AddonEvent.prayer_maghrib)
     val isha = q(AddonEvent.prayer_isha)
+    val isha_extra_1 = q(AddonEvent.prayer_isha_extra_1)
 
     val sunrise = sun?.sunrise ?: q(AddonEvent.makruh_sunrise_start)
     val sunrise_end = q(AddonEvent.makruh_sunrise_end)
@@ -192,6 +198,7 @@ private fun build_calendar_day(context: Context, host: String, tz: TimeZone, day
     return PrayerTimesCalendarDay(
         is_friday = is_friday,
         fajr = fajr,
+        fajr_extra_1 = fajr_extra_1,
         duha = duha,
         eid_start = eid_start,
         eid_end = eid_end,
@@ -199,6 +206,7 @@ private fun build_calendar_day(context: Context, host: String, tz: TimeZone, day
         asr = asr,
         maghrib = maghrib,
         isha = isha,
+        isha_extra_1 = isha_extra_1,
         sunrise = sunrise,
         sunrise_end = sunrise_end,
         zawal_start = zawal_start,

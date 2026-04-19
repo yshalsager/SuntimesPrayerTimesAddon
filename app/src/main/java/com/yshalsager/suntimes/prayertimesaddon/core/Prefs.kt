@@ -2,6 +2,7 @@ package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
 import androidx.core.content.edit
+import com.yshalsager.suntimes.prayertimesaddon.R
 
 object Prefs {
     const val isha_mode_angle = "angle"
@@ -38,9 +39,15 @@ object Prefs {
     private const val k_host_event_authority = "host_event_authority"
     private const val k_method_preset = "method_preset"
     private const val k_fajr_angle = "fajr_angle"
+    private const val k_extra_fajr_1_enabled = "extra_fajr_1_enabled"
+    private const val k_extra_fajr_1_angle = "extra_fajr_1_angle"
+    private const val k_extra_fajr_1_label = "extra_fajr_1_label"
     private const val k_isha_mode = "isha_mode"
     private const val k_isha_angle = "isha_angle"
     private const val k_isha_fixed_minutes = "isha_fixed_minutes"
+    private const val k_extra_isha_1_enabled = "extra_isha_1_enabled"
+    private const val k_extra_isha_1_angle = "extra_isha_1_angle"
+    private const val k_extra_isha_1_label = "extra_isha_1_label"
     private const val k_asr_factor = "asr_factor"
     private const val k_maghrib_offset_minutes = "maghrib_offset_minutes"
     private const val k_makruh_preset = "makruh_preset"
@@ -145,6 +152,29 @@ object Prefs {
     fun set_fajr_angle(context: Context, angle: Double) =
         put_str(context, k_fajr_angle, angle.toString())
 
+    fun get_extra_fajr_1_enabled(context: Context): Boolean =
+        sp(context).getBoolean(k_extra_fajr_1_enabled, false)
+
+    fun set_extra_fajr_1_enabled(context: Context, enabled: Boolean) =
+        put_bool(context, k_extra_fajr_1_enabled, enabled)
+
+    fun get_extra_fajr_1_angle(context: Context): Double =
+        get_double(context, k_extra_fajr_1_angle, 18.0)
+
+    fun set_extra_fajr_1_angle(context: Context, angle: Double) =
+        put_str(context, k_extra_fajr_1_angle, angle.toString())
+
+    fun get_extra_fajr_1_label_raw(context: Context): String =
+        sp(context).getString(k_extra_fajr_1_label, null)?.trim().orEmpty()
+
+    fun get_extra_fajr_1_label(context: Context): String {
+        val stored = get_extra_fajr_1_label_raw(context)
+        return if (stored.isBlank()) context.getString(R.string.event_prayer_fajr_extra_1) else stored
+    }
+
+    fun set_extra_fajr_1_label(context: Context, label: String) =
+        put_str(context, k_extra_fajr_1_label, label.trim())
+
     fun get_isha_mode(context: Context): String =
         get_str(context, k_isha_mode, isha_mode_angle)
 
@@ -162,6 +192,29 @@ object Prefs {
 
     fun set_isha_fixed_minutes(context: Context, minutes: Int) =
         put_str(context, k_isha_fixed_minutes, minutes.toString())
+
+    fun get_extra_isha_1_enabled(context: Context): Boolean =
+        sp(context).getBoolean(k_extra_isha_1_enabled, false)
+
+    fun set_extra_isha_1_enabled(context: Context, enabled: Boolean) =
+        put_bool(context, k_extra_isha_1_enabled, enabled)
+
+    fun get_extra_isha_1_angle(context: Context): Double =
+        get_double(context, k_extra_isha_1_angle, 18.0)
+
+    fun set_extra_isha_1_angle(context: Context, angle: Double) =
+        put_str(context, k_extra_isha_1_angle, angle.toString())
+
+    fun get_extra_isha_1_label_raw(context: Context): String =
+        sp(context).getString(k_extra_isha_1_label, null)?.trim().orEmpty()
+
+    fun get_extra_isha_1_label(context: Context): String {
+        val stored = get_extra_isha_1_label_raw(context)
+        return if (stored.isBlank()) context.getString(R.string.event_prayer_isha_extra_1) else stored
+    }
+
+    fun set_extra_isha_1_label(context: Context, label: String) =
+        put_str(context, k_extra_isha_1_label, label.trim())
 
     fun get_asr_factor(context: Context): Int =
         get_int(context, k_asr_factor, 1)

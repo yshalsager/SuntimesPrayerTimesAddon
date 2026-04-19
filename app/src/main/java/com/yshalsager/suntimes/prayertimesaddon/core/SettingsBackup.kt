@@ -35,9 +35,15 @@ object SettingsBackup {
         "host_event_authority",
         "method_preset",
         "fajr_angle",
+        "extra_fajr_1_enabled",
+        "extra_fajr_1_angle",
+        "extra_fajr_1_label",
         "isha_mode",
         "isha_angle",
         "isha_fixed_minutes",
+        "extra_isha_1_enabled",
+        "extra_isha_1_angle",
+        "extra_isha_1_label",
         "asr_factor",
         "maghrib_offset_minutes",
         "makruh_preset",
@@ -106,9 +112,15 @@ object SettingsBackup {
             "palette" to Prefs.get_palette(context),
             "method_preset" to Prefs.get_method_preset(context),
             "fajr_angle" to Prefs.get_fajr_angle(context),
+            "extra_fajr_1_enabled" to Prefs.get_extra_fajr_1_enabled(context),
+            "extra_fajr_1_angle" to Prefs.get_extra_fajr_1_angle(context),
+            "extra_fajr_1_label" to Prefs.get_extra_fajr_1_label_raw(context),
             "isha_mode" to Prefs.get_isha_mode(context),
             "isha_angle" to Prefs.get_isha_angle(context),
             "isha_fixed_minutes" to Prefs.get_isha_fixed_minutes(context),
+            "extra_isha_1_enabled" to Prefs.get_extra_isha_1_enabled(context),
+            "extra_isha_1_angle" to Prefs.get_extra_isha_1_angle(context),
+            "extra_isha_1_label" to Prefs.get_extra_isha_1_label_raw(context),
             "asr_factor" to Prefs.get_asr_factor(context),
             "maghrib_offset_minutes" to Prefs.get_maghrib_offset_minutes(context),
             "makruh_preset" to Prefs.get_makruh_preset(context),
@@ -176,7 +188,9 @@ object SettingsBackup {
             "days_show_night_portions",
             "days_show_hijri",
             "widget_show_prohibited",
-            "widget_show_night_portions" -> parse_bool(raw_value)
+            "widget_show_night_portions",
+            "extra_fajr_1_enabled",
+            "extra_isha_1_enabled" -> parse_bool(raw_value)
 
             "days_month_basis" -> parse_string(raw_value) { it == "gregorian" || it == "hijri" }
             "gregorian_date_format" -> parse_string(raw_value) { it == "card" || it == "medium" || it == "long" }
@@ -186,13 +200,17 @@ object SettingsBackup {
             "theme" -> parse_string(raw_value) { it == "system" || it == "light" || it == "dark" }
             "palette" -> parse_string(raw_value) { it == "parchment" || it == "dynamic" || it == "sapphire" || it == "rose" }
             "host_event_authority" -> parse_string(raw_value) { it.isNotBlank() }
+            "extra_fajr_1_label",
+            "extra_isha_1_label" -> parse_string(raw_value)
             "method_preset" -> parse_string(raw_value) { it == "egypt" || it == "mwl" || it == "karachi" || it == "isna" || it == "uaq" || it == "custom" }
             "isha_mode" -> parse_string(raw_value) { it == "angle" || it == "fixed" }
             "makruh_preset" -> parse_string(raw_value) { it == "shafi" || it == "hanafi" || it == "custom" }
             "asr_factor" -> parse_int(raw_value) { it == 1 || it == 2 }
             "makruh_sunrise_minutes" -> parse_int(raw_value) { it == 10 || it == 15 || it == 20 }
             "fajr_angle",
+            "extra_fajr_1_angle",
             "isha_angle",
+            "extra_isha_1_angle",
             "makruh_angle" -> parse_double(raw_value)
 
             "isha_fixed_minutes",

@@ -130,6 +130,7 @@ fun query_host_addon_time(context: Context, host_event_authority: String, event:
     val selection_args = event_calc_args(alarm_now)
 
     if (event.type == AddonEventType.night) return null
+    if (!is_addon_event_enabled(context, event)) return null
 
     if (event == AddonEvent.prayer_eid_start || event == AddonEvent.prayer_eid_end) {
         return query_host_eid_time(context, host_event_authority, event, alarm_now, selection, selection_args)

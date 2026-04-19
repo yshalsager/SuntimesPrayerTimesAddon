@@ -84,6 +84,30 @@ class TimesTest {
         assertNull(eid_end)
     }
 
+    @Test
+    fun query_host_addon_time_returns_extra_fajr_and_isha_when_enabled() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        Prefs.set_extra_fajr_1_enabled(context, true)
+        Prefs.set_extra_isha_1_enabled(context, true)
+
+        val fajr_extra = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_fajr_extra_1, day_start)
+        val isha_extra = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_isha_extra_1, day_start)
+
+        assertEquals(day_start + 5 * 60 * 60 * 1000L, fajr_extra)
+        assertEquals(day_start + 19 * 60 * 60 * 1000L + 30 * 60 * 1000L, isha_extra)
+    }
+
+    @Test
+    fun query_host_addon_time_returns_null_for_extra_fajr_and_isha_when_disabled() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        val fajr_extra = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_fajr_extra_1, day_start)
+        val isha_extra = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_isha_extra_1, day_start)
+
+        assertNull(fajr_extra)
+        assertNull(isha_extra)
+    }
+
     private fun find_eid_day_start(): Long {
         val tz = TimeZone.getTimeZone("UTC")
         val from = utc_day_start(2026, Calendar.JANUARY, 1)

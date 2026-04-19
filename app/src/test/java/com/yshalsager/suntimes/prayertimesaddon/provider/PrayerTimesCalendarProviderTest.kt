@@ -132,6 +132,34 @@ class PrayerTimesCalendarProviderTest {
     }
 
     @Test
+    fun prayers_calendar_excludes_extra_fajr_and_isha_when_disabled() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        val titles = query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
+            .read_strings(CalendarContract.Events.TITLE)
+
+        assertFalse(titles.contains(context.getString(R.string.event_prayer_fajr_extra_1)))
+        assertFalse(titles.contains(context.getString(R.string.event_prayer_isha_extra_1)))
+    }
+
+    @Test
+    fun prayers_calendar_includes_custom_labeled_extra_fajr_and_isha_when_enabled() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        Prefs.set_extra_fajr_1_enabled(context, true)
+        Prefs.set_extra_fajr_1_label(context, "Fajr Secondary")
+        Prefs.set_extra_isha_1_enabled(context, true)
+        Prefs.set_extra_isha_1_label(context, "Isha Secondary")
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        val titles = query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
+            .read_strings(CalendarContract.Events.TITLE)
+
+        assertTrue(titles.contains("Fajr Secondary"))
+        assertTrue(titles.contains("Isha Secondary"))
+    }
+
+    @Test
     fun makruh_calendar_returns_ranges() {
         Prefs.set_host_event_authority(context, host_event_authority)
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
