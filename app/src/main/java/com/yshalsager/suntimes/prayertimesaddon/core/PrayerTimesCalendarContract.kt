@@ -19,6 +19,7 @@ enum class PrayerTimesCalendarSource(
 
 object PrayerTimesCalendarContract {
     val authority = AppIds.calendar_provider_authority
+    const val param_saved_location_id = query_param_saved_location_id
 
     const val action_add_calendar = "suntimes.action.ADD_CALENDAR"
     const val category_suntimes_calendar = "suntimes.SUNTIMES_CALENDAR"

@@ -2,6 +2,7 @@ package com.yshalsager.suntimes.prayertimesaddon.ui.compose
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,8 +28,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -110,10 +115,17 @@ sealed class HomeItemUi(open val sort_time: Long) {
 data class HomeUiState(
     val method_summary: String,
     val location_summary: String,
+    val selected_location_key: String,
+    val location_options: List<HomeLocationOptionUi>,
     val host_footer: String,
     val error: String?,
     val show_reinstall_addon: Boolean,
     val days: List<HomeDayUiState>
+)
+
+data class HomeLocationOptionUi(
+    val key: String,
+    val label: String
 )
 
 data class HomeDayUiState(
@@ -128,6 +140,8 @@ fun HomeScreen(
     state: HomeUiState,
     on_open_days: () -> Unit,
     on_open_settings: () -> Unit,
+    on_open_saved_locations_cards: () -> Unit,
+    on_select_location: (String) -> Unit,
     on_install_host: () -> Unit,
     on_reinstall_addon: () -> Unit,
     on_open_alarm: (String) -> Unit,
@@ -136,8 +150,12 @@ fun HomeScreen(
     val no_host_found = stringResource(R.string.no_host_found)
     val install_host_action = stringResource(R.string.install_host_action)
     val reinstall_addon_action = stringResource(R.string.reinstall_addon_action)
+    val location_selector_title = stringResource(R.string.home_location_selector_title)
+    val locations_cards_action = stringResource(R.string.saved_locations_cards_action)
+    val close_label = stringResource(android.R.string.cancel)
     val pager_state = rememberPagerState(initialPage = 1, pageCount = { 3 })
     var override_center_day by remember { mutableStateOf<HomeDayUiState?>(null) }
+    var show_location_selector by remember { mutableStateOf(false) }
     val latest_state by rememberUpdatedState(state)
 
     LaunchedEffect(state.days.getOrNull(1)?.day_start) {
@@ -164,6 +182,7 @@ fun HomeScreen(
     AppScaffold(
         title = state.location_summary,
         subtitle = state.method_summary,
+        on_title_click = if (state.location_options.isNotEmpty()) ({ show_location_selector = true }) else null,
         actions = {
             IconButton(onClick = on_open_days, modifier = Modifier.size(44.dp)) {
                 Icon(painterResource(R.drawable.ic_days), contentDescription = null, tint = MaterialTheme.colorScheme.onBackground)
@@ -173,6 +192,24 @@ fun HomeScreen(
             }
         }
     ) { padding ->
+        if (show_location_selector) {
+            HomeLocationSelectorDialog(
+                title = location_selector_title,
+                locations_cards_action = locations_cards_action,
+                close_label = close_label,
+                location_options = state.location_options,
+                selected_location_key = state.selected_location_key,
+                on_dismiss = { show_location_selector = false },
+                on_select_location = {
+                    show_location_selector = false
+                    on_select_location(it)
+                },
+                on_open_saved_locations_cards = {
+                    show_location_selector = false
+                    on_open_saved_locations_cards()
+                }
+            )
+        }
         if (state.error != null) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
@@ -239,6 +276,81 @@ fun HomeScreen(
                 DayTimeline(day = day, host_footer = state.host_footer, on_open_alarm = on_open_alarm)
             }
         }
+    }
+}
+
+@Composable
+private fun HomeLocationSelectorDialog(
+    title: String,
+    locations_cards_action: String,
+    close_label: String,
+    location_options: List<HomeLocationOptionUi>,
+    selected_location_key: String,
+    on_dismiss: () -> Unit,
+    on_select_location: (String) -> Unit,
+    on_open_saved_locations_cards: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = on_dismiss,
+        containerColor = MaterialTheme.colorScheme.background,
+        titleContentColor = MaterialTheme.colorScheme.onBackground,
+        textContentColor = MaterialTheme.colorScheme.onSurface,
+        title = { Text(title) },
+        text = {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = MaterialTheme.shapes.large,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Column {
+                    location_options.forEachIndexed { index, option ->
+                        HomeLocationSelectorRow(
+                            option = option,
+                            selected = option.key == selected_location_key,
+                            on_click = { on_select_location(option.key) }
+                        )
+                        if (index < location_options.lastIndex) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = on_open_saved_locations_cards) { Text(locations_cards_action) }
+        },
+        dismissButton = {
+            TextButton(onClick = on_dismiss) { Text(close_label) }
+        }
+    )
+}
+
+@Composable
+private fun HomeLocationSelectorRow(
+    option: HomeLocationOptionUi,
+    selected: Boolean,
+    on_click: () -> Unit
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable(onClick = on_click)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = option.label,
+            modifier = Modifier.weight(1f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Start,
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Normal
+        )
+        Spacer(Modifier.width(8.dp))
+        RadioButton(selected = selected, onClick = null)
     }
 }
 

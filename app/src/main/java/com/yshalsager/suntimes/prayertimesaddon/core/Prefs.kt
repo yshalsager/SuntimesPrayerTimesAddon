@@ -54,6 +54,9 @@ object Prefs {
     private const val k_makruh_angle = "makruh_angle"
     private const val k_makruh_sunrise_minutes = "makruh_sunrise_minutes"
     private const val k_zawal_minutes = "zawal_minutes"
+    private const val k_saved_locations_json = "saved_locations_json"
+    private const val k_home_location_source = "home_location_source"
+    private const val k_home_location_id = "home_location_id"
 
     private fun sp(context: Context) = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
 
@@ -261,6 +264,30 @@ object Prefs {
     fun set_zawal_minutes(context: Context, minutes: Int) =
         put_str(context, k_zawal_minutes, minutes.toString())
 
+    fun get_saved_locations_json(context: Context): String =
+        get_str(context, k_saved_locations_json, "[]")
+
+    fun set_saved_locations_json(context: Context, raw: String) =
+        put_str(context, k_saved_locations_json, raw)
+
+    fun get_home_location_source(context: Context): String {
+        val stored = get_str(context, k_home_location_source, SavedLocations.home_source_host)
+        return if (stored == SavedLocations.home_source_saved) stored else SavedLocations.home_source_host
+    }
+
+    fun set_home_location_source(context: Context, source: String) =
+        put_str(
+            context,
+            k_home_location_source,
+            if (source == SavedLocations.home_source_saved) SavedLocations.home_source_saved else SavedLocations.home_source_host
+        )
+
+    fun get_home_location_id(context: Context): String =
+        get_str(context, k_home_location_id, "").trim()
+
+    fun set_home_location_id(context: Context, id: String?) =
+        put_str(context, k_home_location_id, id?.trim().orEmpty())
+
     fun apply_method_preset(context: Context, preset: String) {
         when (preset) {
             "egypt" -> {
@@ -291,6 +318,12 @@ object Prefs {
                 set_fajr_angle(context, 18.5)
                 set_isha_mode(context, isha_mode_fixed)
                 set_isha_fixed_minutes(context, 90)
+            }
+
+            "uiof" -> {
+                set_fajr_angle(context, 12.0)
+                set_isha_mode(context, isha_mode_angle)
+                set_isha_angle(context, 12.0)
             }
         }
     }

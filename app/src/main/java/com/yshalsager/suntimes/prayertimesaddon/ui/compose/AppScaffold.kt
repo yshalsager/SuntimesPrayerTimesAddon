@@ -1,9 +1,11 @@
 package com.yshalsager.suntimes.prayertimesaddon.ui.compose
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -16,6 +18,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -25,6 +29,7 @@ fun AppScaffold(
     subtitle: String? = null,
     nav_content_description: String? = null,
     on_nav: (() -> Unit)? = null,
+    on_title_click: (() -> Unit)? = null,
     actions: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
@@ -32,7 +37,12 @@ fun AppScaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
+                    Column(
+                        modifier =
+                            if (on_title_click != null) {
+                                Modifier.clickable(onClick = on_title_click).padding(vertical = 2.dp)
+                            } else Modifier
+                    ) {
                         Text(
                             text = title,
                             maxLines = 1,

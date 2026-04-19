@@ -46,4 +46,5 @@ object AlarmEventContract {
     const val extra_alarm_offset = "alarm_offset"
     const val extra_alarm_repeat = "alarm_repeat"
     const val extra_alarm_repeat_days = "alarm_repeat_days"
+    const val extra_saved_location_id = query_param_saved_location_id
 }

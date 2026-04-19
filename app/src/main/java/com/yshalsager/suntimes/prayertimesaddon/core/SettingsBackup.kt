@@ -3,6 +3,7 @@ package com.yshalsager.suntimes.prayertimesaddon.core
 import android.content.Context
 import androidx.core.content.edit
 import androidx.appcompat.app.AppCompatDelegate
+import org.json.JSONArray
 import org.json.JSONObject
 
 object SettingsBackup {
@@ -49,7 +50,10 @@ object SettingsBackup {
         "makruh_preset",
         "makruh_angle",
         "makruh_sunrise_minutes",
-        "zawal_minutes"
+        "zawal_minutes",
+        "saved_locations_json",
+        "home_location_source",
+        "home_location_id"
     )
 
     fun export_json(context: Context): String = encode_json(export_values(context))
@@ -126,7 +130,10 @@ object SettingsBackup {
             "makruh_preset" to Prefs.get_makruh_preset(context),
             "makruh_angle" to Prefs.get_makruh_angle(context),
             "makruh_sunrise_minutes" to Prefs.get_makruh_sunrise_minutes(context),
-            "zawal_minutes" to Prefs.get_zawal_minutes(context)
+            "zawal_minutes" to Prefs.get_zawal_minutes(context),
+            "saved_locations_json" to Prefs.get_saved_locations_json(context),
+            "home_location_source" to Prefs.get_home_location_source(context),
+            "home_location_id" to Prefs.get_home_location_id(context)
         )
         Prefs.get_host_event_authority(context)?.let { values["host_event_authority"] = it }
         return values
@@ -202,9 +209,11 @@ object SettingsBackup {
             "host_event_authority" -> parse_string(raw_value) { it.isNotBlank() }
             "extra_fajr_1_label",
             "extra_isha_1_label" -> parse_string(raw_value)
-            "method_preset" -> parse_string(raw_value) { it == "egypt" || it == "mwl" || it == "karachi" || it == "isna" || it == "uaq" || it == "custom" }
+            "method_preset" -> parse_string(raw_value) { it in MethodConfig.supported_presets }
             "isha_mode" -> parse_string(raw_value) { it == "angle" || it == "fixed" }
             "makruh_preset" -> parse_string(raw_value) { it == "shafi" || it == "hanafi" || it == "custom" }
+            "home_location_source" -> parse_string(raw_value) { it == SavedLocations.home_source_host || it == SavedLocations.home_source_saved }
+            "home_location_id" -> parse_string(raw_value)
             "asr_factor" -> parse_int(raw_value) { it == 1 || it == 2 }
             "makruh_sunrise_minutes" -> parse_int(raw_value) { it == 10 || it == 15 || it == 20 }
             "fajr_angle",
@@ -212,6 +221,14 @@ object SettingsBackup {
             "isha_angle",
             "extra_isha_1_angle",
             "makruh_angle" -> parse_double(raw_value)
+            "saved_locations_json" -> parse_string(raw_value) {
+                try {
+                    JSONArray(it)
+                    true
+                } catch (_: Exception) {
+                    false
+                }
+            }
 
             "isha_fixed_minutes",
             "maghrib_offset_minutes",

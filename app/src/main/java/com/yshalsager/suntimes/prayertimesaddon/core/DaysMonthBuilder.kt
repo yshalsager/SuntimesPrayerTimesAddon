@@ -57,15 +57,18 @@ fun add_days(day_start_millis: Long, offset_days: Int, tz: TimeZone): Long =
         timeInMillis
     }
 
-fun today_start(tz: TimeZone): Long =
+fun day_start_at(at_millis: Long, tz: TimeZone): Long =
     Calendar.getInstance(tz).run {
-        timeInMillis = AppClock.now_millis()
+        timeInMillis = at_millis
         set(Calendar.HOUR_OF_DAY, 0)
         set(Calendar.MINUTE, 0)
         set(Calendar.SECOND, 0)
         set(Calendar.MILLISECOND, 0)
         timeInMillis
     }
+
+fun today_start(tz: TimeZone): Long =
+    day_start_at(AppClock.now_millis(), tz)
 
 fun format_gregorian_day_title(context: Context, day_start_millis: Long, tz: TimeZone, locale: Locale): String {
     val weekday = SimpleDateFormat("EEE", locale).apply { timeZone = tz }.format(Date(day_start_millis))
@@ -88,9 +91,10 @@ fun build_month_skeleton(
     show_hijri: Boolean,
     hijri_variant: String,
     hijri_offset: Int,
-    month_anchor: Long?
+    month_anchor: Long?,
+    selected_location: HomeSelectedLocation? = null
 ): MonthSkeleton {
-    val tz = HostConfigReader.read_config(context, host)?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
+    val tz = selected_location?.timezone ?: HostConfigReader.read_config(context, host)?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
 
     val locale = Locale.getDefault()
     val month_format = SimpleDateFormat("MMMM yyyy", locale).apply { timeZone = tz }
@@ -173,9 +177,12 @@ fun build_day_item(
     host: String,
     meta: DayMeta,
     show_prohibited: Boolean,
-    show_night: Boolean
+    show_night: Boolean,
+    selected_location: HomeSelectedLocation? = null
 ): DayItem {
-    val tz = HostConfigReader.read_config(context, host)?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
+    val tz = selected_location?.timezone ?: HostConfigReader.read_config(context, host)?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
+    val method_override = selected_location?.method_config_override
+    val addon_runtime_profile_override = selected_location?.addon_runtime_profile_override
 
     val time_format = DateFormat.getTimeFormat(context).apply { timeZone = tz }
     val time_only_format =
@@ -185,27 +192,49 @@ fun build_day_item(
     fun time_str(v: Long?): String = v?.let { time_format.format(Date(it)) } ?: "--"
     fun range(a: Long?, b: Long?): String = "${time_short(a)}-${time_short(b)}"
 
-    fun q(event: AddonEvent) = query_host_addon_time(context, host, event, meta.day_start)
+    fun q(event: AddonEvent, alarm_now: Long = meta.day_start): Long? {
+        val inputs = selected_location?.query_inputs(alarm_now)
+        return query_host_addon_time(
+            context = context,
+            host_event_authority = host,
+            event = event,
+            alarm_now = alarm_now,
+            selection = inputs?.selection,
+            selection_args = inputs?.selection_args,
+            timezone_override = inputs?.timezone_override ?: selected_location?.timezone,
+            latitude_override = inputs?.latitude_override,
+            method_config_override = inputs?.method_config_override ?: method_override,
+            addon_runtime_profile_override = inputs?.addon_runtime_profile_override ?: addon_runtime_profile_override
+        )
+    }
 
-    val sun = query_host_sun(context, host, meta.day_start)
-    val maghrib_offset_ms = Prefs.get_maghrib_offset_minutes(context) * 60_000L
+    val sun =
+        selected_location?.let {
+            val inputs = it.query_inputs(meta.day_start)
+            query_host_sun(context, host, meta.day_start, inputs.selection, inputs.selection_args)
+        } ?: query_host_sun(context, host, meta.day_start)
+    fun same_selected_day(v: Long?): Boolean = v != null && day_start_at(v, tz) == meta.day_start
+    val sun_today_noon = sun?.noon?.takeIf(::same_selected_day)
+    val sun_today_sunrise = sun?.sunrise?.takeIf(::same_selected_day)
+    val sun_today_sunset = sun?.sunset?.takeIf(::same_selected_day)
+    val maghrib_offset_ms = (method_override?.maghrib_offset_minutes ?: Prefs.get_maghrib_offset_minutes(context)) * 60_000L
 
     val fajr = q(AddonEvent.prayer_fajr)
     val duha = q(AddonEvent.prayer_duha)
     val asr = q(AddonEvent.prayer_asr)
     val isha = q(AddonEvent.prayer_isha)
 
-    val dhuhr = sun?.noon ?: q(AddonEvent.prayer_dhuhr)
-    val maghrib = sun?.sunset?.plus(maghrib_offset_ms) ?: q(AddonEvent.prayer_maghrib)
+    val dhuhr = sun_today_noon ?: q(AddonEvent.prayer_dhuhr)
+    val maghrib = sun_today_sunset?.plus(maghrib_offset_ms) ?: q(AddonEvent.prayer_maghrib)
 
-    val sunrise = if (!show_prohibited) null else sun?.sunrise ?: q(AddonEvent.makruh_sunrise_start)
+    val sunrise = if (!show_prohibited) null else sun_today_sunrise ?: q(AddonEvent.makruh_sunrise_start)
     val sunrise_end = if (!show_prohibited) null else q(AddonEvent.makruh_sunrise_end)
     val zawal_start =
         if (!show_prohibited) null
-        else if (sun?.noon != null) sun.noon - Prefs.get_zawal_minutes(context) * 60_000L
+        else if (sun_today_noon != null) sun_today_noon - (method_override?.zawal_minutes ?: Prefs.get_zawal_minutes(context)) * 60_000L
         else q(AddonEvent.makruh_zawal_start)
     val sunset_start = if (!show_prohibited) null else q(AddonEvent.makruh_sunset_start)
-    val sunset = if (!show_prohibited) null else sun?.sunset ?: q(AddonEvent.makruh_sunset_end)
+    val sunset = if (!show_prohibited) null else sun_today_sunset ?: q(AddonEvent.makruh_sunset_end)
 
     val prohibited_dawn = if (!show_prohibited) null else range(fajr, sunrise)
     val prohibited_sunrise = if (!show_prohibited) null else range(sunrise, sunrise_end)
@@ -215,7 +244,7 @@ fun build_day_item(
 
     val fajr_next =
         if (!show_night) null
-        else query_host_addon_time(context, host, AddonEvent.prayer_fajr, add_days(meta.day_start, 1, tz))
+        else q(AddonEvent.prayer_fajr, add_days(meta.day_start, 1, tz))
     val night = if (!show_night) null else calc_night(maghrib, fajr_next)
 
     val night_midpoint = night?.midpoint?.let(::time_short)

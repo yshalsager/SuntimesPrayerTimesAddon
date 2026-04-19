@@ -14,19 +14,30 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.text.BidiFormatter
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
+import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
 import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
+import com.yshalsager.suntimes.prayertimesaddon.core.day_start_at
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
+import com.yshalsager.suntimes.prayertimesaddon.core.home_location_key
 import com.yshalsager.suntimes.prayertimesaddon.core.open_url
+import com.yshalsager.suntimes.prayertimesaddon.core.query_inputs
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_addon_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
+import com.yshalsager.suntimes.prayertimesaddon.core.resolve_selected_home_location
+import com.yshalsager.suntimes.prayertimesaddon.core.select_home_location_by_key
+import com.yshalsager.suntimes.prayertimesaddon.core.valid_timezone_id
+import com.yshalsager.suntimes.prayertimesaddon.core.add_days
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeItemUi
+import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeLocationOptionUi
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeScreen
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeDayUiState
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeUiState
@@ -69,6 +80,8 @@ class MainActivity : ThemedActivity() {
         HomeUiState(
             method_summary = "--",
             location_summary = "--",
+            selected_location_key = SavedLocations.home_source_host,
+            location_options = emptyList(),
             host_footer = "--",
             error = null,
             show_reinstall_addon = false,
@@ -89,6 +102,8 @@ class MainActivity : ThemedActivity() {
                     state = state,
                     on_open_days = { startActivity(Intent(this@MainActivity, DaysActivity::class.java)) },
                     on_open_settings = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
+                    on_open_saved_locations_cards = { startActivity(Intent(this@MainActivity, SavedLocationsCardsActivity::class.java)) },
+                    on_select_location = { key -> select_home_location(key) },
                     on_install_host = { open_url(this@MainActivity, "https://github.com/forrestguice/SuntimesWidget") },
                     on_reinstall_addon = { open_url(this@MainActivity, "https://github.com/yshalsager/SuntimesPrayerTimesAddon/releases/latest") },
                     on_open_alarm = { event_id -> open_host_alarm(event_id) },
@@ -192,31 +207,42 @@ class MainActivity : ThemedActivity() {
         val loc: String
     )
 
+    private fun home_location_options(host_label: String, saved_locations: List<SavedLocation>): List<HomeLocationOptionUi> {
+        val out = ArrayList<HomeLocationOptionUi>(saved_locations.size + 1)
+        val host_prefix = getString(R.string.home_location_host_prefix)
+        val wrapped_host_label = BidiFormatter.getInstance().unicodeWrap(host_label)
+        out.add(
+            HomeLocationOptionUi(
+                key = SavedLocations.home_source_host,
+                label = "$host_prefix $wrapped_host_label"
+            )
+        )
+        saved_locations.forEach { loc ->
+            out.add(HomeLocationOptionUi(key = home_location_key(loc.id), label = loc.display_label()))
+        }
+        return out
+    }
+
+    private fun select_home_location(key: String) {
+        if (!select_home_location_by_key(this, key)) return
+        center_day_start = null
+        refresh_home()
+    }
+
     private fun compute_home(host: String): Computed {
         val host_config = HostConfigReader.read_config(this, host)
-        val tz = host_config?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
+        val host_label = host_config?.display_label() ?: "--"
+        val host_timezone_id = valid_timezone_id(host_config?.timezone) ?: TimeZone.getDefault().id
+        val saved_locations = SavedLocations.load(this)
+        val selected_location = resolve_selected_home_location(this, host_label, host_timezone_id, saved_locations)
+        val method_override = selected_location.method_config_override
+        val addon_runtime_profile_override = selected_location.addon_runtime_profile_override
+        val tz = selected_location.timezone
         val now = AppClock.now_millis()
-        val maghrib_offset_ms = Prefs.get_maghrib_offset_minutes(this) * 60_000L
+        val maghrib_offset_ms = (method_override?.maghrib_offset_minutes ?: Prefs.get_maghrib_offset_minutes(this)) * 60_000L
 
-        fun same_day_start(millis: Long): Long =
-            Calendar.getInstance(tz).run {
-                timeInMillis = millis
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                timeInMillis
-            }
-
-        fun shift_day_start(day_start: Long, delta: Int): Long =
-            Calendar.getInstance(tz).run {
-                timeInMillis = day_start
-                add(Calendar.DAY_OF_YEAR, delta)
-                timeInMillis
-            }
-
-        val today_start = same_day_start(now)
-        val center = same_day_start(center_day_start ?: today_start)
+        val today_start = day_start_at(now, tz)
+        val center = day_start_at(center_day_start ?: today_start, tz)
         center_day_start = center
 
         val time_format = DateFormat.getTimeFormat(this).apply { timeZone = tz }
@@ -228,7 +254,8 @@ class MainActivity : ThemedActivity() {
                 Prefs.gregorian_date_format_card -> SimpleDateFormat("MMM d", locale)
                 else -> java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM, locale)
             }.apply { timeZone = tz }
-        val loc = host_config?.display_label() ?: "--"
+        val loc = selected_location.label
+        val location_options = home_location_options(host_label, saved_locations)
 
         fun day_time(v: Long?): String = v?.let { "${day_format.format(Date(it))} ${time_format.format(Date(it))}" } ?: "--"
         fun time_only(v: Long?): String = v?.let { time_format.format(Date(it)) } ?: "--"
@@ -240,7 +267,7 @@ class MainActivity : ThemedActivity() {
             }
 
         fun prayer_label(event: AddonEvent, time: Long?): String {
-            if (event != AddonEvent.prayer_dhuhr || time == null) return addon_event_title(this, event)
+            if (event != AddonEvent.prayer_dhuhr || time == null) return addon_event_title(this, event, addon_runtime_profile_override)
             return if (is_friday(time)) getString(R.string.event_prayer_jummah) else getString(R.string.event_prayer_dhuhr)
         }
 
@@ -253,23 +280,23 @@ class MainActivity : ThemedActivity() {
 
         val month_basis = Prefs.get_days_month_basis(this)
         val show_hijri_effective = Prefs.get_days_show_hijri(this) || month_basis == Prefs.days_month_basis_hijri
-        val hijri_variant = Prefs.get_hijri_variant(this)
-        val hijri_offset = Prefs.get_hijri_day_offset(this)
+        val hijri_variant = addon_runtime_profile_override?.hijri_variant ?: Prefs.get_hijri_variant(this)
+        val hijri_offset = addon_runtime_profile_override?.hijri_day_offset ?: Prefs.get_hijri_day_offset(this)
 
         fun build_day(day_start: Long): DayComputed {
             val is_today = day_start == today_start
-            val yesterday_start = shift_day_start(day_start, -1)
-            val tomorrow_start = shift_day_start(day_start, 1)
+            val yesterday_start = add_days(day_start, -1, tz)
+            val tomorrow_start = add_days(day_start, 1, tz)
 
             fun timeline_time(v: Long?): String {
                 if (v == null) return "--"
-                return if (same_day_start(v) == day_start) time_only(v) else day_time(v)
+                return if (day_start_at(v, tz) == day_start) time_only(v) else day_time(v)
             }
 
             fun window_range_str(start: Long?, end: Long?): String {
                 if (start == null || end == null) return "${timeline_time(start)} - ${timeline_time(end)}"
-                val ds = same_day_start(start)
-                val de = same_day_start(end)
+                val ds = day_start_at(start, tz)
+                val de = day_start_at(end, tz)
                 val ts = time_only(start)
                 val te = time_only(end)
                 return when {
@@ -285,9 +312,32 @@ class MainActivity : ThemedActivity() {
                 return getString(R.string.duration_minutes, mins.toInt())
             }
 
-            fun q(event: AddonEvent, alarm_now: Long = day_start) = query_host_addon_time(this, host, event, alarm_now)
+            fun q(event: AddonEvent, alarm_now: Long = day_start): Long? {
+                val inputs = selected_location.query_inputs(alarm_now)
+                return query_host_addon_time(
+                    this,
+                    host,
+                    event,
+                    alarm_now,
+                    inputs.selection,
+                    inputs.selection_args,
+                    inputs.timezone_override ?: selected_location.timezone,
+                    inputs.latitude_override,
+                    inputs.method_config_override ?: method_override,
+                    inputs.addon_runtime_profile_override ?: addon_runtime_profile_override
+                )
+            }
 
-            val sun_today = query_host_sun(this, host, day_start)
+            fun sun(at_millis: Long) : com.yshalsager.suntimes.prayertimesaddon.core.SunTimes? {
+                val inputs = selected_location.query_inputs(at_millis)
+                return query_host_sun(this, host, at_millis, inputs.selection, inputs.selection_args)
+            }
+
+            val sun_today = sun(day_start)
+            fun same_selected_day(v: Long?): Boolean = v != null && day_start_at(v, tz) == day_start
+            val sun_today_noon = sun_today?.noon?.takeIf(::same_selected_day)
+            val sun_today_sunrise = sun_today?.sunrise?.takeIf(::same_selected_day)
+            val sun_today_sunset = sun_today?.sunset?.takeIf(::same_selected_day)
 
             val fajr = q(AddonEvent.prayer_fajr)
             val fajr_extra_1 = q(AddonEvent.prayer_fajr_extra_1)
@@ -298,14 +348,19 @@ class MainActivity : ThemedActivity() {
             val isha = q(AddonEvent.prayer_isha)
             val isha_extra_1 = q(AddonEvent.prayer_isha_extra_1)
 
-            val dhuhr = sun_today?.noon ?: q(AddonEvent.prayer_dhuhr)
-            val maghrib = sun_today?.sunset?.plus(maghrib_offset_ms) ?: q(AddonEvent.prayer_maghrib)
+            val dhuhr = sun_today_noon ?: q(AddonEvent.prayer_dhuhr)
+            val maghrib = sun_today_sunset?.plus(maghrib_offset_ms) ?: q(AddonEvent.prayer_maghrib)
 
-            val sunrise = sun_today?.sunrise ?: q(AddonEvent.makruh_sunrise_start)
+            val sunrise = sun_today_sunrise ?: q(AddonEvent.makruh_sunrise_start)
             val sunrise_end = q(AddonEvent.makruh_sunrise_end)
-            val zawal_start = if (sun_today?.noon != null) sun_today.noon - Prefs.get_zawal_minutes(this) * 60_000L else q(AddonEvent.makruh_zawal_start)
+            val zawal_start =
+                if (sun_today_noon != null) {
+                    sun_today_noon - (method_override?.zawal_minutes ?: Prefs.get_zawal_minutes(this)) * 60_000L
+                } else {
+                    q(AddonEvent.makruh_zawal_start)
+                }
             val sunset_start = q(AddonEvent.makruh_sunset_start)
-            val sunset_end = sun_today?.sunset ?: q(AddonEvent.makruh_sunset_end)
+            val sunset_end = sun_today_sunset ?: q(AddonEvent.makruh_sunset_end)
             val duha_subtitle =
                 if (duha != null && zawal_start != null && zawal_start > duha) {
                     window_range_str(duha, zawal_start)
@@ -334,7 +389,9 @@ class MainActivity : ThemedActivity() {
             val fajr_tomorrow = q(AddonEvent.prayer_fajr, tomorrow_start)
 
             val hour_ms = 60L * 60L * 1000L
-            val sunset_yesterday = query_host_sun(this, host, yesterday_start)?.sunset
+            val sunset_yesterday =
+                sun(yesterday_start)?.sunset?.takeIf { day_start_at(it, tz) == yesterday_start }
+                    ?: q(AddonEvent.makruh_sunset_end, yesterday_start)
             val night_prev = calc_night(sunset_yesterday?.plus(maghrib_offset_ms), fajr)
             val night_next = calc_night(maghrib, fajr_tomorrow)
 
@@ -477,14 +534,16 @@ class MainActivity : ThemedActivity() {
             return DayComputed(day_state, next_prayer?.second, prev_prayer_time, next_boundary_millis)
         }
 
-        val day_prev = build_day(shift_day_start(center, -1))
+        val day_prev = build_day(add_days(center, -1, tz))
         val day_center = build_day(center)
-        val day_next = build_day(shift_day_start(center, 1))
+        val day_next = build_day(add_days(center, 1, tz))
 
         val host_now = "${day_format.format(Date(now))} ${time_format.format(Date(now))}"
         val ui_state = HomeUiState(
-            method_summary = format_method_summary(this),
+            method_summary = format_method_summary(this, method_override),
             location_summary = "$loc | $host_now",
+            selected_location_key = selected_location.key,
+            location_options = location_options,
             host_footer = "HOST: $host",
             error = null,
             show_reinstall_addon = false,
@@ -497,14 +556,30 @@ class MainActivity : ThemedActivity() {
     private fun open_host_alarm(event_id: String) {
         val host_event_authority = HostResolver.ensure_default_selected(this) ?: return
         val host_package = packageManager.resolveContentProvider(host_event_authority, 0)?.packageName ?: return
+        val host_config = HostConfigReader.read_config(this, host_event_authority)
+        val host_label = host_config?.display_label() ?: "--"
+        val host_timezone_id = valid_timezone_id(host_config?.timezone) ?: TimeZone.getDefault().id
+        val selected_location = resolve_selected_home_location(this, host_label, host_timezone_id, SavedLocations.load(this))
         val component = ComponentName(host_package, "com.forrestguice.suntimeswidget.alarmclock.ui.AlarmClockActivity")
-        val event_uri =
-            "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}/$event_id".toUri().toString()
+        val event_uri_builder =
+            "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}/$event_id".toUri().buildUpon()
+        selected_location.saved_location?.id?.let {
+            event_uri_builder.appendQueryParameter(AlarmEventContract.extra_saved_location_id, it)
+        }
+        val event_uri = event_uri_builder.build().toString()
 
         val intent = Intent(AlarmClock.ACTION_SET_ALARM)
             .setComponent(component)
             .putExtra("solarevent", event_uri)
             .putExtra("alarmtype", "ALARM")
+        val saved = selected_location.saved_location
+        if (saved != null) {
+            intent.putExtra("latitude", saved.latitude)
+            intent.putExtra("longitude", saved.longitude)
+            saved.altitude?.trim()?.takeIf { it.isNotBlank() }?.let { intent.putExtra("altitude", it) }
+            intent.putExtra("location_label", saved.display_label())
+            intent.putExtra("timezone", selected_location.timezone_id)
+        }
 
         try {
             startActivity(intent)
@@ -528,22 +603,10 @@ class MainActivity : ThemedActivity() {
     private fun start_tick() {
         tick?.let(ui::removeCallbacks)
 
-        fun same_day_start(millis: Long): Long {
-            val zone = tz ?: return 0L
-            return Calendar.getInstance(zone).run {
-                timeInMillis = millis
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                timeInMillis
-            }
-        }
-
         fun update() {
             val n = AppClock.now_millis()
             val ts = today_start
-            if (ts != null && same_day_start(n) != ts) {
+            if (ts != null && day_start_at(n, tz ?: TimeZone.getDefault()) != ts) {
                 refresh_home()
                 return
             }
@@ -624,12 +687,7 @@ class MainActivity : ThemedActivity() {
     private fun shift_day(delta: Int) {
         val zone = tz ?: return
         val center = center_day_start ?: return
-        center_day_start =
-            Calendar.getInstance(zone).run {
-                timeInMillis = center
-                add(Calendar.DAY_OF_YEAR, delta)
-                timeInMillis
-            }
+        center_day_start = add_days(center, delta, zone)
         refresh_home()
     }
 }

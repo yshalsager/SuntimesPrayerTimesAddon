@@ -43,6 +43,7 @@
     <string name='method_karachi'>Karachi</string>
     <string name='method_isna'>ISNA</string>
     <string name='method_uaq'>Umm al-Qura</string>
+    <string name='method_uiof'>Union of Islamic Organizations of France</string>
     <string name='method_custom'>Custom</string>
 
     <string name='fajr_angle_title'>Fajr angle</string>
@@ -94,6 +95,42 @@
     <string name='host_location_title'>Host location</string>
     <string name='host_alarms_title'>Host alarms</string>
     <string name='host_alarms_summary'>Open host alarms screen</string>
+    <string name='home_location_selector_title'>Home location</string>
+    <string name='home_location_host_prefix'>Host (global)</string>
+    <string name='saved_locations_manage_action'>Manage locations</string>
+    <string name='saved_locations_cards_action'>Location cards</string>
+    <string name='saved_locations_cards_title'>Saved location cards</string>
+    <string name='saved_locations_cards_subtitle'>Today\'s prayer cards for all saved locations</string>
+    <string name='saved_locations_title'>Saved locations</string>
+    <string name='saved_locations_import_host_title'>Import current host location</string>
+    <string name='saved_locations_import_failed'>Failed to import host location</string>
+    <string name='saved_locations_add_manual_title'>Add location manually</string>
+    <string name='saved_locations_add_manual_summary'>Set label, coordinates, altitude (optional), and timezone</string>
+    <string name='saved_locations_add_action'>Add</string>
+    <string name='saved_locations_limit_reached'>Maximum %1$d locations reached</string>
+    <string name='saved_locations_empty_title'>No saved locations yet</string>
+    <string name='saved_locations_empty_summary'>Add locations to switch Home prayer times quickly</string>
+    <string name='saved_locations_move_up_action'>Up</string>
+    <string name='saved_locations_move_down_action'>Down</string>
+    <string name='saved_locations_delete_action'>Delete</string>
+    <string name='saved_locations_edit_title'>Edit location</string>
+    <string name='saved_locations_save_action'>Save</string>
+    <string name='saved_locations_field_label'>Label</string>
+    <string name='saved_locations_field_latitude'>Latitude</string>
+    <string name='saved_locations_field_longitude'>Longitude</string>
+    <string name='saved_locations_field_altitude'>Altitude (optional)</string>
+    <string name='saved_locations_field_timezone'>Timezone ID</string>
+    <string name='saved_locations_timezone_pick_action'>Choose timezone</string>
+    <string name='saved_locations_timezone_device_action'>Use device timezone</string>
+    <string name='saved_locations_timezone_picker_title'>Select timezone</string>
+    <string name='saved_locations_timezone_search_label'>Search timezone ID</string>
+    <string name='saved_locations_timezone_no_results'>No matching timezones</string>
+    <string name='saved_locations_timezone_current_tag'>Current</string>
+    <string name='saved_locations_timezone_mismatch_warning'>Timezone may not match coordinates (offset diff about %1$.1f h).</string>
+    <string name='saved_locations_field_calc_mode'>Calculation mode</string>
+    <string name='saved_locations_field_method_preset'>Calculation preset</string>
+    <string name='saved_locations_calc_mode_inherit'>Inherit global settings</string>
+    <string name='saved_locations_calc_mode_custom'>Custom (%1$s)</string>
     <string name='open_in_host'>Open</string>
     <string name='install_host_action'>Install</string>
     <string name='export_label'>Export</string>
@@ -145,6 +182,7 @@
     <string name='days_show_night_portions_title'>Show night portions</string>
 
     <string name='days_title'>Calendar</string>
+    <string name='days_location_context'>Location: %1$s · %2$s</string>
     <string name='prev_month'>Previous month</string>
     <string name='next_month'>Next month</string>
     <string name='next_prayer_label'>Next Prayer: %1$s</string>
@@ -181,6 +219,8 @@
     <string name='widget_show_night_portions_title'>Show night portions</string>
     <string name='widget_prayer_times_today'>Prayer Times (Today)</string>
     <string name='widget_prayer_times_today_desc'>Today\'s prayer times</string>
+    <string name='widget_location_config_title'>Widget location</string>
+    <string name='widget_location_config_confirm'>Add widget</string>
     <string name='calendar_prayers_title'>Prayer Times</string>
     <string name='calendar_makruh_title'>Prohibited Times</string>
     <string name='calendar_night_title'>Night Portions</string>

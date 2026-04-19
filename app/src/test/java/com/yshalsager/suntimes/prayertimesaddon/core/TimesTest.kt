@@ -2,10 +2,16 @@ package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
 import android.content.pm.ProviderInfo
+import com.yshalsager.suntimes.prayertimesaddon.FallbackOnlyHostEventProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostEventProvider
+import com.yshalsager.suntimes.prayertimesaddon.OffdaySunHostCalcProvider
+import com.yshalsager.suntimes.prayertimesaddon.fallback_host_calc_authority
+import com.yshalsager.suntimes.prayertimesaddon.fallback_host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
+import com.yshalsager.suntimes.prayertimesaddon.offday_host_calc_authority
+import com.yshalsager.suntimes.prayertimesaddon.offday_host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -37,6 +43,10 @@ class TimesTest {
         Robolectric.setupContentProvider(PrayerTimesProvider::class.java, PrayerTimesProvider.authority)
         Robolectric.setupContentProvider(FakeHostEventProvider::class.java, host_event_authority)
         Robolectric.setupContentProvider(FakeHostCalcProvider::class.java, host_calc_authority)
+        Robolectric.setupContentProvider(FallbackOnlyHostEventProvider::class.java, fallback_host_event_authority)
+        Robolectric.setupContentProvider(FakeHostCalcProvider::class.java, fallback_host_calc_authority)
+        Robolectric.setupContentProvider(FakeHostEventProvider::class.java, offday_host_event_authority)
+        Robolectric.setupContentProvider(OffdaySunHostCalcProvider::class.java, offday_host_calc_authority)
 
         shadowOf(context.packageManager).addOrUpdateProvider(
             ProviderInfo().apply {
@@ -59,6 +69,38 @@ class TimesTest {
                 authority = host_calc_authority
                 packageName = context.packageName
                 name = FakeHostCalcProvider::class.java.name
+                applicationInfo = context.applicationInfo
+            }
+        )
+        shadowOf(context.packageManager).addOrUpdateProvider(
+            ProviderInfo().apply {
+                authority = fallback_host_event_authority
+                packageName = context.packageName
+                name = FallbackOnlyHostEventProvider::class.java.name
+                applicationInfo = context.applicationInfo
+            }
+        )
+        shadowOf(context.packageManager).addOrUpdateProvider(
+            ProviderInfo().apply {
+                authority = fallback_host_calc_authority
+                packageName = context.packageName
+                name = FakeHostCalcProvider::class.java.name
+                applicationInfo = context.applicationInfo
+            }
+        )
+        shadowOf(context.packageManager).addOrUpdateProvider(
+            ProviderInfo().apply {
+                authority = offday_host_event_authority
+                packageName = context.packageName
+                name = FakeHostEventProvider::class.java.name
+                applicationInfo = context.applicationInfo
+            }
+        )
+        shadowOf(context.packageManager).addOrUpdateProvider(
+            ProviderInfo().apply {
+                authority = offday_host_calc_authority
+                packageName = context.packageName
+                name = OffdaySunHostCalcProvider::class.java.name
                 applicationInfo = context.applicationInfo
             }
         )
@@ -120,6 +162,72 @@ class TimesTest {
     }
 
     @Test
+    fun query_host_addon_time_uses_runtime_profile_override_for_extra_slots() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val runtime =
+            AddonRuntimeProfile(
+                hijri_variant = Prefs.hijri_variant_umalqura,
+                hijri_day_offset = 0,
+                extra_fajr_1_enabled = true,
+                extra_fajr_1_angle = 20.0,
+                extra_fajr_1_label_raw = "",
+                extra_isha_1_enabled = true,
+                extra_isha_1_angle = 20.0,
+                extra_isha_1_label_raw = ""
+            )
+
+        val fajr_extra =
+            query_host_addon_time(
+                context,
+                host_event_authority,
+                AddonEvent.prayer_fajr_extra_1,
+                day_start,
+                addon_runtime_profile_override = runtime
+            )
+        val isha_extra =
+            query_host_addon_time(
+                context,
+                host_event_authority,
+                AddonEvent.prayer_isha_extra_1,
+                day_start,
+                addon_runtime_profile_override = runtime
+            )
+
+        assertEquals(day_start + 5 * 60 * 60 * 1000L, fajr_extra)
+        assertEquals(day_start + 19 * 60 * 60 * 1000L + 30 * 60 * 1000L, isha_extra)
+    }
+
+    @Test
+    fun query_host_addon_time_uses_runtime_profile_override_for_eid_detection() {
+        val eid_day = find_eid_day_start()
+        val day_before = eid_day - 24L * 60L * 60L * 1000L
+        val runtime =
+            AddonRuntimeProfile(
+                hijri_variant = Prefs.hijri_variant_umalqura,
+                hijri_day_offset = 1,
+                extra_fajr_1_enabled = false,
+                extra_fajr_1_angle = 18.0,
+                extra_fajr_1_label_raw = "",
+                extra_isha_1_enabled = false,
+                extra_isha_1_angle = 18.0,
+                extra_isha_1_label_raw = ""
+            )
+
+        val without_override = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_start, day_before)
+        val with_override =
+            query_host_addon_time(
+                context,
+                host_event_authority,
+                AddonEvent.prayer_eid_start,
+                day_before,
+                addon_runtime_profile_override = runtime
+            )
+
+        assertNull(without_override)
+        assertEquals(day_before + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L, with_override)
+    }
+
+    @Test
     fun query_host_addon_time_uses_location_selection_for_sun_based_events() {
         val day_start = find_eid_day_start()
         val selection =
@@ -154,6 +262,92 @@ class TimesTest {
         assertEquals(day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, duha)
         assertEquals(day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, eid_start)
         assertEquals(day_start + 12 * 60 * 60 * 1000L + 30 * 60 * 1000L, eid_end)
+    }
+
+    @Test
+    fun query_host_addon_time_uses_latitude_override_for_asr_fallback() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val selection =
+            "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=?"
+        val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "10.0", "31.0")
+
+        val without_override = query_host_addon_time(
+            context,
+            fallback_host_event_authority,
+            AddonEvent.prayer_asr,
+            day_start,
+            selection,
+            selection_args
+        )
+        val with_override = query_host_addon_time(
+            context,
+            fallback_host_event_authority,
+            AddonEvent.prayer_asr,
+            day_start,
+            selection,
+            selection_args,
+            null,
+            10.0
+        )
+
+        assertNull(without_override)
+        assertEquals(day_start + 16 * 60 * 60 * 1000L, with_override)
+    }
+
+    @Test
+    fun query_host_addon_time_ignores_offday_sunrise_for_duha_and_sunrise_end() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val selection =
+            "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
+        val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "21.4", "39.8", "0")
+
+        val duha = query_host_addon_time(
+            context,
+            offday_host_event_authority,
+            AddonEvent.prayer_duha,
+            day_start,
+            selection,
+            selection_args
+        )
+        val sunrise_end = query_host_addon_time(
+            context,
+            offday_host_event_authority,
+            AddonEvent.makruh_sunrise_end,
+            day_start,
+            selection,
+            selection_args
+        )
+
+        assertEquals(day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L, duha)
+        assertEquals(day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L, sunrise_end)
+    }
+
+    @Test
+    fun query_host_addon_time_ignores_offday_sunrise_and_noon_for_eid_events() {
+        val day_start = find_eid_day_start()
+        val selection =
+            "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
+        val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "21.4", "39.8", "0")
+
+        val eid_start = query_host_addon_time(
+            context,
+            offday_host_event_authority,
+            AddonEvent.prayer_eid_start,
+            day_start,
+            selection,
+            selection_args
+        )
+        val eid_end = query_host_addon_time(
+            context,
+            offday_host_event_authority,
+            AddonEvent.prayer_eid_end,
+            day_start,
+            selection,
+            selection_args
+        )
+
+        assertEquals(day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L, eid_start)
+        assertEquals(day_start + 12 * 60 * 60 * 1000L, eid_end)
     }
 
     @Test

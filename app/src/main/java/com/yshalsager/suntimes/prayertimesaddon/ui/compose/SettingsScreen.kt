@@ -12,12 +12,26 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -39,11 +54,20 @@ import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
+import com.yshalsager.suntimes.prayertimesaddon.core.MethodConfig
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
+import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
 import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 import com.yshalsager.suntimes.prayertimesaddon.core.SettingsBackup
 import com.yshalsager.suntimes.prayertimesaddon.core.app_language_locales
 import com.yshalsager.suntimes.prayertimesaddon.core.current_app_language
+import com.yshalsager.suntimes.prayertimesaddon.core.method_config_from_prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.method_config_with_preset
+import com.yshalsager.suntimes.prayertimesaddon.core.addon_runtime_profile_from_prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.timezone_offset_mismatch_hours
+import com.yshalsager.suntimes.prayertimesaddon.core.timezone_likely_mismatch
+import com.yshalsager.suntimes.prayertimesaddon.core.valid_timezone_id
 import com.yshalsager.suntimes.prayertimesaddon.core.open_url as open_external_url
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingDropdown
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingInlineTextField
@@ -51,6 +75,7 @@ import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingRow
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingSwitch
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingTextField
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingsSection
+import com.yshalsager.suntimes.prayertimesaddon.ui.SavedLocationsCardsActivity
 import androidx.compose.ui.text.input.KeyboardType
 import com.yshalsager.suntimes.prayertimesaddon.widget.WidgetUpdate
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
@@ -59,6 +84,9 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
+import java.util.UUID
+import kotlin.math.abs
 
 @Composable
 fun SettingsRoot(on_back: () -> Unit) {
@@ -72,6 +100,17 @@ fun SettingsRoot(on_back: () -> Unit) {
         SettingsContent(padding = padding)
     }
 }
+
+private data class SavedLocationDraft(
+    val edit_id: String?,
+    val label: String,
+    val latitude: String,
+    val longitude: String,
+    val altitude: String,
+    val timezone_id: String,
+    val calc_mode: String,
+    val method_preset: String
+)
 
 @Composable
 private fun SettingsContent(
@@ -120,6 +159,8 @@ private fun SettingsContent(
 
     var hijri_variant by rememberSaveable { mutableStateOf(Prefs.get_hijri_variant(ctx)) }
     var hijri_day_offset by rememberSaveable { mutableStateOf(Prefs.get_hijri_day_offset(ctx).toString()) }
+    var saved_locations by remember { mutableStateOf(SavedLocations.load(ctx)) }
+    var editing_location by remember { mutableStateOf<SavedLocationDraft?>(null) }
 
     fun reload_state_from_prefs() {
         host_event_authority = Prefs.get_host_event_authority(ctx) ?: HostResolver.ensure_default_selected(ctx) ?: ""
@@ -152,6 +193,60 @@ private fun SettingsContent(
         widget_show_night = Prefs.get_widget_show_night_portions(ctx)
         hijri_variant = Prefs.get_hijri_variant(ctx)
         hijri_day_offset = Prefs.get_hijri_day_offset(ctx).toString()
+        saved_locations = SavedLocations.load(ctx)
+    }
+
+    fun save_saved_locations(next: List<SavedLocation>) {
+        SavedLocations.save(ctx, next)
+        val persisted = SavedLocations.load(ctx)
+        saved_locations = persisted
+        val selected_source = Prefs.get_home_location_source(ctx)
+        if (selected_source == SavedLocations.home_source_saved) {
+            val selected_id = Prefs.get_home_location_id(ctx)
+            if (selected_id.isBlank() || persisted.none { it.id == selected_id }) {
+                Prefs.set_home_location_source(ctx, SavedLocations.home_source_host)
+                Prefs.set_home_location_id(ctx, "")
+            }
+        }
+        WidgetUpdate.request(ctx)
+    }
+
+    fun move_saved_location(index: Int, delta: Int) {
+        val target = index + delta
+        if (index !in saved_locations.indices || target !in saved_locations.indices) return
+        val next = saved_locations.toMutableList()
+        val item = next.removeAt(index)
+        next.add(target, item)
+        save_saved_locations(next)
+    }
+
+    fun remove_saved_location(id: String) {
+        save_saved_locations(saved_locations.filterNot { it.id == id })
+    }
+
+    fun open_edit_location(location: SavedLocation?) {
+        val method_defaults = method_config_from_prefs(ctx)
+        editing_location =
+            SavedLocationDraft(
+                edit_id = location?.id,
+                label = location?.label.orEmpty(),
+                latitude = location?.latitude.orEmpty(),
+                longitude = location?.longitude.orEmpty(),
+                altitude = location?.altitude.orEmpty(),
+                timezone_id = location?.timezone_id ?: TimeZone.getDefault().id,
+                calc_mode = location?.calc_mode ?: SavedLocations.calc_mode_inherit_global,
+                method_preset = location?.method_preset ?: method_defaults.method_preset
+            )
+    }
+
+    fun add_host_location() {
+        if (saved_locations.size >= SavedLocations.max_count) return
+        val added = SavedLocations.create_from_host(ctx, host_event_authority)
+        if (added == null) {
+            Toast.makeText(ctx, ctx.getString(R.string.saved_locations_import_failed), Toast.LENGTH_SHORT).show()
+            return
+        }
+        save_saved_locations(saved_locations + added)
     }
 
     fun sync_method_fields() {
@@ -235,6 +330,19 @@ private fun SettingsContent(
         open_external_url(ctx, url)
     }
 
+    fun open_saved_locations_cards() {
+        ctx.startActivity(Intent(ctx, SavedLocationsCardsActivity::class.java))
+    }
+
+    @Composable
+    fun saved_location_add_action(can_add_saved: Boolean) {
+        Text(
+            text = ctx.getString(R.string.saved_locations_add_action),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (can_add_saved) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+
     val create_preset_file_launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
         val ok = write_prayer_alarm_preset(ctx, uri)
@@ -289,6 +397,75 @@ private fun SettingsContent(
         }
         lifecycle_owner.lifecycle.addObserver(observer)
         onDispose { lifecycle_owner.lifecycle.removeObserver(observer) }
+    }
+
+    editing_location?.let { draft ->
+        val can_save =
+            SavedLocations.is_valid_lat(draft.latitude) &&
+                SavedLocations.is_valid_lon(draft.longitude) &&
+                (draft.altitude.isBlank() || SavedLocations.is_valid_alt(draft.altitude)) &&
+                draft.timezone_id.isNotBlank() &&
+                valid_timezone_id(draft.timezone_id) != null
+        SavedLocationEditorDialog(
+            draft = draft,
+            is_edit = draft.edit_id != null,
+            on_dismiss = { editing_location = null },
+            on_change = { editing_location = it },
+            on_save = on_save@{ edited ->
+                val previous = saved_locations.firstOrNull { it.id == edited.edit_id }
+                val base_method = previous?.method_config() ?: method_config_from_prefs(ctx)
+                val runtime_profile = previous?.let {
+                    SavedLocations.addon_runtime_profile_for_location(ctx, it) ?: addon_runtime_profile_from_prefs(ctx)
+                } ?: addon_runtime_profile_from_prefs(ctx)
+                val method =
+                    if (edited.calc_mode == SavedLocations.calc_mode_custom) {
+                        method_config_with_preset(base_method, edited.method_preset)
+                    } else {
+                        base_method
+                    }
+                val updated =
+                    SavedLocation(
+                        id = edited.edit_id ?: UUID.randomUUID().toString(),
+                        label = edited.label.trim(),
+                        latitude = edited.latitude.trim(),
+                        longitude = edited.longitude.trim(),
+                        altitude = edited.altitude.trim().ifBlank { null },
+                        timezone_id = edited.timezone_id.trim(),
+                        calc_mode = edited.calc_mode,
+                        hijri_variant = runtime_profile.hijri_variant,
+                        hijri_day_offset = runtime_profile.hijri_day_offset,
+                        method_preset = method.method_preset,
+                        method_fajr_angle = method.fajr_angle,
+                        method_isha_mode = method.isha_mode,
+                        method_isha_angle = method.isha_angle,
+                        method_isha_fixed_minutes = method.isha_fixed_minutes,
+                        method_asr_factor = method.asr_factor,
+                        method_maghrib_offset_minutes = method.maghrib_offset_minutes,
+                        method_makruh_angle = method.makruh_angle,
+                        method_makruh_sunrise_minutes = method.makruh_sunrise_minutes,
+                        method_zawal_minutes = method.zawal_minutes,
+                        extra_fajr_1_enabled = runtime_profile.extra_fajr_1_enabled,
+                        extra_fajr_1_angle = runtime_profile.extra_fajr_1_angle,
+                        extra_fajr_1_label_raw = runtime_profile.extra_fajr_1_label_raw,
+                        extra_isha_1_enabled = runtime_profile.extra_isha_1_enabled,
+                        extra_isha_1_angle = runtime_profile.extra_isha_1_angle,
+                        extra_isha_1_label_raw = runtime_profile.extra_isha_1_label_raw
+                    )
+                val next =
+                    if (edited.edit_id == null) {
+                        if (saved_locations.size >= SavedLocations.max_count) {
+                            editing_location = null
+                            return@on_save
+                        }
+                        saved_locations + updated
+                    } else {
+                        saved_locations.map { if (it.id == edited.edit_id) updated else it }
+                    }
+                save_saved_locations(next)
+                editing_location = null
+            },
+            can_save = can_save
+        )
     }
 
     LazyColumn(
@@ -426,6 +603,93 @@ private fun SettingsContent(
                         )
                     }
                 )
+            }
+
+            Spacer(Modifier.height(12.dp))
+        }
+
+        item {
+            val can_add_saved = saved_locations.size < SavedLocations.max_count
+            SettingsSection(ctx.getString(R.string.saved_locations_title)) {
+                SettingRow(
+                    title = ctx.getString(R.string.saved_locations_import_host_title),
+                    subtitle = if (can_add_saved) host_location_label else ctx.getString(R.string.saved_locations_limit_reached, SavedLocations.max_count),
+                    on_click = if (can_add_saved) ({ add_host_location() }) else null,
+                    trailing = { saved_location_add_action(can_add_saved) }
+                )
+
+                SettingRow(
+                    title = ctx.getString(R.string.saved_locations_add_manual_title),
+                    subtitle = ctx.getString(R.string.saved_locations_add_manual_summary),
+                    on_click = if (can_add_saved) ({ open_edit_location(null) }) else null,
+                    trailing = { saved_location_add_action(can_add_saved) }
+                )
+
+                SettingRow(
+                    title = ctx.getString(R.string.saved_locations_cards_title),
+                    subtitle = ctx.getString(R.string.saved_locations_cards_subtitle),
+                    on_click = { open_saved_locations_cards() },
+                    trailing = {
+                        Text(
+                            text = ctx.getString(R.string.open_in_host),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+
+                if (saved_locations.isEmpty()) {
+                    SettingRow(
+                        title = ctx.getString(R.string.saved_locations_empty_title),
+                        subtitle = ctx.getString(R.string.saved_locations_empty_summary)
+                    )
+                } else {
+                    saved_locations.forEachIndexed { index, location ->
+                        val subtitle =
+                            buildString {
+                                append(location.latitude)
+                                append(", ")
+                                append(location.longitude)
+                                location.altitude?.takeIf { it.isNotBlank() }?.let { append(" | "); append(it) }
+                                append(" | ")
+                                append(location.timezone_id)
+                                append(" | ")
+                                append(calc_mode_label(ctx, location.calc_mode, location.method_preset))
+                            }
+
+                        SettingRow(
+                            title = location.display_label(),
+                            subtitle = subtitle,
+                            on_click = { open_edit_location(location) },
+                            trailing = {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    if (index > 0) {
+                                        Text(
+                                            text = ctx.getString(R.string.saved_locations_move_up_action),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.clickable { move_saved_location(index, -1) }
+                                        )
+                                    }
+                                    if (index < saved_locations.lastIndex) {
+                                        Text(
+                                            text = ctx.getString(R.string.saved_locations_move_down_action),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.clickable { move_saved_location(index, 1) }
+                                        )
+                                    }
+                                    Text(
+                                        text = ctx.getString(R.string.saved_locations_delete_action),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.clickable { remove_saved_location(location.id) }
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(12.dp))
@@ -798,6 +1062,274 @@ private fun SettingsContent(
     }
 }
 
+@Composable
+private fun SavedLocationEditorDialog(
+    draft: SavedLocationDraft,
+    is_edit: Boolean,
+    can_save: Boolean,
+    on_dismiss: () -> Unit,
+    on_change: (SavedLocationDraft) -> Unit,
+    on_save: (SavedLocationDraft) -> Unit
+) {
+    val ctx = LocalContext.current
+    var show_timezone_picker by rememberSaveable { mutableStateOf(false) }
+    val timezone_mismatch_hours = timezone_offset_mismatch_hours(draft.longitude, draft.timezone_id)
+    val show_timezone_warning = timezone_likely_mismatch(draft.longitude, draft.timezone_id)
+    AlertDialog(
+        onDismissRequest = on_dismiss,
+        title = {
+            Text(
+                text =
+                    if (is_edit) ctx.getString(R.string.saved_locations_edit_title)
+                    else ctx.getString(R.string.saved_locations_add_manual_title)
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = draft.label,
+                    onValueChange = { on_change(draft.copy(label = it)) },
+                    singleLine = true,
+                    label = { Text(ctx.getString(R.string.saved_locations_field_label)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = draft.latitude,
+                    onValueChange = { on_change(draft.copy(latitude = it)) },
+                    singleLine = true,
+                    label = { Text(ctx.getString(R.string.saved_locations_field_latitude)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = draft.longitude,
+                    onValueChange = { on_change(draft.copy(longitude = it)) },
+                    singleLine = true,
+                    label = { Text(ctx.getString(R.string.saved_locations_field_longitude)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = draft.altitude,
+                    onValueChange = { on_change(draft.copy(altitude = it)) },
+                    singleLine = true,
+                    label = { Text(ctx.getString(R.string.saved_locations_field_altitude)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                OutlinedTextField(
+                    value = draft.timezone_id,
+                    onValueChange = { on_change(draft.copy(timezone_id = it)) },
+                    singleLine = true,
+                    label = { Text(ctx.getString(R.string.saved_locations_field_timezone)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = { show_timezone_picker = true }) {
+                        Text(ctx.getString(R.string.saved_locations_timezone_pick_action))
+                    }
+                    TextButton(onClick = { on_change(draft.copy(timezone_id = TimeZone.getDefault().id)) }) {
+                        Text(ctx.getString(R.string.saved_locations_timezone_device_action))
+                    }
+                }
+                if (show_timezone_warning) {
+                    Text(
+                        text = ctx.getString(R.string.saved_locations_timezone_mismatch_warning, timezone_mismatch_hours ?: 0.0),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.tertiary
+                    )
+                }
+                DialogDropdownField(
+                    label = ctx.getString(R.string.saved_locations_field_calc_mode),
+                    value_label = calc_mode_label(ctx, draft.calc_mode, draft.method_preset),
+                    selected = calc_mode_selected_value(draft.calc_mode, draft.method_preset),
+                    options = calc_mode_options(ctx),
+                    on_select = {
+                        val preset = calc_mode_preset_from_value(it)
+                        if (preset == null) {
+                            on_change(draft.copy(calc_mode = SavedLocations.calc_mode_inherit_global))
+                        } else {
+                            on_change(
+                                draft.copy(
+                                    calc_mode = SavedLocations.calc_mode_custom,
+                                    method_preset = preset
+                                )
+                            )
+                        }
+                    }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { on_save(draft) }, enabled = can_save) {
+                Text(ctx.getString(R.string.saved_locations_save_action))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = on_dismiss) {
+                Text(ctx.getString(android.R.string.cancel))
+            }
+        }
+    )
+
+    if (show_timezone_picker) {
+        TimezonePickerDialog(
+            selected_id = draft.timezone_id,
+            on_select = {
+                on_change(draft.copy(timezone_id = it))
+                show_timezone_picker = false
+            },
+            on_dismiss = { show_timezone_picker = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DialogDropdownField(
+    label: String,
+    value_label: String,
+    selected: String,
+    options: List<Pair<String, String>>,
+    on_select: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        OutlinedTextField(
+            value = value_label,
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            label = { Text(label) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            options.forEach { (value, option_label) ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            text = option_label,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    onClick = {
+                        expanded = false
+                        if (value != selected) on_select(value)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TimezonePickerDialog(
+    selected_id: String,
+    on_select: (String) -> Unit,
+    on_dismiss: () -> Unit
+) {
+    val ctx = LocalContext.current
+    val all_ids = remember { TimeZone.getAvailableIDs().sorted() }
+    var query by rememberSaveable { mutableStateOf("") }
+    val filtered =
+        remember(query, selected_id, all_ids) {
+            val q = query.trim()
+            val source = if (q.isBlank()) all_ids else all_ids.filter { it.contains(q, ignoreCase = true) }
+            val promoted =
+                if (selected_id.isNotBlank() && source.contains(selected_id)) {
+                    listOf(selected_id) + source.filterNot { it == selected_id }
+                } else {
+                    source
+                }
+            promoted.take(120)
+        }
+
+    AlertDialog(
+        onDismissRequest = on_dismiss,
+        title = { Text(ctx.getString(R.string.saved_locations_timezone_picker_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    label = { Text(ctx.getString(R.string.saved_locations_timezone_search_label)) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth().height(280.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    items(filtered) { timezone_id ->
+                        Row(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { on_select(timezone_id) }
+                                    .padding(horizontal = 2.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    text = timezone_id,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    text = timezone_offset_label(timezone_id),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            if (timezone_id == selected_id) {
+                                Text(
+                                    text = ctx.getString(R.string.saved_locations_timezone_current_tag),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                    }
+                    if (filtered.isEmpty()) {
+                        item {
+                            Text(
+                                text = ctx.getString(R.string.saved_locations_timezone_no_results),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(vertical = 12.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = on_dismiss) {
+                Text(ctx.getString(android.R.string.cancel))
+            }
+        }
+    )
+}
+
+private fun timezone_offset_label(timezone_id: String): String {
+    val tz = TimeZone.getTimeZone(timezone_id)
+    val total_minutes = tz.getOffset(System.currentTimeMillis()) / 60_000
+    val sign = if (total_minutes >= 0) "+" else "-"
+    val abs_minutes = abs(total_minutes)
+    val hours = abs_minutes / 60
+    val minutes = abs_minutes % 60
+    return String.format(Locale.US, "UTC%s%02d:%02d", sign, hours, minutes)
+}
+
 private fun app_version_label(ctx: android.content.Context): String {
     val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
     val version_code = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
@@ -852,11 +1384,41 @@ private fun method_options(ctx: android.content.Context): List<Pair<String, Stri
         "karachi" to ctx.getString(R.string.method_karachi),
         "isna" to ctx.getString(R.string.method_isna),
         "uaq" to ctx.getString(R.string.method_uaq),
+        "uiof" to ctx.getString(R.string.method_uiof),
         "custom" to ctx.getString(R.string.method_custom)
     )
 
 private fun method_label(ctx: android.content.Context, v: String): String =
     method_options(ctx).firstOrNull { it.first == v }?.second ?: v
+
+private fun calc_mode_options(ctx: android.content.Context): List<Pair<String, String>> =
+    buildList {
+        add(SavedLocations.calc_mode_inherit_global to ctx.getString(R.string.saved_locations_calc_mode_inherit))
+        MethodConfig.supported_presets.forEach { preset ->
+            add(calc_mode_value_for_preset(preset) to method_label(ctx, preset))
+        }
+    }
+
+private fun calc_mode_label(ctx: android.content.Context, calc_mode: String, method_preset: String): String =
+    when (calc_mode) {
+        SavedLocations.calc_mode_custom -> method_label(ctx, method_preset)
+        else -> ctx.getString(R.string.saved_locations_calc_mode_inherit)
+    }
+
+private fun calc_mode_value_for_preset(preset: String): String = "preset:$preset"
+
+private fun calc_mode_preset_from_value(value: String): String? {
+    if (!value.startsWith("preset:")) return null
+    return value.removePrefix("preset:").takeIf { it in MethodConfig.supported_presets }
+}
+
+private fun calc_mode_selected_value(calc_mode: String, method_preset: String): String {
+    return if (calc_mode == SavedLocations.calc_mode_custom) {
+        calc_mode_value_for_preset(method_preset)
+    } else {
+        SavedLocations.calc_mode_inherit_global
+    }
+}
 
 private fun isha_mode_options(ctx: android.content.Context): List<Pair<String, String>> =
     listOf(

@@ -81,6 +81,7 @@ fun DaysScreen(vm: DaysViewModel, on_back: () -> Unit, on_install_host: () -> Un
 
     AppScaffold(
         title = state.title.ifBlank { days_title },
+        subtitle = state.subtitle,
         nav_content_description = nav_cancel,
         on_nav = on_back,
         actions = {

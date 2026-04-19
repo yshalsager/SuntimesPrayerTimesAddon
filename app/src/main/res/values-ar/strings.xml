@@ -80,6 +80,42 @@
     <string name='host_location_title'>موقع المضيف</string>
     <string name='host_alarms_title'>منبّهات المضيف</string>
     <string name='host_alarms_summary'>فتح شاشة منبّهات التطبيق المضيف</string>
+    <string name='home_location_selector_title'>موقع الصفحة الرئيسية</string>
+    <string name='home_location_host_prefix'>المضيف (عام)</string>
+    <string name='saved_locations_manage_action'>إدارة المواقع</string>
+    <string name='saved_locations_cards_action'>بطاقات المواقع</string>
+    <string name='saved_locations_cards_title'>بطاقات المواقع المحفوظة</string>
+    <string name='saved_locations_cards_subtitle'>بطاقات مواقيت اليوم لكل المواقع المحفوظة</string>
+    <string name='saved_locations_title'>المواقع المحفوظة</string>
+    <string name='saved_locations_import_host_title'>استيراد موقع المضيف الحالي</string>
+    <string name='saved_locations_import_failed'>تعذر استيراد موقع المضيف</string>
+    <string name='saved_locations_add_manual_title'>إضافة موقع يدويًا</string>
+    <string name='saved_locations_add_manual_summary'>حدّد الاسم والإحداثيات والارتفاع (اختياري) والمنطقة الزمنية</string>
+    <string name='saved_locations_add_action'>إضافة</string>
+    <string name='saved_locations_limit_reached'>تم الوصول إلى الحد الأقصى (%1$d مواقع)</string>
+    <string name='saved_locations_empty_title'>لا توجد مواقع محفوظة بعد</string>
+    <string name='saved_locations_empty_summary'>أضف مواقع للتبديل السريع في مواقيت الصفحة الرئيسية</string>
+    <string name='saved_locations_move_up_action'>أعلى</string>
+    <string name='saved_locations_move_down_action'>أسفل</string>
+    <string name='saved_locations_delete_action'>حذف</string>
+    <string name='saved_locations_edit_title'>تعديل الموقع</string>
+    <string name='saved_locations_save_action'>حفظ</string>
+    <string name='saved_locations_field_label'>الاسم</string>
+    <string name='saved_locations_field_latitude'>خط العرض</string>
+    <string name='saved_locations_field_longitude'>خط الطول</string>
+    <string name='saved_locations_field_altitude'>الارتفاع (اختياري)</string>
+    <string name='saved_locations_field_timezone'>معرّف المنطقة الزمنية</string>
+    <string name='saved_locations_timezone_pick_action'>اختيار المنطقة الزمنية</string>
+    <string name='saved_locations_timezone_device_action'>استخدام منطقة الجهاز</string>
+    <string name='saved_locations_timezone_picker_title'>اختيار المنطقة الزمنية</string>
+    <string name='saved_locations_timezone_search_label'>ابحث عن معرّف المنطقة الزمنية</string>
+    <string name='saved_locations_timezone_no_results'>لا توجد مناطق مطابقة</string>
+    <string name='saved_locations_timezone_current_tag'>الحالي</string>
+    <string name='saved_locations_timezone_mismatch_warning'>قد لا تتطابق المنطقة الزمنية مع الإحداثيات (فرق التوقيت حوالي %1$.1f ساعة).</string>
+    <string name='saved_locations_field_calc_mode'>وضع الحساب</string>
+    <string name='saved_locations_field_method_preset'>الإعداد الحسابي</string>
+    <string name='saved_locations_calc_mode_inherit'>استخدام الإعدادات العامة</string>
+    <string name='saved_locations_calc_mode_custom'>مخصص (%1$s)</string>
     <string name='open_in_host'>فتح</string>
     <string name='install_host_action'>تثبيت</string>
     <string name='export_label'>تصدير</string>
@@ -120,6 +156,7 @@
     <string name='method_karachi'>كراتشي</string>
     <string name='method_isna'>أمريكا الشمالية (ISNA)</string>
     <string name='method_uaq'>أم القرى</string>
+    <string name='method_uiof'>اتحاد المنظمات الإسلامية في فرنسا</string>
     <string name='method_custom'>مخصص</string>
 
     <string name='asr_factor_1'>شافعي (×1)</string>
@@ -138,6 +175,7 @@
     <string name='days_show_night_portions_title'>إظهار تقسيم الليل</string>
 
     <string name='days_title'>التقويم</string>
+    <string name='days_location_context'>الموقع: %1$s · %2$s</string>
     <string name='prev_month'>الشهر السابق</string>
     <string name='next_month'>الشهر التالي</string>
     <string name='next_prayer_label'>الصلاة القادمة: %1$s</string>
@@ -178,6 +216,8 @@
     <string name='widget_show_night_portions_title'>إظهار تقسيم الليل</string>
     <string name='widget_prayer_times_today'>مواقيت الصلاة (اليوم)</string>
     <string name='widget_prayer_times_today_desc'>مواقيت الصلاة لليوم</string>
+    <string name='widget_location_config_title'>موقع الودجت</string>
+    <string name='widget_location_config_confirm'>إضافة الودجت</string>
     <string name='calendar_prayers_title'>مواقيت الصلاة</string>
     <string name='calendar_makruh_title'>أوقات النهي</string>
     <string name='calendar_night_title'>أجزاء الليل</string>

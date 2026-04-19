@@ -30,6 +30,7 @@ class SettingsBackupTest {
             "language" to "ar",
             "days_show_hijri" to false,
             "hijri_day_offset" to 2,
+            "method_preset" to "uiof",
             "fajr_angle" to 16.2,
             "extra_fajr_1_enabled" to true,
             "extra_fajr_1_angle" to 18.3,
@@ -39,7 +40,10 @@ class SettingsBackupTest {
             "extra_isha_1_angle" to 17.8,
             "extra_isha_1_label" to "Isha Secondary",
             "makruh_sunrise_minutes" to 20,
-            "host_event_authority" to "com.forrestguice.suntimeswidget.event.provider"
+            "host_event_authority" to "com.forrestguice.suntimeswidget.event.provider",
+            "saved_locations_json" to """[{"id":"1","label":"Cairo","latitude":"30.0","longitude":"31.0","timezone_id":"Africa/Cairo"}]""",
+            "home_location_source" to SavedLocations.home_source_saved,
+            "home_location_id" to "1"
         )
 
         val raw = SettingsBackup.encode_json(values)
@@ -51,6 +55,7 @@ class SettingsBackupTest {
         assertEquals("ar", restored["language"])
         assertEquals(false, restored["days_show_hijri"])
         assertEquals(2, restored["hijri_day_offset"])
+        assertEquals("uiof", restored["method_preset"])
         assertEquals(16.2, restored["fajr_angle"])
         assertEquals(true, restored["extra_fajr_1_enabled"])
         assertEquals(18.3, restored["extra_fajr_1_angle"])
@@ -61,6 +66,9 @@ class SettingsBackupTest {
         assertEquals("Isha Secondary", restored["extra_isha_1_label"])
         assertEquals(20, restored["makruh_sunrise_minutes"])
         assertEquals("com.forrestguice.suntimeswidget.event.provider", restored["host_event_authority"])
+        assertEquals("""[{"id":"1","label":"Cairo","latitude":"30.0","longitude":"31.0","timezone_id":"Africa/Cairo"}]""", restored["saved_locations_json"])
+        assertEquals(SavedLocations.home_source_saved, restored["home_location_source"])
+        assertEquals("1", restored["home_location_id"])
         assertEquals(0, parsed.skipped_count)
     }
 
@@ -122,7 +130,8 @@ class SettingsBackupTest {
                 "asr_factor": "bad",
                 "theme": "dark",
                 "hijri_day_offset": 9,
-                "fajr_angle": "NaN"
+                "fajr_angle": "NaN",
+                "home_location_source": "invalid"
               }
             }
         """.trimIndent()
@@ -134,7 +143,8 @@ class SettingsBackupTest {
         assertEquals(false, parsed.values.containsKey("asr_factor"))
         assertEquals(false, parsed.values.containsKey("hijri_day_offset"))
         assertEquals(false, parsed.values.containsKey("fajr_angle"))
-        assertEquals(3, parsed.skipped_count)
+        assertEquals(false, parsed.values.containsKey("home_location_source"))
+        assertEquals(4, parsed.skipped_count)
     }
 
     @Test

@@ -9,22 +9,32 @@ import android.database.MatrixCursor
 import android.net.Uri
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEventMapper
+import com.yshalsager.suntimes.prayertimesaddon.core.AddonRuntimeProfile
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEventType
 import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.core.AppIds
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostEventQueries
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
+import com.yshalsager.suntimes.prayertimesaddon.core.MethodConfig
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
 import com.yshalsager.suntimes.prayertimesaddon.core.is_addon_event_enabled
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_eid_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
+import com.yshalsager.suntimes.prayertimesaddon.core.resolve_location_query_context
 import com.yshalsager.suntimes.prayertimesaddon.core.visible_addon_events
 import java.util.Calendar
+import java.util.TimeZone
 
 class PrayerTimesProvider : ContentProvider() {
+    private data class SelectionLocationArgs(
+        val latitude: String?,
+        val longitude: String?,
+        val altitude: String?
+    )
+
     companion object {
         val authority = AppIds.event_provider_authority
 
@@ -63,9 +73,9 @@ class PrayerTimesProvider : ContentProvider() {
         val ctx = context ?: return null
         return when (matcher.match(uri)) {
             match_types -> query_types(ctx, projection)
-            match_events -> query_event_info(ctx, null, projection)
-            match_event -> query_event_info(ctx, uri.lastPathSegment, projection)
-            match_calc -> query_event_calc(ctx, uri.lastPathSegment, projection, selection, selectionArgs)
+            match_events -> query_event_info(ctx, uri, null, projection)
+            match_event -> query_event_info(ctx, uri, uri.lastPathSegment, projection)
+            match_calc -> query_event_calc(ctx, uri, uri.lastPathSegment, projection, selection, selectionArgs)
 
             else -> null
         }
@@ -90,19 +100,34 @@ class PrayerTimesProvider : ContentProvider() {
 
     private fun query_event_info(
         context: Context,
+        uri: Uri,
         event_id: String?,
         projection: Array<String>?
     ): Cursor {
         val cols = projection ?: AlarmEventContract.query_event_info_projection
         val c = MatrixCursor(cols)
-        for (e in visible_addon_events(context)) {
-            if (event_id == null || e.event_id == event_id) c.addRow(event_info_row(context, cols, e))
+        val location_context =
+            resolve_location_query_context(
+                context = context,
+                saved_location_id = uri.getQueryParameter(AlarmEventContract.extra_saved_location_id),
+                latitude = null,
+                longitude = null,
+                altitude = null
+            )
+        val runtime_profile = location_context.addon_runtime_profile_override
+        for (e in visible_addon_events(context, runtime_profile)) {
+            if (event_id == null || e.event_id == event_id) c.addRow(event_info_row(context, cols, e, runtime_profile))
         }
         return c
     }
 
-    private fun event_info_row(context: Context, cols: Array<String>, e: AddonEvent): Array<Any?> {
-        val title = addon_event_title(context, e)
+    private fun event_info_row(
+        context: Context,
+        cols: Array<String>,
+        e: AddonEvent,
+        runtime_profile: AddonRuntimeProfile?
+    ): Array<Any?> {
+        val title = addon_event_title(context, e, runtime_profile)
         val row = arrayOfNulls<Any>(cols.size)
         for (i in cols.indices) {
             row[i] = when (cols[i]) {
@@ -126,6 +151,7 @@ class PrayerTimesProvider : ContentProvider() {
 
     private fun query_event_calc(
         context: Context,
+        uri: Uri,
         addon_event_id: String?,
         projection: Array<String>?,
         selection: String?,
@@ -136,27 +162,76 @@ class PrayerTimesProvider : ContentProvider() {
 
         val selected = HostResolver.ensure_default_selected(context) ?: return c
         val addon_event = AddonEvent.entries.firstOrNull { it.event_id == addon_event_id } ?: return c
-        if (!is_addon_event_enabled(context, addon_event)) return c
+        val selection_location = selection_location_from_args(selectionArgs)
+        val location_context =
+            resolve_location_query_context(
+                context = context,
+                saved_location_id = uri.getQueryParameter(AlarmEventContract.extra_saved_location_id),
+                latitude = selection_location.latitude,
+                longitude = selection_location.longitude,
+                altitude = selection_location.altitude
+            )
+        val method_override = location_context.method_config_override
+        val runtime_profile = location_context.addon_runtime_profile_override
+        val timezone_override = location_context.timezone_override
+        val alarm_now = selectionArgs?.getOrNull(0)?.toLongOrNull() ?: System.currentTimeMillis()
+        val resolved_selection = location_context.selection_for_alarm_now(alarm_now, selection, selectionArgs)
+        val effective_selection = resolved_selection.first
+        val effective_selection_args = resolved_selection.second
+        if (!is_addon_event_enabled(context, addon_event, runtime_profile)) return c
 
         if (addon_event.type == AddonEventType.night) {
-            val t = calc_night_event_time(context, selected, addon_event, selection, selectionArgs)
+            val t =
+                calc_night_event_time(
+                    context,
+                    selected,
+                    addon_event,
+                    effective_selection,
+                    effective_selection_args,
+                    method_override,
+                    timezone_override
+                )
             if (t != null) c.addRow(calc_row(cols, addon_event, t))
             return c
         }
 
         if (addon_event == AddonEvent.prayer_eid_start || addon_event == AddonEvent.prayer_eid_end) {
-            val alarm_now = selectionArgs?.getOrNull(0)?.toLongOrNull() ?: System.currentTimeMillis()
-            val t = query_host_eid_time(context, selected, addon_event, alarm_now, selection, selectionArgs)
+            val t =
+                query_host_eid_time(
+                    context,
+                    selected,
+                    addon_event,
+                    alarm_now,
+                    effective_selection,
+                    effective_selection_args,
+                    timezone_override,
+                    runtime_profile
+                )
             if (t != null) c.addRow(calc_row(cols, addon_event, t))
             return c
         }
 
-        val host_query = AddonEventMapper.map_event(context, addon_event) ?: return c
-        var t = if (addon_event == AddonEvent.prayer_asr || addon_event == AddonEvent.makruh_after_asr_start) {
-            HostEventQueries.query_asr_time(context, selected, selection, selectionArgs)
-        } else {
-            HostEventQueries.query_host_event_time(context, selected, host_query.base_event_id, host_query.delta_millis, selection, selectionArgs)
-        }
+        val t =
+            if (addon_event == AddonEvent.prayer_asr || addon_event == AddonEvent.makruh_after_asr_start) {
+                HostEventQueries.query_asr_time(
+                    context,
+                    selected,
+                    effective_selection,
+                    effective_selection_args,
+                    latitude_override = location_context.latitude_override,
+                    asr_factor_override = method_override?.asr_factor
+                )
+            } else {
+                val host_query = AddonEventMapper.map_event(context, addon_event, method_override, runtime_profile) ?: return c
+                HostEventQueries.query_host_event_time(
+                    context,
+                    selected,
+                    host_query.base_event_id,
+                    host_query.delta_millis,
+                    effective_selection,
+                    effective_selection_args
+                )
+            }
 
         if (t != null) c.addRow(calc_row(cols, addon_event, t))
 
@@ -180,13 +255,16 @@ class PrayerTimesProvider : ContentProvider() {
         host_event_authority: String,
         addon_event: AddonEvent,
         selection: String?,
-        selectionArgs: Array<String>?
+        selectionArgs: Array<String>?,
+        method_override: MethodConfig?,
+        timezone_override: TimeZone?
     ): Long? {
         val now = selectionArgs?.getOrNull(0)?.toLongOrNull() ?: System.currentTimeMillis()
         val alarm_offset = selectionArgs?.getOrNull(1)?.toLongOrNull() ?: 0L
-        val fajr_query = AddonEventMapper.map_event(context, AddonEvent.prayer_fajr) ?: return null
+        val fajr_query = AddonEventMapper.map_event(context, AddonEvent.prayer_fajr, method_override) ?: return null
         val tz =
-            HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(java.util.TimeZone::getTimeZone)
+            timezone_override
+                ?: HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(java.util.TimeZone::getTimeZone)
                 ?: java.util.TimeZone.getDefault()
 
         fun with_now(v: Long): Array<String>? {
@@ -224,7 +302,7 @@ class PrayerTimesProvider : ContentProvider() {
                     selection,
                     with_now(maghrib_day_start) ?: selectionArgs
                 )?.sunset ?: return null
-            val maghrib = sunset + Prefs.get_maghrib_offset_minutes(context) * 60_000L
+            val maghrib = sunset + (method_override?.maghrib_offset_minutes ?: Prefs.get_maghrib_offset_minutes(context)) * 60_000L
             val night = calc_night(maghrib, fajr) ?: return null
 
             val t = when (addon_event) {
@@ -240,4 +318,11 @@ class PrayerTimesProvider : ContentProvider() {
 
         return null
     }
+
+    private fun selection_location_from_args(selectionArgs: Array<String>?): SelectionLocationArgs =
+        SelectionLocationArgs(
+            latitude = selectionArgs?.getOrNull(4),
+            longitude = selectionArgs?.getOrNull(5),
+            altitude = selectionArgs?.getOrNull(6)
+        )
 }

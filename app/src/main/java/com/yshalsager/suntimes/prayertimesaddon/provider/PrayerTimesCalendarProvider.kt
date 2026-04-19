@@ -7,6 +7,8 @@ import android.database.MatrixCursor
 import android.net.Uri
 import androidx.core.content.ContextCompat
 import com.yshalsager.suntimes.prayertimesaddon.R
+import com.yshalsager.suntimes.prayertimesaddon.core.LocationQueryContext
+import com.yshalsager.suntimes.prayertimesaddon.core.resolve_location_query_context
 import com.yshalsager.suntimes.prayertimesaddon.core.PrayerTimesCalendarContract
 import com.yshalsager.suntimes.prayertimesaddon.core.PrayerTimesCalendarSource
 import com.yshalsager.suntimes.prayertimesaddon.core.query_prayer_times_calendar_events
@@ -28,11 +30,19 @@ class PrayerTimesCalendarProvider : ContentProvider() {
     ): Cursor? {
         val ctx = context ?: return null
         val source = uri.pathSegments.getOrNull(0)?.let(PrayerTimesCalendarSource::from_id) ?: return null
+        val location_context =
+            resolve_location_query_context(
+                context = ctx,
+                saved_location_id = uri.getQueryParameter(PrayerTimesCalendarContract.param_saved_location_id),
+                latitude = selectionArgs?.getOrNull(4),
+                longitude = selectionArgs?.getOrNull(5),
+                altitude = selectionArgs?.getOrNull(6)
+            )
         return when (uri.pathSegments.getOrNull(1)) {
-            PrayerTimesCalendarContract.query_calendar_info -> query_calendar_info(ctx, source, projection)
+            PrayerTimesCalendarContract.query_calendar_info -> query_calendar_info(ctx, source, projection, location_context)
             PrayerTimesCalendarContract.query_calendar_template_strings -> MatrixCursor(projection ?: PrayerTimesCalendarContract.query_calendar_template_strings_projection)
             PrayerTimesCalendarContract.query_calendar_template_flags -> MatrixCursor(projection ?: PrayerTimesCalendarContract.query_calendar_template_flags_projection)
-            PrayerTimesCalendarContract.query_calendar_content -> query_calendar_content(ctx, source, projection, uri.pathSegments.getOrNull(2))
+            PrayerTimesCalendarContract.query_calendar_content -> query_calendar_content(ctx, source, projection, uri.pathSegments.getOrNull(2), location_context)
             else -> null
         }
     }
@@ -45,11 +55,12 @@ class PrayerTimesCalendarProvider : ContentProvider() {
     private fun query_calendar_info(
         context: android.content.Context,
         source: PrayerTimesCalendarSource,
-        projection: Array<String>?
+        projection: Array<String>?,
+        location_context: LocationQueryContext
     ): Cursor {
         val cols = projection ?: PrayerTimesCalendarContract.query_calendar_info_projection
         val c = MatrixCursor(cols)
-        val meta = resolve_prayer_times_calendar_meta(context, source)
+        val meta = resolve_prayer_times_calendar_meta(context, source, location_context)
         val summary = meta?.summary ?: context.getString(R.string.no_host_found)
         val color = meta?.color ?: ContextCompat.getColor(context, source.color_res)
 
@@ -75,13 +86,14 @@ class PrayerTimesCalendarProvider : ContentProvider() {
         context: android.content.Context,
         source: PrayerTimesCalendarSource,
         projection: Array<String>?,
-        range_segment: String?
+        range_segment: String?,
+        location_context: LocationQueryContext
     ): Cursor {
         val cols = projection ?: PrayerTimesCalendarContract.query_calendar_content_projection
         val c = MatrixCursor(cols)
         val (window_start, window_end) = parse_window(range_segment) ?: return c
 
-        query_prayer_times_calendar_events(context, source, window_start, window_end).forEach { event ->
+        query_prayer_times_calendar_events(context, source, window_start, window_end, location_context).forEach { event ->
             val row = arrayOfNulls<Any>(cols.size)
             cols.indices.forEach { i ->
                 row[i] =

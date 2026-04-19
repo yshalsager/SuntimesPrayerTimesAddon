@@ -125,24 +125,28 @@ object HostEventQueries {
         context: Context,
         host_event_authority: String,
         selection: String?,
-        selectionArgs: Array<String>?
+        selectionArgs: Array<String>?,
+        latitude_override: Double? = null,
+        asr_factor_override: Int? = null
     ): Long? {
-        val factor = Prefs.get_asr_factor(context)
+        val factor = asr_factor_override ?: Prefs.get_asr_factor(context)
         val host_event_id = resolve_shadow_ratio_event_id(context, host_event_authority, factor)
         if (host_event_id != null) return query_host_event_time(context, host_event_authority, host_event_id, 0, selection, selectionArgs)
-        return calc_asr_fallback_time(context, host_event_authority, selection, selectionArgs)
+        return calc_asr_fallback_time(context, host_event_authority, selection, selectionArgs, latitude_override, factor)
     }
 
     fun calc_asr_fallback_time(
         context: Context,
         host_event_authority: String,
         selection: String?,
-        selectionArgs: Array<String>?
+        selectionArgs: Array<String>?,
+        latitude_override: Double? = null,
+        asr_factor_override: Int? = null
     ): Long? {
-        val factor = Prefs.get_asr_factor(context)
+        val factor = asr_factor_override ?: Prefs.get_asr_factor(context)
         val noon = query_host_event_time(context, host_event_authority, "NOON", 0, selection, selectionArgs) ?: return null
 
-        val lat = HostConfigReader.read_config(context, host_event_authority)?.latitude?.toDoubleOrNull() ?: return null
+        val lat = latitude_override ?: HostConfigReader.read_config(context, host_event_authority)?.latitude?.toDoubleOrNull() ?: return null
         val dec = query_host_declination(context, host_event_authority, noon) ?: return null
 
         val ratio = factor + tan(Math.toRadians(abs(lat - dec)))

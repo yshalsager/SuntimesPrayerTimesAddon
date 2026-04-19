@@ -70,56 +70,63 @@ object HostEventIds {
 object AddonEventMapper {
     const val eid_start_offset_millis = 15L * 60_000L
 
-    fun map_event(context: Context, addon_event: AddonEvent): HostQuery? {
+    fun map_event(
+        context: Context,
+        addon_event: AddonEvent,
+        method_config: MethodConfig? = null,
+        addon_runtime_profile: AddonRuntimeProfile? = null
+    ): HostQuery? {
+        val cfg = method_config ?: method_config_from_prefs(context)
+        val runtime = addon_runtime_profile ?: addon_runtime_profile_from_prefs(context)
         return when (addon_event) {
             AddonEvent.prayer_fajr ->
-                HostQuery(HostEventIds.sun_elevation(-Prefs.get_fajr_angle(context), rising = true))
+                HostQuery(HostEventIds.sun_elevation(-cfg.fajr_angle, rising = true))
             AddonEvent.prayer_fajr_extra_1 ->
-                HostQuery(HostEventIds.sun_elevation(-Prefs.get_extra_fajr_1_angle(context), rising = true))
+                HostQuery(HostEventIds.sun_elevation(-runtime.extra_fajr_1_angle, rising = true))
             AddonEvent.prayer_duha -> {
-                val delta = Prefs.get_makruh_sunrise_minutes(context) * 60_000L
+                val delta = cfg.makruh_sunrise_minutes * 60_000L
                 HostQuery("SUNRISE", delta_millis = delta)
             }
             AddonEvent.prayer_eid_start -> HostQuery("SUNRISE", delta_millis = eid_start_offset_millis)
             AddonEvent.prayer_eid_end -> HostQuery("NOON")
 
             AddonEvent.prayer_dhuhr -> HostQuery("NOON")
-            AddonEvent.prayer_asr -> HostQuery(HostEventIds.shadow_ratio(Prefs.get_asr_factor(context)))
+            AddonEvent.prayer_asr -> HostQuery(HostEventIds.shadow_ratio(cfg.asr_factor))
 
             AddonEvent.prayer_maghrib -> {
-                val delta = Prefs.get_maghrib_offset_minutes(context) * 60_000L
+                val delta = cfg.maghrib_offset_minutes * 60_000L
                 HostQuery("SUNSET", delta_millis = delta)
             }
 
-            AddonEvent.prayer_isha -> when (Prefs.get_isha_mode(context)) {
+            AddonEvent.prayer_isha -> when (cfg.isha_mode) {
                 Prefs.isha_mode_fixed -> {
-                    val delta = Prefs.get_isha_fixed_minutes(context) * 60_000L
+                    val delta = cfg.isha_fixed_minutes * 60_000L
                     HostQuery("SUNSET", delta_millis = delta)
                 }
 
-                else -> HostQuery(HostEventIds.sun_elevation(-Prefs.get_isha_angle(context), rising = false))
+                else -> HostQuery(HostEventIds.sun_elevation(-cfg.isha_angle, rising = false))
             }
             AddonEvent.prayer_isha_extra_1 ->
-                HostQuery(HostEventIds.sun_elevation(-Prefs.get_extra_isha_1_angle(context), rising = false))
+                HostQuery(HostEventIds.sun_elevation(-runtime.extra_isha_1_angle, rising = false))
 
             AddonEvent.makruh_dawn_start ->
-                HostQuery(HostEventIds.sun_elevation(-Prefs.get_fajr_angle(context), rising = true))
+                HostQuery(HostEventIds.sun_elevation(-cfg.fajr_angle, rising = true))
             AddonEvent.makruh_dawn_end -> HostQuery("SUNRISE")
             AddonEvent.makruh_sunrise_start -> HostQuery("SUNRISE")
             AddonEvent.makruh_sunrise_end -> {
-                val delta = Prefs.get_makruh_sunrise_minutes(context) * 60_000L
+                val delta = cfg.makruh_sunrise_minutes * 60_000L
                 HostQuery("SUNRISE", delta_millis = delta)
             }
 
             AddonEvent.makruh_zawal_end -> HostQuery("NOON")
             AddonEvent.makruh_zawal_start -> {
-                val delta = -Prefs.get_zawal_minutes(context) * 60_000L
+                val delta = -cfg.zawal_minutes * 60_000L
                 HostQuery("NOON", delta_millis = delta)
             }
 
-            AddonEvent.makruh_after_asr_start -> HostQuery(HostEventIds.shadow_ratio(Prefs.get_asr_factor(context)))
-            AddonEvent.makruh_after_asr_end -> HostQuery(HostEventIds.sun_elevation(Prefs.get_makruh_angle(context), rising = false))
-            AddonEvent.makruh_sunset_start -> HostQuery(HostEventIds.sun_elevation(Prefs.get_makruh_angle(context), rising = false))
+            AddonEvent.makruh_after_asr_start -> HostQuery(HostEventIds.shadow_ratio(cfg.asr_factor))
+            AddonEvent.makruh_after_asr_end -> HostQuery(HostEventIds.sun_elevation(cfg.makruh_angle, rising = false))
+            AddonEvent.makruh_sunset_start -> HostQuery(HostEventIds.sun_elevation(cfg.makruh_angle, rising = false))
 
             AddonEvent.makruh_sunset_end -> HostQuery("SUNSET")
 

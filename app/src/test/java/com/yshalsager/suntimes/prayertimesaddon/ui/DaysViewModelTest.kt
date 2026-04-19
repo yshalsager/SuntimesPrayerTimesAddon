@@ -1,6 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.ui
 
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.addon_runtime_profile_from_prefs
 import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
@@ -27,12 +28,11 @@ class DaysViewModelTest {
         val show_night = true
         val show_hijri_effective = true
         val month_basis = Prefs.days_month_basis_gregorian
-        val hijri_variant = Prefs.hijri_variant_umalqura
-        val hijri_offset = 0
+        val selected_location_sig = "host"
 
-        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), selected_location_sig)
         Prefs.set_gregorian_date_format(context, Prefs.gregorian_date_format_long)
-        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), selected_location_sig)
 
         assertNotEquals(first, second)
     }
@@ -45,12 +45,11 @@ class DaysViewModelTest {
         val show_night = true
         val show_hijri_effective = true
         val month_basis = Prefs.days_month_basis_gregorian
-        val hijri_variant = Prefs.hijri_variant_umalqura
-        val hijri_offset = 0
+        val selected_location_sig = "host"
 
-        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), selected_location_sig)
         Prefs.set_makruh_sunrise_minutes(context, 20)
-        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), selected_location_sig)
 
         assertNotEquals(first, second)
     }
@@ -63,12 +62,11 @@ class DaysViewModelTest {
         val show_night = true
         val show_hijri_effective = true
         val month_basis = Prefs.days_month_basis_gregorian
-        val hijri_variant = Prefs.hijri_variant_umalqura
-        val hijri_offset = 0
+        val selected_location_sig = "host"
 
-        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), selected_location_sig)
         Prefs.set_extra_fajr_1_label(context, "Fajr Secondary")
-        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), selected_location_sig)
 
         assertNotEquals(first, second)
     }
@@ -81,12 +79,37 @@ class DaysViewModelTest {
         val show_night = true
         val show_hijri_effective = true
         val month_basis = Prefs.days_month_basis_gregorian
-        val hijri_variant = Prefs.hijri_variant_umalqura
-        val hijri_offset = 0
+        val selected_location_sig = "host"
 
-        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), selected_location_sig)
         Prefs.set_extra_isha_1_enabled(context, true)
-        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, hijri_variant, hijri_offset)
+        val second = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), selected_location_sig)
+
+        assertNotEquals(first, second)
+    }
+
+    @Test
+    fun build_days_sig_changes_when_selected_location_signature_changes() {
+        val host = "com.test.host.event.provider"
+        val month_anchor = 123L
+        val show_prohibited = true
+        val show_night = true
+        val show_hijri_effective = true
+        val month_basis = Prefs.days_month_basis_gregorian
+
+        val first = build_days_sig(context, host, month_anchor, show_prohibited, show_night, show_hijri_effective, month_basis, addon_runtime_profile_from_prefs(context), "host")
+        val second =
+            build_days_sig(
+                context,
+                host,
+                month_anchor,
+                show_prohibited,
+                show_night,
+                show_hijri_effective,
+                month_basis,
+                addon_runtime_profile_from_prefs(context),
+                "saved:loc-1"
+            )
 
         assertNotEquals(first, second)
     }

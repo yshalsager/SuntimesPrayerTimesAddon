@@ -3,7 +3,6 @@ package com.yshalsager.suntimes.prayertimesaddon.core
 import android.content.Context
 import androidx.core.net.toUri
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
-import java.util.Calendar
 import java.util.Locale
 import java.util.TimeZone
 
@@ -20,20 +19,23 @@ private const val event_calc_selection =
 private fun event_calc_args(alarm_now: Long): Array<String> =
     arrayOf(alarm_now.toString(), "0", "false", "[]")
 
-private fun day_start_at(at_millis: Long, tz: TimeZone): Long =
-    Calendar.getInstance(tz).run {
-        timeInMillis = at_millis
-        set(Calendar.HOUR_OF_DAY, 0)
-        set(Calendar.MINUTE, 0)
-        set(Calendar.SECOND, 0)
-        set(Calendar.MILLISECOND, 0)
-        timeInMillis
-    }
+private fun resolve_host_timezone(
+    context: Context,
+    host_event_authority: String,
+    timezone_override: TimeZone?
+): TimeZone =
+    timezone_override
+        ?: HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(TimeZone::getTimeZone)
+        ?: TimeZone.getDefault()
 
-private fun is_eid_day(context: Context, host_event_authority: String, alarm_now: Long): Boolean {
-    val tz =
-        HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(TimeZone::getTimeZone)
-            ?: TimeZone.getDefault()
+private fun is_eid_day(
+    context: Context,
+    host_event_authority: String,
+    alarm_now: Long,
+    timezone_override: TimeZone?,
+    runtime_profile: AddonRuntimeProfile = addon_runtime_profile_from_prefs(context)
+): Boolean {
+    val tz = resolve_host_timezone(context, host_event_authority, timezone_override)
     val day_start = day_start_at(alarm_now, tz)
     val hijri =
         try {
@@ -41,8 +43,8 @@ private fun is_eid_day(context: Context, host_event_authority: String, alarm_now
                 day_start_millis = day_start,
                 tz = tz,
                 locale = Locale.getDefault(),
-                variant = Prefs.get_hijri_variant(context),
-                offset_days = Prefs.get_hijri_day_offset(context)
+                variant = runtime_profile.hijri_variant,
+                offset_days = runtime_profile.hijri_day_offset
             )
         } catch (_: ArithmeticException) {
             return false
@@ -56,43 +58,45 @@ fun query_host_eid_time(
     event: AddonEvent,
     alarm_now: Long,
     selection: String?,
-    selection_args: Array<String>?
+    selection_args: Array<String>?,
+    timezone_override: TimeZone? = null,
+    addon_runtime_profile_override: AddonRuntimeProfile? = null
 ): Long? {
     if (event != AddonEvent.prayer_eid_start && event != AddonEvent.prayer_eid_end) return null
-    if (!is_eid_day(context, host_event_authority, alarm_now)) return null
+    val runtime = (addon_runtime_profile_override ?: addon_runtime_profile_from_prefs(context)).normalized()
+    if (!is_eid_day(context, host_event_authority, alarm_now, timezone_override, runtime)) return null
 
-    val tz =
-        HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(TimeZone::getTimeZone)
-            ?: TimeZone.getDefault()
+    val tz = resolve_host_timezone(context, host_event_authority, timezone_override)
     val day_start = day_start_at(alarm_now, tz)
     val eid_selection_args =
         selection_args?.clone()?.also { args ->
             if (args.isNotEmpty()) args[0] = day_start.toString()
         } ?: selection_args
     val sun = query_host_sun(context, host_event_authority, day_start, selection, eid_selection_args)
+    fun same_selected_day(v: Long?): Boolean = v != null && day_start_at(v, tz) == day_start
     return when (event) {
         AddonEvent.prayer_eid_start -> {
             val sunrise =
-                sun?.sunrise ?: HostEventQueries.query_host_event_time(
+                sun?.sunrise?.takeIf(::same_selected_day) ?: HostEventQueries.query_host_event_time(
                     context,
                     host_event_authority,
                     "SUNRISE",
                     0L,
                     selection,
                     eid_selection_args
-                )
+                )?.takeIf(::same_selected_day)
             sunrise?.plus(AddonEventMapper.eid_start_offset_millis)
         }
 
         AddonEvent.prayer_eid_end ->
-            sun?.noon ?: HostEventQueries.query_host_event_time(
+            sun?.noon?.takeIf(::same_selected_day) ?: HostEventQueries.query_host_event_time(
                 context,
                 host_event_authority,
                 "NOON",
                 0L,
                 selection,
                 eid_selection_args
-            )
+            )?.takeIf(::same_selected_day)
     }
 }
 
@@ -137,13 +141,19 @@ fun query_host_addon_time(
     event: AddonEvent,
     alarm_now: Long,
     selection: String? = null,
-    selection_args: Array<String>? = null
+    selection_args: Array<String>? = null,
+    timezone_override: TimeZone? = null,
+    latitude_override: Double? = null,
+    method_config_override: MethodConfig? = null,
+    addon_runtime_profile_override: AddonRuntimeProfile? = null
 ): Long? {
     val effective_selection = selection ?: event_calc_selection
     val effective_selection_args = selection_args ?: event_calc_args(alarm_now)
+    val method_config = method_config_override ?: method_config_from_prefs(context)
+    val runtime_profile = (addon_runtime_profile_override ?: addon_runtime_profile_from_prefs(context)).normalized()
 
     if (event.type == AddonEventType.night) return null
-    if (!is_addon_event_enabled(context, event)) return null
+    if (!is_addon_event_enabled(context, event, runtime_profile)) return null
 
     if (event == AddonEvent.prayer_eid_start || event == AddonEvent.prayer_eid_end) {
         return query_host_eid_time(
@@ -152,11 +162,15 @@ fun query_host_addon_time(
             event,
             alarm_now,
             effective_selection,
-            effective_selection_args
+            effective_selection_args,
+            timezone_override,
+            runtime_profile
         )
     }
 
     if (event == AddonEvent.prayer_duha || event == AddonEvent.makruh_sunrise_end) {
+        val tz = resolve_host_timezone(context, host_event_authority, timezone_override)
+        val expected_day_start = day_start_at(alarm_now, tz)
         val sunrise =
             query_host_sun(
                 context,
@@ -164,15 +178,31 @@ fun query_host_addon_time(
                 alarm_now,
                 effective_selection,
                 effective_selection_args
-            )?.sunrise ?: return null
-        return sunrise + Prefs.get_makruh_sunrise_minutes(context) * 60_000L
+            )?.sunrise?.takeIf { day_start_at(it, tz) == expected_day_start }
+                ?: HostEventQueries.query_host_event_time(
+                    context,
+                    host_event_authority,
+                    "SUNRISE",
+                    0L,
+                    effective_selection,
+                    effective_selection_args
+                )?.takeIf { day_start_at(it, tz) == expected_day_start }
+                ?: return null
+        return sunrise + method_config.makruh_sunrise_minutes * 60_000L
     }
 
     if (event == AddonEvent.prayer_asr || event == AddonEvent.makruh_after_asr_start) {
-        return HostEventQueries.query_asr_time(context, host_event_authority, effective_selection, effective_selection_args)
+        return HostEventQueries.query_asr_time(
+            context,
+            host_event_authority,
+            effective_selection,
+            effective_selection_args,
+            latitude_override,
+            method_config.asr_factor
+        )
     }
 
-    val host_query = AddonEventMapper.map_event(context, event) ?: return null
+    val host_query = AddonEventMapper.map_event(context, event, method_config, runtime_profile) ?: return null
     return HostEventQueries.query_host_event_time(
         context,
         host_event_authority,
@@ -188,11 +218,19 @@ fun query_addon_time(
     event: AddonEvent,
     alarm_now: Long,
     selection: String? = null,
-    selection_args: Array<String>? = null
+    selection_args: Array<String>? = null,
+    saved_location_id: String? = null
 ): Long? {
     val effective_selection = selection ?: event_calc_selection
     val effective_selection_args = selection_args ?: event_calc_args(alarm_now)
-    val uri = "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_calc}/${event.event_id}".toUri()
+    val uri_builder =
+        "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_calc}/${event.event_id}"
+            .toUri()
+            .buildUpon()
+    saved_location_id?.trim()?.takeIf { it.isNotBlank() }?.let {
+        uri_builder.appendQueryParameter(AlarmEventContract.extra_saved_location_id, it)
+    }
+    val uri = uri_builder.build()
     return try {
         context.contentResolver.query(
             uri,

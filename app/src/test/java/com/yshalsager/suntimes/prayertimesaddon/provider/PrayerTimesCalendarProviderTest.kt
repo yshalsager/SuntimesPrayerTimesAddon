@@ -11,15 +11,20 @@ import androidx.core.content.ContextCompat
 import com.yshalsager.suntimes.prayertimesaddon.DeniedHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostEventProvider
+import com.yshalsager.suntimes.prayertimesaddon.OffdaySunHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.day_millis
 import com.yshalsager.suntimes.prayertimesaddon.denied_host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.denied_host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
+import com.yshalsager.suntimes.prayertimesaddon.offday_host_calc_authority
+import com.yshalsager.suntimes.prayertimesaddon.offday_host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.PrayerTimesCalendarContract
+import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
+import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -55,12 +60,16 @@ class PrayerTimesCalendarProviderTest {
         Robolectric.setupContentProvider(FakeHostEventProvider::class.java, host_event_authority)
         Robolectric.setupContentProvider(FakeHostCalcProvider::class.java, host_calc_authority)
         Robolectric.setupContentProvider(DeniedHostCalcProvider::class.java, denied_host_calc_authority)
+        Robolectric.setupContentProvider(FakeHostEventProvider::class.java, offday_host_event_authority)
+        Robolectric.setupContentProvider(OffdaySunHostCalcProvider::class.java, offday_host_calc_authority)
 
         val shadow_package_manager = shadowOf(context.packageManager)
         register_provider(shadow_package_manager, host_event_authority, FakeHostEventProvider::class.java.name)
         register_provider(shadow_package_manager, host_calc_authority, FakeHostCalcProvider::class.java.name)
         register_provider(shadow_package_manager, denied_host_event_authority, FakeHostEventProvider::class.java.name)
         register_provider(shadow_package_manager, denied_host_calc_authority, DeniedHostCalcProvider::class.java.name)
+        register_provider(shadow_package_manager, offday_host_event_authority, FakeHostEventProvider::class.java.name)
+        register_provider(shadow_package_manager, offday_host_calc_authority, OffdaySunHostCalcProvider::class.java.name)
     }
 
     @Test
@@ -105,6 +114,23 @@ class PrayerTimesCalendarProviderTest {
             val end = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Events.DTEND))
             assertEquals(start, end)
         }
+    }
+
+    @Test
+    fun prayers_calendar_uses_event_fallback_when_sun_values_are_out_of_day() {
+        Prefs.set_host_event_authority(context, offday_host_event_authority)
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        val events =
+            query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
+                .read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART)
+
+        val dhuhr_title = context.getString(R.string.event_prayer_dhuhr)
+        val maghrib_title = context.getString(R.string.event_prayer_maghrib)
+        val dhuhr = events.firstOrNull { it.first == dhuhr_title }?.second
+        val maghrib = events.firstOrNull { it.first == maghrib_title }?.second
+        assertTrue(dhuhr != null && dhuhr in day_start until (day_start + day_millis))
+        assertTrue(maghrib != null && maghrib in day_start until (day_start + day_millis))
     }
 
     @Test
@@ -157,6 +183,146 @@ class PrayerTimesCalendarProviderTest {
 
         assertTrue(titles.contains("Fajr Secondary"))
         assertTrue(titles.contains("Isha Secondary"))
+    }
+
+    @Test
+    fun prayers_calendar_scoped_saved_location_uses_custom_extra_labels() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        SavedLocations.save(
+            context,
+            listOf(
+                SavedLocation(
+                    id = "loc-custom",
+                    label = "Custom",
+                    latitude = "30.0",
+                    longitude = "31.0",
+                    altitude = null,
+                    timezone_id = "UTC",
+                    calc_mode = SavedLocations.calc_mode_custom,
+                    extra_fajr_1_enabled = true,
+                    extra_fajr_1_label_raw = "Local Fajr+",
+                    extra_isha_1_enabled = true,
+                    extra_isha_1_label_raw = "Local Isha+"
+                )
+            )
+        )
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        val scoped_titles =
+            query(
+                "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}?${PrayerTimesCalendarContract.param_saved_location_id}=loc-custom"
+            ).read_strings(CalendarContract.Events.TITLE)
+        val host_titles =
+            query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
+                .read_strings(CalendarContract.Events.TITLE)
+
+        assertTrue(scoped_titles.contains("Local Fajr+"))
+        assertTrue(scoped_titles.contains("Local Isha+"))
+        assertFalse(host_titles.contains("Local Fajr+"))
+        assertFalse(host_titles.contains("Local Isha+"))
+    }
+
+    @Test
+    fun prayers_calendar_content_uses_saved_location_id_scope() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        SavedLocations.save(
+            context,
+            listOf(
+                SavedLocation(
+                    id = "loc-shifted",
+                    label = "Shifted",
+                    latitude = "55.0",
+                    longitude = "37.0",
+                    altitude = "100.0",
+                    timezone_id = "UTC"
+                )
+            )
+        )
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        val scoped =
+            query(
+                "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}?${PrayerTimesCalendarContract.param_saved_location_id}=loc-shifted"
+            ).read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART)
+        val host =
+            query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
+                .read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART)
+
+        val scoped_dhuhr = scoped.first { it.first == context.getString(R.string.event_prayer_dhuhr) }.second
+        val host_dhuhr = host.first { it.first == context.getString(R.string.event_prayer_dhuhr) }.second
+        assertEquals(30L * 60L * 1000L, scoped_dhuhr - host_dhuhr)
+    }
+
+    @Test
+    fun prayers_calendar_unknown_saved_location_id_falls_back_to_host() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        val scoped =
+            query(
+                "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}?${PrayerTimesCalendarContract.param_saved_location_id}=missing"
+            ).read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART)
+        val host =
+            query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
+                .read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART)
+
+        assertEquals(host, scoped)
+    }
+
+    @Test
+    fun prayers_calendar_scoped_dst_timezone_uses_location_timezone() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        SavedLocations.save(
+            context,
+            listOf(
+                SavedLocation(
+                    id = "loc-ny",
+                    label = "New York",
+                    latitude = "30.0",
+                    longitude = "31.0",
+                    altitude = null,
+                    timezone_id = "America/New_York"
+                )
+            )
+        )
+        val day_start = utc_day_start(2026, Calendar.MARCH, 8)
+
+        val scoped_uri =
+            "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}?${PrayerTimesCalendarContract.param_saved_location_id}=loc-ny"
+        val scoped_times = query(scoped_uri).read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART)
+        val scoped_timezones = query(scoped_uri).read_strings(CalendarContract.Events.EVENT_TIMEZONE)
+
+        assertTrue(scoped_timezones.all { it == "America/New_York" })
+        assertTrue(scoped_times.any { it.first == context.getString(R.string.event_prayer_dhuhr) })
+    }
+
+    @Test
+    fun calendar_info_uses_saved_location_scope_summary() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        SavedLocations.save(
+            context,
+            listOf(
+                SavedLocation(
+                    id = "loc-cairo",
+                    label = "Cairo",
+                    latitude = "30.0",
+                    longitude = "31.0",
+                    altitude = null,
+                    timezone_id = "Africa/Cairo"
+                )
+            )
+        )
+
+        val cursor =
+            query(
+                "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarInfo?${PrayerTimesCalendarContract.param_saved_location_id}=loc-cairo"
+            )
+        cursor.use {
+            assertEquals(1, it.count)
+            it.moveToFirst()
+            val summary = it.getString(it.getColumnIndexOrThrow(PrayerTimesCalendarContract.column_calendar_summary))
+            assertTrue(summary.contains("Cairo"))
+        }
     }
 
     @Test
@@ -257,6 +423,18 @@ class PrayerTimesCalendarProviderTest {
         moveToPosition(-1)
         val out = ArrayList<String>()
         while (moveToNext()) out.add(getString(getColumnIndexOrThrow(column)))
+        return out
+    }
+
+    private fun Cursor.read_events(title_column: String, start_column: String): List<Pair<String, Long>> {
+        moveToPosition(-1)
+        val out = ArrayList<Pair<String, Long>>()
+        while (moveToNext()) {
+            out.add(
+                getString(getColumnIndexOrThrow(title_column)) to
+                    getLong(getColumnIndexOrThrow(start_column))
+            )
+        }
         return out
     }
 }
