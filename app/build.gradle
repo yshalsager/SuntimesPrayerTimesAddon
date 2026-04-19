@@ -15,8 +15,8 @@ android {
         applicationId 'com.yshalsager.suntimes.prayertimesaddon'
         minSdkVersion 23
         targetSdkVersion 36
-        versionCode 12
-        versionName '0.5.0'
+        versionCode 13
+        versionName '0.6.0'
         resConfigs 'en', 'ar'
 
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
