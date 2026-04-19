@@ -26,6 +26,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.format_method_summary
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import com.yshalsager.suntimes.prayertimesaddon.core.query_addon_time
 import com.yshalsager.suntimes.prayertimesaddon.core.format_gregorian_day_title
+import com.yshalsager.suntimes.prayertimesaddon.core.resolve_location_query_context
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -55,6 +56,11 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        super.onDeleted(context, appWidgetIds)
+        WidgetPrefs.clear_saved_location_ids(context, appWidgetIds)
+    }
+
     private fun update_all(context: Context, mgr: AppWidgetManager, ids: IntArray) {
         val host = HostResolver.ensure_default_selected(context)
         if (host == null) {
@@ -74,83 +80,99 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         }
 
         val cfg = HostConfigReader.read_config(context, host)
-        val tz = cfg?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
+        val host_tz = cfg?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
+        val host_location_label = cfg?.display_label() ?: context.getString(R.string.unknown_location)
         val now = System.currentTimeMillis()
-        val day_start = day_start(now, tz)
-
-        val time_format = DateFormat.getTimeFormat(context).apply { timeZone = tz }
-        val time_only_format =
-            SimpleDateFormat(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm", Locale.getDefault()).apply { timeZone = tz }
-
-        fun time_short(v: Long?): String = v?.let { time_only_format.format(Date(it)) } ?: "--"
-        fun time_str(v: Long?): String = v?.let { time_format.format(Date(it)) } ?: "--"
-        fun range(a: Long?, b: Long?): String = "${time_short(a)}-${time_short(b)}"
-
-        val fajr = query_addon_time(context, AddonEvent.prayer_fajr, day_start)
-        val duha = query_addon_time(context, AddonEvent.prayer_duha, day_start)
-        val dhuhr = query_addon_time(context, AddonEvent.prayer_dhuhr, day_start)
-        val asr = query_addon_time(context, AddonEvent.prayer_asr, day_start)
-        val maghrib = query_addon_time(context, AddonEvent.prayer_maghrib, day_start)
-        val isha = query_addon_time(context, AddonEvent.prayer_isha, day_start)
 
         val month_basis = Prefs.get_days_month_basis(context)
         val show_hijri = Prefs.get_days_show_hijri(context) || month_basis == Prefs.days_month_basis_hijri
-        val hijri_variant = Prefs.get_hijri_variant(context)
-        val hijri_offset = Prefs.get_hijri_day_offset(context)
         val locale = ConfigurationCompat.getLocales(context.resources.configuration).get(0) ?: Locale.getDefault()
-        val hijri =
-            if (!show_hijri) null
-            else
-                try {
-                    hijri_for_day(day_start, tz, locale, hijri_variant, hijri_offset).formatted
-                } catch (_: ArithmeticException) {
-                    null
-                }
-        val greg = format_gregorian_day_title(context, day_start, tz, locale)
-
-        val location = cfg?.display_label() ?: context.getString(R.string.unknown_location)
-        val method = format_method_summary(context)
-        val summary = "$location \u00b7 $method"
-
         val rtl = locale.layoutDirection == View.LAYOUT_DIRECTION_RTL
         val row_dir = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
 
-        val is_friday =
-            Calendar.getInstance(tz).run {
-                timeInMillis = day_start
-                get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
-            }
-
         val widget_show_prohibited = Prefs.get_widget_show_prohibited(context)
         val widget_show_night = Prefs.get_widget_show_night_portions(context)
-
-        val sunrise = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_sunrise_start, day_start)
-        val sunrise_end = if (!widget_show_prohibited) null else duha
-        val zawal_start = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_zawal_start, day_start)
-        val sunset_start = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_sunset_start, day_start)
-        val sunset = if (!widget_show_prohibited) null else query_addon_time(context, AddonEvent.makruh_sunset_end, day_start)
-
-        val prohibited_dawn = if (!widget_show_prohibited) null else range(fajr, sunrise)
-        val prohibited_sunrise = if (!widget_show_prohibited) null else range(sunrise, sunrise_end)
-        val prohibited_zawal = if (!widget_show_prohibited) null else range(zawal_start, dhuhr)
-        val prohibited_after_asr = if (!widget_show_prohibited) null else range(asr, sunset_start)
-        val prohibited_sunset = if (!widget_show_prohibited) null else range(sunset_start, sunset)
-
-        val fajr_next =
-            if (!widget_show_night) null
-            else query_addon_time(context, AddonEvent.prayer_fajr, next_day_start(day_start, tz))
-        val night = if (!widget_show_night) null else calc_night(maghrib, fajr_next)
-        val night_times =
-            if (!widget_show_night) emptyList()
-            else listOfNotNull(night?.midpoint, night?.last_third, night?.last_sixth)
-        val night_ok = widget_show_night && night_times.size == 3
-        val night_midpoint = night_times.getOrNull(0)
-        val night_last_third = night_times.getOrNull(1)
-        val night_last_sixth = night_times.getOrNull(2)
-
         val colors = widget_colors(context)
+        val all_candidates = ArrayList<Long>()
 
         ids.forEach { id ->
+            val requested_saved_location_id = WidgetPrefs.get_saved_location_id(context, id)
+            val location_context = resolve_location_query_context(context, requested_saved_location_id, null, null, null)
+            if (requested_saved_location_id != null && location_context.saved_location == null) {
+                WidgetPrefs.set_saved_location_id(context, id, null)
+            }
+            val scoped_saved_location_id = location_context.resolved_saved_location_id
+            val tz = location_context.timezone_override ?: host_tz
+            val day_start = day_start(now, tz)
+            val time_format = DateFormat.getTimeFormat(context).apply { timeZone = tz }
+            val time_only_format =
+                SimpleDateFormat(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm", Locale.getDefault()).apply { timeZone = tz }
+
+            fun time_short(v: Long?): String = v?.let { time_only_format.format(Date(it)) } ?: "--"
+            fun time_str(v: Long?): String = v?.let { time_format.format(Date(it)) } ?: "--"
+            fun range(a: Long?, b: Long?): String = "${time_short(a)}-${time_short(b)}"
+
+            val fajr = query_addon_time(context, AddonEvent.prayer_fajr, day_start, saved_location_id = scoped_saved_location_id)
+            val duha = query_addon_time(context, AddonEvent.prayer_duha, day_start, saved_location_id = scoped_saved_location_id)
+            val dhuhr = query_addon_time(context, AddonEvent.prayer_dhuhr, day_start, saved_location_id = scoped_saved_location_id)
+            val asr = query_addon_time(context, AddonEvent.prayer_asr, day_start, saved_location_id = scoped_saved_location_id)
+            val maghrib = query_addon_time(context, AddonEvent.prayer_maghrib, day_start, saved_location_id = scoped_saved_location_id)
+            val isha = query_addon_time(context, AddonEvent.prayer_isha, day_start, saved_location_id = scoped_saved_location_id)
+
+            val hijri_variant = location_context.addon_runtime_profile_override?.hijri_variant ?: Prefs.get_hijri_variant(context)
+            val hijri_offset = location_context.addon_runtime_profile_override?.hijri_day_offset ?: Prefs.get_hijri_day_offset(context)
+            val hijri =
+                if (!show_hijri) null
+                else
+                    try {
+                        hijri_for_day(day_start, tz, locale, hijri_variant, hijri_offset).formatted
+                    } catch (_: ArithmeticException) {
+                        null
+                    }
+            val greg = format_gregorian_day_title(context, day_start, tz, locale)
+            val location_label = location_context.saved_location?.display_label() ?: host_location_label
+            val method_summary = format_method_summary(context, location_context.method_config_override)
+            val summary = "$location_label \u00b7 $method_summary"
+
+            val is_friday =
+                Calendar.getInstance(tz).run {
+                    timeInMillis = day_start
+                    get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
+                }
+
+            val sunrise =
+                if (!widget_show_prohibited) null
+                else query_addon_time(context, AddonEvent.makruh_sunrise_start, day_start, saved_location_id = scoped_saved_location_id)
+            val sunrise_end = if (!widget_show_prohibited) null else duha
+            val zawal_start =
+                if (!widget_show_prohibited) null
+                else query_addon_time(context, AddonEvent.makruh_zawal_start, day_start, saved_location_id = scoped_saved_location_id)
+            val sunset_start =
+                if (!widget_show_prohibited) null
+                else query_addon_time(context, AddonEvent.makruh_sunset_start, day_start, saved_location_id = scoped_saved_location_id)
+            val sunset =
+                if (!widget_show_prohibited) null
+                else query_addon_time(context, AddonEvent.makruh_sunset_end, day_start, saved_location_id = scoped_saved_location_id)
+
+            val prohibited_dawn = if (!widget_show_prohibited) null else range(fajr, sunrise)
+            val prohibited_sunrise = if (!widget_show_prohibited) null else range(sunrise, sunrise_end)
+            val prohibited_zawal = if (!widget_show_prohibited) null else range(zawal_start, dhuhr)
+            val prohibited_after_asr = if (!widget_show_prohibited) null else range(asr, sunset_start)
+            val prohibited_sunset = if (!widget_show_prohibited) null else range(sunset_start, sunset)
+
+            val tomorrow_start = next_day_start(day_start, tz)
+            val fajr_next =
+                if (!widget_show_night) null
+                else query_addon_time(context, AddonEvent.prayer_fajr, tomorrow_start, saved_location_id = scoped_saved_location_id)
+            val night = if (!widget_show_night) null else calc_night(maghrib, fajr_next)
+            val night_times =
+                if (!widget_show_night) emptyList()
+                else listOfNotNull(night?.midpoint, night?.last_third, night?.last_sixth)
+            val night_ok = widget_show_night && night_times.size == 3
+            val night_midpoint = night_times.getOrNull(0)
+            val night_last_third = night_times.getOrNull(1)
+            val night_last_sixth = night_times.getOrNull(2)
+
             val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
             val layout_profile = widget_layout_profile(mgr, id)
 
@@ -250,24 +272,13 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setOnClickPendingIntent(R.id.widget_header, open_days)
 
             mgr.updateAppWidget(id, rv)
+
+            all_candidates += listOfNotNull(fajr, duha, dhuhr, asr, maghrib, isha)
+            all_candidates += listOfNotNull(sunrise, sunrise_end, zawal_start, dhuhr, sunset_start, sunset)
+            if (night_ok) all_candidates += night_times
+            all_candidates += (tomorrow_start + 120_000L)
         }
-
-        val candidates =
-            buildList {
-                // Prayers
-                listOf(fajr, duha, dhuhr, asr, maghrib, isha).forEach { if (it != null) add(it) }
-
-                // Prohibited boundaries (start/end)
-                listOf(sunrise, sunrise_end, zawal_start, dhuhr, sunset_start, sunset).forEach { if (it != null) add(it) }
-
-                // Night (only if we actually show it)
-                if (night_ok) night_times.forEach { add(it) }
-
-                // Midnight rollover
-                add(next_day_start(day_start, tz) + 120_000L)
-            }
-
-        schedule_next(context, now, candidates)
+        schedule_next(context, now, all_candidates)
     }
 
     private data class WidgetColors(

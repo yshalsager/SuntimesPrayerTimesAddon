@@ -113,6 +113,10 @@
             android:name='.ui.DaysActivity'
             android:exported='false' />
 
+        <activity
+            android:name='.ui.SavedLocationsCardsActivity'
+            android:exported='false' />
+
         <service
             android:name='androidx.appcompat.app.AppLocalesMetadataHolderService'
             android:enabled='false'
@@ -139,6 +143,10 @@
                 android:name='android.appwidget.provider'
                 android:resource='@xml/prayer_times_widget' />
         </receiver>
+
+        <activity
+            android:name='.widget.PrayerTimesWidgetConfigureActivity'
+            android:exported='true' />
 
     </application>
 </manifest>

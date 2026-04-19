@@ -9,6 +9,7 @@
     android:minResizeHeight="80dp"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
+    android:configure="com.yshalsager.suntimes.prayertimesaddon.widget.PrayerTimesWidgetConfigureActivity"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="0"
     android:widgetCategory="home_screen"

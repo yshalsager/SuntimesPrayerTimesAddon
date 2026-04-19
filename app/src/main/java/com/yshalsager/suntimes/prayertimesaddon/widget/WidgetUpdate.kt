@@ -10,15 +10,16 @@ object WidgetUpdate {
         val mgr = AppWidgetManager.getInstance(context)
         val cn = ComponentName(context, PrayerTimesWidgetProvider::class.java)
         val ids = mgr.getAppWidgetIds(cn)
-        if (ids.isEmpty()) return
+        request(context, ids)
+    }
 
+    fun request(context: Context, app_widget_ids: IntArray) {
+        if (app_widget_ids.isEmpty()) return
         val intent =
             Intent(context, PrayerTimesWidgetProvider::class.java).apply {
                 action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
-                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, app_widget_ids)
             }
-
         context.sendBroadcast(intent)
     }
 }
-

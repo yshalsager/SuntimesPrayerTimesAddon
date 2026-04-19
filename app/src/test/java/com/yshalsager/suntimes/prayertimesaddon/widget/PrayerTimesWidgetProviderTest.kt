@@ -15,6 +15,8 @@ import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
+import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -198,6 +200,43 @@ class PrayerTimesWidgetProviderTest {
 
         val after = widget_view(widget_id).findViewById<TextView>(R.id.widget_summary).text.toString()
         assertEquals(before, after)
+    }
+
+    @Test
+    fun on_update_with_widget_saved_location_shows_saved_location_summary() {
+        val (widget_id, provider) = create_widget_and_provider()
+        SavedLocations.save(
+            context,
+            listOf(
+                SavedLocation(
+                    id = "loc-widget",
+                    label = "Mecca",
+                    latitude = "21.4209",
+                    longitude = "39.82562",
+                    altitude = null,
+                    timezone_id = "Etc/GMT-3",
+                    calc_mode = SavedLocations.calc_mode_custom,
+                    method_preset = "uaq"
+                )
+            )
+        )
+        WidgetPrefs.set_saved_location_id(context, widget_id, "loc-widget")
+
+        update_widget_with_host(provider, widget_id)
+
+        val summary = widget_view(widget_id).findViewById<TextView>(R.id.widget_summary).text.toString()
+        assertTrue("summary=$summary", summary.contains("Mecca"))
+        assertTrue("summary=$summary", summary.contains("Umm al-Qura"))
+    }
+
+    @Test
+    fun on_deleted_clears_widget_saved_location_binding() {
+        val (widget_id, provider) = create_widget_and_provider()
+        WidgetPrefs.set_saved_location_id(context, widget_id, "loc-widget")
+
+        provider.onDeleted(context, intArrayOf(widget_id))
+
+        assertEquals(null, WidgetPrefs.get_saved_location_id(context, widget_id))
     }
 
     @Test
