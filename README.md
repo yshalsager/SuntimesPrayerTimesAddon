@@ -65,12 +65,12 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
 - Provides an all-locations cards screen with full daily times for saved locations (prayers + makruh + night portions).
 - Each saved location can use either global settings or its own custom calculation profile (method + makruh + hijri + extra Fajr/Isha settings).
 - Exposes events to **SuntimesWidget Alarms**:
-  - prayers (Fajr, optional extra Fajr #1, Duha, Eid start/end on Eid days, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, optional extra Isha #1)
+  - prayers (Fajr, optional extra Fajr #1, Duha, Eid al-Fitr and Eid al-Adha window start/end on their days, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, optional extra Isha #1)
   - prohibited (makruh) boundaries and windows
   - night portions (midpoint, last third, last sixth)
-- Supports Eid prayer time window events on Eid days only:
-  - `Eid start = sunrise + 15 minutes`
-  - `Eid end = zawal (solar noon)`
+- Supports split Eid prayer time window events:
+  - `Eid al-Fitr: start = sunrise + 15 minutes, end = zawal (solar noon)`
+  - `Eid al-Adha: start = sunrise + 15 minutes, end = zawal (solar noon)`
 - Supports one optional additional Fajr slot and one optional additional Isha slot:
   - each has its own angle
   - each has a user-editable custom label
@@ -202,7 +202,7 @@ Location scoping:
 - Scoped calendar content uses the selected location timezone in `EVENT_TIMEZONE`.
 
 Calendar behavior:
-- `prayers` exports point events for Fajr, optional extra Fajr #1, Duha, Eid start/end, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, and optional extra Isha #1
+- `prayers` exports point events for Fajr, optional extra Fajr #1, Duha, Eid al-Fitr and Eid al-Adha window start/end, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, and optional extra Isha #1
 - `makruh` exports range events for dawn, sunrise, zawal, after-Asr, and sunset windows
 - `night` exports point events for midpoint, last third, and last sixth
 
@@ -212,8 +212,10 @@ Prayers:
 - `PRAYER_FAJR`
 - `PRAYER_FAJR_EXTRA_1` (optional; hidden when disabled)
 - `PRAYER_DUHA`
-- `PRAYER_EID_START` (Eid days only)
-- `PRAYER_EID_END` (Eid days only)
+- `PRAYER_EID_FITR_START` (Eid al-Fitr day only)
+- `PRAYER_EID_FITR_END` (Eid al-Fitr day only)
+- `PRAYER_EID_ADHA_START` (Eid al-Adha day only)
+- `PRAYER_EID_ADHA_END` (Eid al-Adha day only)
 - `PRAYER_DHUHR` (displayed as **Jumu'ah** on Friday)
 - `PRAYER_ASR`
 - `PRAYER_MAGHRIB`
