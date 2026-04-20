@@ -579,9 +579,13 @@ class MainActivity : ThemedActivity() {
             .putExtra("alarmtype", "ALARM")
         val saved = selected_location.saved_location
         if (saved != null) {
-            intent.putExtra("latitude", saved.latitude)
-            intent.putExtra("longitude", saved.longitude)
-            saved.altitude?.trim()?.takeIf { it.isNotBlank() }?.let { intent.putExtra("altitude", it) }
+            val lat = saved.latitude.toDoubleOrNull()
+            val lon = saved.longitude.toDoubleOrNull()
+            if (lat != null && lon != null) {
+                intent.putExtra("latitude", lat)
+                intent.putExtra("longitude", lon)
+                saved.altitude?.trim()?.takeIf { it.isNotBlank() }?.toDoubleOrNull()?.let { intent.putExtra("altitude", it) }
+            }
             intent.putExtra("location_label", saved.display_label())
             intent.putExtra("timezone", selected_location.timezone_id)
         }
