@@ -28,8 +28,7 @@ private data class PrayerTimesCalendarDay(
     val fajr: Long?,
     val fajr_extra_1: Long?,
     val duha: Long?,
-    val eid_start: Long?,
-    val eid_end: Long?,
+    val eid_events: List<Pair<AddonEvent, Long?>>,
     val dhuhr: Long?,
     val asr: Long?,
     val maghrib: Long?,
@@ -145,8 +144,9 @@ private fun day_events_for_source(
                 day.fajr?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_fajr, location_context.addon_runtime_profile_override), it)) }
                 day.fajr_extra_1?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_fajr_extra_1, location_context.addon_runtime_profile_override), it)) }
                 day.duha?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_duha, location_context.addon_runtime_profile_override), it)) }
-                day.eid_start?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_eid_start, location_context.addon_runtime_profile_override), it)) }
-                day.eid_end?.let { add(point_event(meta, addon_event_title(context, AddonEvent.prayer_eid_end, location_context.addon_runtime_profile_override), it)) }
+                day.eid_events.forEach { (event, time) ->
+                    time?.let { add(point_event(meta, addon_event_title(context, event, location_context.addon_runtime_profile_override), it)) }
+                }
                 day.dhuhr?.let {
                     val title = if (day.is_friday) context.getString(R.string.event_prayer_jummah) else context.getString(R.string.event_prayer_dhuhr)
                     add(point_event(meta, title, it))
@@ -214,8 +214,13 @@ private fun build_calendar_day(
     val fajr = q(AddonEvent.prayer_fajr)
     val fajr_extra_1 = q(AddonEvent.prayer_fajr_extra_1)
     val duha = q(AddonEvent.prayer_duha)
-    val eid_start = q(AddonEvent.prayer_eid_start)
-    val eid_end = q(AddonEvent.prayer_eid_end)
+    val eid_events =
+        listOf(
+            AddonEvent.prayer_eid_fitr_start,
+            AddonEvent.prayer_eid_fitr_end,
+            AddonEvent.prayer_eid_adha_start,
+            AddonEvent.prayer_eid_adha_end
+        ).map { it to q(it) }
     val dhuhr = sun_today_noon ?: q(AddonEvent.prayer_dhuhr)
     val asr = q(AddonEvent.prayer_asr)
     val maghrib = sun_today_sunset?.plus(maghrib_offset_ms) ?: q(AddonEvent.prayer_maghrib)
@@ -255,8 +260,7 @@ private fun build_calendar_day(
         fajr = fajr,
         fajr_extra_1 = fajr_extra_1,
         duha = duha,
-        eid_start = eid_start,
-        eid_end = eid_end,
+        eid_events = eid_events,
         dhuhr = dhuhr,
         asr = asr,
         maghrib = maghrib,

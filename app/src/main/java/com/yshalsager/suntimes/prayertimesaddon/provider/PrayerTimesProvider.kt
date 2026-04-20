@@ -20,6 +20,9 @@ import com.yshalsager.suntimes.prayertimesaddon.core.MethodConfig
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
+import com.yshalsager.suntimes.prayertimesaddon.core.day_start_at
+import com.yshalsager.suntimes.prayertimesaddon.core.find_next_eid_day_start
+import com.yshalsager.suntimes.prayertimesaddon.core.is_eid_event
 import com.yshalsager.suntimes.prayertimesaddon.core.is_addon_event_enabled
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_eid_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
@@ -195,9 +198,9 @@ class PrayerTimesProvider : ContentProvider() {
             return c
         }
 
-        if (addon_event == AddonEvent.prayer_eid_start || addon_event == AddonEvent.prayer_eid_end) {
+        if (addon_event.is_eid_event()) {
             val t =
-                query_host_eid_time(
+                calc_eid_event_time(
                     context,
                     selected,
                     addon_event,
@@ -317,6 +320,58 @@ class PrayerTimesProvider : ContentProvider() {
         }
 
         return null
+    }
+
+    private fun calc_eid_event_time(
+        context: Context,
+        host_event_authority: String,
+        addon_event: AddonEvent,
+        alarm_now: Long,
+        selection: String?,
+        selectionArgs: Array<String>?,
+        timezone_override: TimeZone?,
+        runtime_profile: AddonRuntimeProfile?
+    ): Long? {
+        val alarm_offset = selectionArgs?.getOrNull(1)?.toLongOrNull() ?: 0L
+        val tz =
+            timezone_override
+                ?: HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(java.util.TimeZone::getTimeZone)
+                ?: java.util.TimeZone.getDefault()
+        val current_day_start = day_start_at(alarm_now, tz)
+
+        fun args_for(day_start: Long): Array<String>? {
+            val args = selectionArgs?.clone() ?: return null
+            if (args.isNotEmpty()) args[0] = day_start.toString()
+            return args
+        }
+
+        fun time_for_day(day_start: Long): Long? =
+            query_host_eid_time(
+                context = context,
+                host_event_authority = host_event_authority,
+                event = addon_event,
+                alarm_now = day_start,
+                selection = selection,
+                selection_args = args_for(day_start) ?: selectionArgs,
+                timezone_override = timezone_override,
+                addon_runtime_profile_override = runtime_profile
+            )
+
+        val today_time = time_for_day(current_day_start)
+        if (today_time != null && today_time + alarm_offset >= alarm_now) return today_time
+
+        val next_day_start =
+            find_next_eid_day_start(
+                context = context,
+                host_event_authority = host_event_authority,
+                event = addon_event,
+                from_day_start = current_day_start,
+                timezone_override = timezone_override,
+                addon_runtime_profile_override = runtime_profile
+            ) ?: return null
+
+        val next_time = time_for_day(next_day_start) ?: return null
+        return if (next_time + alarm_offset >= alarm_now) next_time else null
     }
 
     private fun selection_location_from_args(selectionArgs: Array<String>?): SelectionLocationArgs =

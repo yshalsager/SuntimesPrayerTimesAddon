@@ -119,8 +119,8 @@ class TimesTest {
     fun query_host_addon_time_returns_eid_start_and_end_on_eid_day() {
         val day_start = find_eid_day_start()
 
-        val eid_start = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_start, day_start)
-        val eid_end = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_end, day_start)
+        val eid_start = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_fitr_start, day_start)
+        val eid_end = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_fitr_end, day_start)
 
         assertEquals(day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L, eid_start)
         assertEquals(day_start + 12 * 60 * 60 * 1000L, eid_end)
@@ -130,8 +130,8 @@ class TimesTest {
     fun query_host_addon_time_returns_null_for_eid_events_on_non_eid_day() {
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
 
-        val eid_start = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_start, day_start)
-        val eid_end = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_end, day_start)
+        val eid_start = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_fitr_start, day_start)
+        val eid_end = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_fitr_end, day_start)
 
         assertNull(eid_start)
         assertNull(eid_end)
@@ -213,12 +213,12 @@ class TimesTest {
                 extra_isha_1_label_raw = ""
             )
 
-        val without_override = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_start, day_before)
+        val without_override = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_eid_fitr_start, day_before)
         val with_override =
             query_host_addon_time(
                 context,
                 host_event_authority,
-                AddonEvent.prayer_eid_start,
+                AddonEvent.prayer_eid_fitr_start,
                 day_before,
                 addon_runtime_profile_override = runtime
             )
@@ -245,7 +245,7 @@ class TimesTest {
         val eid_start = query_host_addon_time(
             context,
             host_event_authority,
-            AddonEvent.prayer_eid_start,
+            AddonEvent.prayer_eid_fitr_start,
             day_start,
             selection,
             selection_args
@@ -253,7 +253,7 @@ class TimesTest {
         val eid_end = query_host_addon_time(
             context,
             host_event_authority,
-            AddonEvent.prayer_eid_end,
+            AddonEvent.prayer_eid_fitr_end,
             day_start,
             selection,
             selection_args
@@ -332,7 +332,7 @@ class TimesTest {
         val eid_start = query_host_addon_time(
             context,
             offday_host_event_authority,
-            AddonEvent.prayer_eid_start,
+            AddonEvent.prayer_eid_fitr_start,
             day_start,
             selection,
             selection_args
@@ -340,7 +340,7 @@ class TimesTest {
         val eid_end = query_host_addon_time(
             context,
             offday_host_event_authority,
-            AddonEvent.prayer_eid_end,
+            AddonEvent.prayer_eid_fitr_end,
             day_start,
             selection,
             selection_args
@@ -357,8 +357,8 @@ class TimesTest {
             "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
         val eid_selection_args = arrayOf(eid_day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
 
-        val eid_start = query_addon_time(context, AddonEvent.prayer_eid_start, eid_day_start, selection, eid_selection_args)
-        val eid_end = query_addon_time(context, AddonEvent.prayer_eid_end, eid_day_start, selection, eid_selection_args)
+        val eid_start = query_addon_time(context, AddonEvent.prayer_eid_fitr_start, eid_day_start, selection, eid_selection_args)
+        val eid_end = query_addon_time(context, AddonEvent.prayer_eid_fitr_end, eid_day_start, selection, eid_selection_args)
 
         assertEquals(eid_day_start + 6 * 60 * 60 * 1000L + 45 * 60 * 1000L, eid_start)
         assertEquals(eid_day_start + 12 * 60 * 60 * 1000L + 30 * 60 * 1000L, eid_end)
@@ -376,11 +376,11 @@ class TimesTest {
         repeat(730) { idx ->
             val day_start = from + idx * 24L * 60L * 60L * 1000L
             val hijri = hijri_for_day(day_start, tz, Locale.getDefault(), Prefs.get_hijri_variant(context), Prefs.get_hijri_day_offset(context))
-            if ((hijri.month == 10 && hijri.day == 1) || (hijri.month == 12 && hijri.day == 10)) {
+            if (hijri.month == 10 && hijri.day == 1) {
                 return day_start
             }
         }
-        throw AssertionError("No Eid day found in search range")
+        throw AssertionError("No Eid al-Fitr day found in search range")
     }
 
     private fun utc_day_start(year: Int, month: Int, day: Int): Long =

@@ -36,8 +36,10 @@ data class SavedLocationCardUi(
     val fajr: String,
     val fajr_extra_1: String?,
     val duha: String?,
-    val eid_start: String?,
-    val eid_end: String?,
+    val eid_fitr_start: String?,
+    val eid_fitr_end: String?,
+    val eid_adha_start: String?,
+    val eid_adha_end: String?,
     val dhuhr: String,
     val asr: String,
     val maghrib: String,
@@ -197,7 +199,13 @@ private fun SavedLocationPrayerCard(card: SavedLocationCardUi) {
                 isha = card.isha
             )
 
-            val has_optional_prayers = card.fajr_extra_1 != null || card.eid_start != null || card.eid_end != null || card.isha_extra_1 != null
+            val has_optional_prayers =
+                card.fajr_extra_1 != null ||
+                    card.eid_fitr_start != null ||
+                    card.eid_fitr_end != null ||
+                    card.eid_adha_start != null ||
+                    card.eid_adha_end != null ||
+                    card.isha_extra_1 != null
             if (has_optional_prayers) {
                 Spacer(Modifier.height(10.dp))
                 OptionalPrayerRow(card)
@@ -280,8 +288,10 @@ private fun OptionalPrayerRow(card: SavedLocationCardUi) {
         listOf(
             Triple(stringResource(R.string.event_prayer_fajr_extra_1), card.fajr_extra_1, true),
             Triple(stringResource(R.string.event_prayer_duha), card.duha, true),
-            Triple(stringResource(R.string.event_prayer_eid_start), card.eid_start, true),
-            Triple(stringResource(R.string.event_prayer_eid_end), card.eid_end, true),
+            Triple(stringResource(R.string.event_prayer_eid_fitr_start), card.eid_fitr_start, true),
+            Triple(stringResource(R.string.event_prayer_eid_fitr_end), card.eid_fitr_end, true),
+            Triple(stringResource(R.string.event_prayer_eid_adha_start), card.eid_adha_start, true),
+            Triple(stringResource(R.string.event_prayer_eid_adha_end), card.eid_adha_end, true),
             Triple(stringResource(R.string.event_prayer_isha_extra_1), card.isha_extra_1, true)
         )
 

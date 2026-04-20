@@ -162,8 +162,13 @@ class SavedLocationsCardsActivity : ThemedActivity() {
             val fajr = q(AddonEvent.prayer_fajr)
             val fajr_extra_1 = q(AddonEvent.prayer_fajr_extra_1)
             val duha = q(AddonEvent.prayer_duha)
-            val eid_start = q(AddonEvent.prayer_eid_start)
-            val eid_end = q(AddonEvent.prayer_eid_end)
+            val eid_times =
+                listOf(
+                    AddonEvent.prayer_eid_fitr_start,
+                    AddonEvent.prayer_eid_fitr_end,
+                    AddonEvent.prayer_eid_adha_start,
+                    AddonEvent.prayer_eid_adha_end
+                ).associateWith { q(it) }
             val dhuhr = sun_today_noon ?: q(AddonEvent.prayer_dhuhr)
             val asr = q(AddonEvent.prayer_asr)
             val maghrib = sun_today_sunset?.plus(maghrib_offset_millis) ?: q(AddonEvent.prayer_maghrib)
@@ -218,8 +223,10 @@ class SavedLocationsCardsActivity : ThemedActivity() {
                 fajr = format_or_dash(time_format, fajr),
                 fajr_extra_1 = fajr_extra_1?.let { format_or_dash(time_format, fajr_extra_1) },
                 duha = duha?.let { format_or_dash(time_format, duha) },
-                eid_start = eid_start?.let { format_or_dash(time_format, eid_start) },
-                eid_end = eid_end?.let { format_or_dash(time_format, eid_end) },
+                eid_fitr_start = eid_times[AddonEvent.prayer_eid_fitr_start]?.let { format_or_dash(time_format, it) },
+                eid_fitr_end = eid_times[AddonEvent.prayer_eid_fitr_end]?.let { format_or_dash(time_format, it) },
+                eid_adha_start = eid_times[AddonEvent.prayer_eid_adha_start]?.let { format_or_dash(time_format, it) },
+                eid_adha_end = eid_times[AddonEvent.prayer_eid_adha_end]?.let { format_or_dash(time_format, it) },
                 dhuhr = format_or_dash(time_format, dhuhr),
                 asr = format_or_dash(time_format, asr),
                 maghrib = format_or_dash(time_format, maghrib),

@@ -71,7 +71,7 @@ class PrayerTimesProviderTest {
     fun eid_event_calc_has_rows_on_eid_day() {
         val day_start = find_eid_day_start()
 
-        query_event_calc("PRAYER_EID_START", day_start).use { cursor ->
+        query_event_calc("PRAYER_EID_FITR_START", day_start).use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             assertEquals(
@@ -80,7 +80,30 @@ class PrayerTimesProviderTest {
             )
         }
 
-        query_event_calc("PRAYER_EID_END", day_start).use { cursor ->
+        query_event_calc("PRAYER_EID_FITR_END", day_start).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start + 12 * 60 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
+    }
+
+    @Test
+    fun eid_adha_event_calc_has_rows_on_adha_day() {
+        val day_start = find_eid_adha_day_start()
+
+        query_event_calc("PRAYER_EID_ADHA_START", day_start).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
+
+        query_event_calc("PRAYER_EID_ADHA_END", day_start).use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             assertEquals(
@@ -96,7 +119,7 @@ class PrayerTimesProviderTest {
         val selection = "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
         val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
 
-        query_event_calc("PRAYER_EID_START", selection, selection_args).use { cursor ->
+        query_event_calc("PRAYER_EID_FITR_START", selection, selection_args).use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             assertEquals(
@@ -105,7 +128,7 @@ class PrayerTimesProviderTest {
             )
         }
 
-        query_event_calc("PRAYER_EID_END", selection, selection_args).use { cursor ->
+        query_event_calc("PRAYER_EID_FITR_END", selection, selection_args).use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             assertEquals(
@@ -116,11 +139,26 @@ class PrayerTimesProviderTest {
     }
 
     @Test
-    fun eid_event_calc_is_empty_on_non_eid_day() {
+    fun eid_event_calc_returns_next_occurrence_on_non_eid_day() {
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val next_eid_day_start = find_next_eid_day_start(day_start)
 
-        query_event_calc("PRAYER_EID_START", day_start).use { cursor -> assertEquals(0, cursor.count) }
-        query_event_calc("PRAYER_EID_END", day_start).use { cursor -> assertEquals(0, cursor.count) }
+        query_event_calc("PRAYER_EID_FITR_START", day_start).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                next_eid_day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
+        query_event_calc("PRAYER_EID_FITR_END", day_start).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                next_eid_day_start + 12 * 60 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
     }
 
     @Test
@@ -141,7 +179,7 @@ class PrayerTimesProviderTest {
         )
 
         query_event_calc(
-            event_id = "PRAYER_EID_START",
+            event_id = "PRAYER_EID_FITR_START",
             selection = null,
             selection_args = arrayOf(day_start.toString(), "0", "false", "[]"),
             saved_location_id = "loc-shifted"
@@ -160,7 +198,7 @@ class PrayerTimesProviderTest {
         val day_start = find_eid_day_start()
 
         query_event_calc(
-            event_id = "PRAYER_EID_START",
+            event_id = "PRAYER_EID_FITR_START",
             selection = null,
             selection_args = arrayOf(day_start.toString(), "0", "false", "[]"),
             saved_location_id = "missing-id"
@@ -194,7 +232,7 @@ class PrayerTimesProviderTest {
             "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=?"
         val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "30.0", "31.0")
 
-        query_event_calc("PRAYER_EID_START", selection, selection_args, saved_location_id = "loc-shifted").use { cursor ->
+        query_event_calc("PRAYER_EID_FITR_START", selection, selection_args, saved_location_id = "loc-shifted").use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             assertEquals(
@@ -210,8 +248,10 @@ class PrayerTimesProviderTest {
         context.contentResolver.query(uri, arrayOf(AlarmEventContract.column_event_name), null, null, null)!!.use { cursor ->
             val names = ArrayList<String>()
             while (cursor.moveToNext()) names.add(cursor.getString(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_name)))
-            assertTrue(names.contains("PRAYER_EID_START"))
-            assertTrue(names.contains("PRAYER_EID_END"))
+            assertTrue(names.contains("PRAYER_EID_FITR_START"))
+            assertTrue(names.contains("PRAYER_EID_FITR_END"))
+            assertTrue(names.contains("PRAYER_EID_ADHA_START"))
+            assertTrue(names.contains("PRAYER_EID_ADHA_END"))
         }
     }
 
@@ -386,13 +426,25 @@ class PrayerTimesProviderTest {
             )
         )
 
-        query_event_calc("PRAYER_EID_START", day_before).use { cursor -> assertEquals(0, cursor.count) }
+        var host_time: Long? = null
+        query_event_calc("PRAYER_EID_FITR_START", day_before).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            host_time = cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+        }
+        var custom_time: Long? = null
         query_event_calc(
-            event_id = "PRAYER_EID_START",
+            event_id = "PRAYER_EID_FITR_START",
             selection = null,
             selection_args = arrayOf(day_before.toString(), "0", "false", "[]"),
             saved_location_id = "loc-custom"
-        ).use { cursor -> assertEquals(1, cursor.count) }
+        ).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            custom_time = cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+        }
+        assertEquals(day_before + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L, custom_time)
+        assertTrue(host_time!! > day_before)
     }
 
     @Test
@@ -451,14 +503,14 @@ class PrayerTimesProviderTest {
         val shifted_location = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
 
         var t_default: Long? = null
-        query_event_calc("PRAYER_EID_START", selection, default_location).use { cursor ->
+        query_event_calc("PRAYER_EID_FITR_START", selection, default_location).use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             t_default = cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
         }
 
         var t_shifted: Long? = null
-        query_event_calc("PRAYER_EID_START", selection, shifted_location).use { cursor ->
+        query_event_calc("PRAYER_EID_FITR_START", selection, shifted_location).use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()
             t_shifted = cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
@@ -603,11 +655,35 @@ class PrayerTimesProviderTest {
         repeat(730) { idx ->
             val day_start = from + idx * 24L * 60L * 60L * 1000L
             val hijri = hijri_for_day(day_start, tz, Locale.getDefault(), Prefs.get_hijri_variant(context), Prefs.get_hijri_day_offset(context))
-            if ((hijri.month == 10 && hijri.day == 1) || (hijri.month == 12 && hijri.day == 10)) {
+            if (hijri.month == 10 && hijri.day == 1) {
                 return day_start
             }
         }
         throw AssertionError("No Eid day found in search range")
+    }
+
+    private fun find_eid_adha_day_start(): Long {
+        val tz = TimeZone.getTimeZone("UTC")
+        val from = utc_day_start(2026, Calendar.JANUARY, 1)
+        repeat(730) { idx ->
+            val day_start = from + idx * 24L * 60L * 60L * 1000L
+            val hijri = hijri_for_day(day_start, tz, Locale.getDefault(), Prefs.get_hijri_variant(context), Prefs.get_hijri_day_offset(context))
+            if (hijri.month == 12 && hijri.day == 10) return day_start
+        }
+        throw AssertionError("No Eid al-Adha day found in search range")
+    }
+
+    private fun find_next_eid_day_start(from_day_start: Long): Long {
+        val tz = TimeZone.getTimeZone("UTC")
+        val from = from_day_start + 24L * 60L * 60L * 1000L
+        repeat(730) { idx ->
+            val day_start = from + idx * 24L * 60L * 60L * 1000L
+            val hijri = hijri_for_day(day_start, tz, Locale.getDefault(), Prefs.get_hijri_variant(context), Prefs.get_hijri_day_offset(context))
+            if (hijri.month == 10 && hijri.day == 1) {
+                return day_start
+            }
+        }
+        throw AssertionError("No next Eid al-Fitr day found in search range")
     }
 
     private fun find_eid_mismatch_alarm_now(selected_tz: TimeZone): Long {

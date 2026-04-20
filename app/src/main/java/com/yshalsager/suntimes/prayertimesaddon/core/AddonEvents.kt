@@ -17,8 +17,10 @@ enum class AddonEvent(
     prayer_fajr("PRAYER_FAJR", R.string.event_prayer_fajr, AddonEventType.prayer),
     prayer_fajr_extra_1("PRAYER_FAJR_EXTRA_1", R.string.event_prayer_fajr_extra_1, AddonEventType.prayer),
     prayer_duha("PRAYER_DUHA", R.string.event_prayer_duha, AddonEventType.prayer),
-    prayer_eid_start("PRAYER_EID_START", R.string.event_prayer_eid_start, AddonEventType.prayer),
-    prayer_eid_end("PRAYER_EID_END", R.string.event_prayer_eid_end, AddonEventType.prayer),
+    prayer_eid_fitr_start("PRAYER_EID_FITR_START", R.string.event_prayer_eid_fitr_start, AddonEventType.prayer),
+    prayer_eid_fitr_end("PRAYER_EID_FITR_END", R.string.event_prayer_eid_fitr_end, AddonEventType.prayer),
+    prayer_eid_adha_start("PRAYER_EID_ADHA_START", R.string.event_prayer_eid_adha_start, AddonEventType.prayer),
+    prayer_eid_adha_end("PRAYER_EID_ADHA_END", R.string.event_prayer_eid_adha_end, AddonEventType.prayer),
     prayer_dhuhr("PRAYER_DHUHR", R.string.event_prayer_dhuhr, AddonEventType.prayer),
     prayer_asr("PRAYER_ASR", R.string.event_prayer_asr, AddonEventType.prayer),
     prayer_maghrib("PRAYER_MAGHRIB", R.string.event_prayer_maghrib, AddonEventType.prayer),
@@ -57,6 +59,15 @@ enum class AddonEvent(
     makruh_sunset_end("MAKRUH_SUNSET_END", R.string.event_makruh_sunset_end, AddonEventType.makruh)
 }
 
+fun AddonEvent.is_eid_event(): Boolean =
+    when (this) {
+        AddonEvent.prayer_eid_fitr_start,
+        AddonEvent.prayer_eid_fitr_end,
+        AddonEvent.prayer_eid_adha_start,
+        AddonEvent.prayer_eid_adha_end -> true
+        else -> false
+    }
+
 data class HostQuery(val base_event_id: String, val delta_millis: Long = 0L)
 
 object HostEventIds {
@@ -87,8 +98,10 @@ object AddonEventMapper {
                 val delta = cfg.makruh_sunrise_minutes * 60_000L
                 HostQuery("SUNRISE", delta_millis = delta)
             }
-            AddonEvent.prayer_eid_start -> HostQuery("SUNRISE", delta_millis = eid_start_offset_millis)
-            AddonEvent.prayer_eid_end -> HostQuery("NOON")
+            AddonEvent.prayer_eid_fitr_start,
+            AddonEvent.prayer_eid_adha_start -> HostQuery("SUNRISE", delta_millis = eid_start_offset_millis)
+            AddonEvent.prayer_eid_fitr_end,
+            AddonEvent.prayer_eid_adha_end -> HostQuery("NOON")
 
             AddonEvent.prayer_dhuhr -> HostQuery("NOON")
             AddonEvent.prayer_asr -> HostQuery(HostEventIds.shadow_ratio(cfg.asr_factor))

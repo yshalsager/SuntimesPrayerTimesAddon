@@ -26,6 +26,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
 import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
 import com.yshalsager.suntimes.prayertimesaddon.core.day_start_at
+import com.yshalsager.suntimes.prayertimesaddon.core.is_eid_event
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import com.yshalsager.suntimes.prayertimesaddon.core.home_location_key
 import com.yshalsager.suntimes.prayertimesaddon.core.open_url
@@ -342,8 +343,13 @@ class MainActivity : ThemedActivity() {
             val fajr = q(AddonEvent.prayer_fajr)
             val fajr_extra_1 = q(AddonEvent.prayer_fajr_extra_1)
             val duha = q(AddonEvent.prayer_duha)
-            val eid_start = q(AddonEvent.prayer_eid_start)
-            val eid_end = q(AddonEvent.prayer_eid_end)
+            val eid_timeline =
+                listOf(
+                    AddonEvent.prayer_eid_fitr_start,
+                    AddonEvent.prayer_eid_fitr_end,
+                    AddonEvent.prayer_eid_adha_start,
+                    AddonEvent.prayer_eid_adha_end
+                ).map { it to q(it) }
             val asr = q(AddonEvent.prayer_asr)
             val isha = q(AddonEvent.prayer_isha)
             val isha_extra_1 = q(AddonEvent.prayer_isha_extra_1)
@@ -373,18 +379,18 @@ class MainActivity : ThemedActivity() {
                 AddonEvent.prayer_maghrib to maghrib,
                 AddonEvent.prayer_isha to isha
             )
-            val timeline_prayers = listOf(
-                AddonEvent.prayer_fajr to fajr,
-                AddonEvent.prayer_fajr_extra_1 to fajr_extra_1,
-                AddonEvent.prayer_duha to duha,
-                AddonEvent.prayer_eid_start to eid_start,
-                AddonEvent.prayer_eid_end to eid_end,
-                AddonEvent.prayer_dhuhr to dhuhr,
-                AddonEvent.prayer_asr to asr,
-                AddonEvent.prayer_maghrib to maghrib,
-                AddonEvent.prayer_isha to isha,
-                AddonEvent.prayer_isha_extra_1 to isha_extra_1
-            )
+            val timeline_prayers =
+                buildList {
+                    add(AddonEvent.prayer_fajr to fajr)
+                    add(AddonEvent.prayer_fajr_extra_1 to fajr_extra_1)
+                    add(AddonEvent.prayer_duha to duha)
+                    addAll(eid_timeline)
+                    add(AddonEvent.prayer_dhuhr to dhuhr)
+                    add(AddonEvent.prayer_asr to asr)
+                    add(AddonEvent.prayer_maghrib to maghrib)
+                    add(AddonEvent.prayer_isha to isha)
+                    add(AddonEvent.prayer_isha_extra_1 to isha_extra_1)
+                }
 
             val fajr_tomorrow = q(AddonEvent.prayer_fajr, tomorrow_start)
 
@@ -407,8 +413,7 @@ class MainActivity : ThemedActivity() {
                 val is_passed = is_today && t < now && !is_next
                 val is_optional =
                     event == AddonEvent.prayer_duha ||
-                        event == AddonEvent.prayer_eid_start ||
-                        event == AddonEvent.prayer_eid_end ||
+                        event.is_eid_event() ||
                         event == AddonEvent.prayer_fajr_extra_1 ||
                         event == AddonEvent.prayer_isha_extra_1
                 items.add(

@@ -38,8 +38,10 @@
     <string name='event_prayer_fajr'>الفجر</string>
     <string name='event_prayer_fajr_extra_1'>الفجر (إضافي ١)</string>
     <string name='event_prayer_duha'>الضحى</string>
-    <string name='event_prayer_eid_start'>العيد (البداية)</string>
-    <string name='event_prayer_eid_end'>العيد (النهاية)</string>
+    <string name='event_prayer_eid_fitr_start'>عيد الفطر (بداية الوقت)</string>
+    <string name='event_prayer_eid_fitr_end'>عيد الفطر (نهاية الوقت)</string>
+    <string name='event_prayer_eid_adha_start'>عيد الأضحى (بداية الوقت)</string>
+    <string name='event_prayer_eid_adha_end'>عيد الأضحى (نهاية الوقت)</string>
     <string name='event_prayer_dhuhr'>الظهر</string>
     <string name='event_prayer_jummah'>الجمعة</string>
     <string name='event_prayer_asr'>العصر</string>

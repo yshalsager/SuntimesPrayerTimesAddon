@@ -153,8 +153,8 @@ class PrayerTimesCalendarProviderTest {
         val titles = query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
             .read_strings(CalendarContract.Events.TITLE)
 
-        assertTrue(titles.contains(context.getString(R.string.event_prayer_eid_start)))
-        assertTrue(titles.contains(context.getString(R.string.event_prayer_eid_end)))
+        assertTrue(titles.contains(context.getString(R.string.event_prayer_eid_fitr_start)))
+        assertTrue(titles.contains(context.getString(R.string.event_prayer_eid_fitr_end)))
     }
 
     @Test
@@ -414,9 +414,9 @@ class PrayerTimesCalendarProviderTest {
         repeat(730) { idx ->
             val day_start = from + idx * day_millis
             val hijri = hijri_for_day(day_start, tz, Locale.getDefault(), Prefs.get_hijri_variant(context), Prefs.get_hijri_day_offset(context))
-            if ((hijri.month == 10 && hijri.day == 1) || (hijri.month == 12 && hijri.day == 10)) return day_start
+            if (hijri.month == 10 && hijri.day == 1) return day_start
         }
-        throw AssertionError("No Eid day found in search range")
+        throw AssertionError("No Eid al-Fitr day found in search range")
     }
 
     private fun Cursor.read_strings(column: String): List<String> {
