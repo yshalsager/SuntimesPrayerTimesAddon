@@ -40,13 +40,18 @@ object HostResolver {
                 ?.flatMap { it.authority?.split(';')?.asSequence() ?: emptySequence() }
                 ?.map { it.trim() }
                 ?.filter { it.endsWith(event_provider_suffix) }
+                ?.distinct()
                 ?.toList()
                 ?: emptyList()
-            for (authority in authorities) {
-                hosts.add(HostInfo(label, pkg, authority, resolve_required_permission(pm, authority)))
-            }
+            val authority = preferred_event_authority(authorities) ?: continue
+            hosts.add(HostInfo(label, pkg, authority, resolve_required_permission(pm, authority)))
         }
         return hosts
+    }
+
+    private fun preferred_event_authority(authorities: List<String>): String? {
+        if (authorities.isEmpty()) return null
+        return authorities.firstOrNull { it.startsWith("suntimes.") } ?: authorities.first()
     }
 
     fun ensure_default_selected(context: Context): String? {

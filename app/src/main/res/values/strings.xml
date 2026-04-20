@@ -103,6 +103,7 @@
     <string name='saved_locations_cards_subtitle'>Today\'s prayer cards for all saved locations</string>
     <string name='saved_locations_title'>Saved locations</string>
     <string name='saved_locations_import_host_title'>Import current host location</string>
+    <string name='saved_locations_import_host_summary'>Import the current host location into saved locations</string>
     <string name='saved_locations_import_failed'>Failed to import host location</string>
     <string name='saved_locations_add_manual_title'>Add location manually</string>
     <string name='saved_locations_add_manual_summary'>Set label, coordinates, altitude (optional), and timezone</string>

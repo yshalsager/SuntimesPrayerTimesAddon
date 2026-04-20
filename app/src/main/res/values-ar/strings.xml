@@ -88,6 +88,7 @@
     <string name='saved_locations_cards_subtitle'>بطاقات مواقيت اليوم لكل المواقع المحفوظة</string>
     <string name='saved_locations_title'>المواقع المحفوظة</string>
     <string name='saved_locations_import_host_title'>استيراد موقع المضيف الحالي</string>
+    <string name='saved_locations_import_host_summary'>استيراد موقع المضيف الحالي إلى المواقع المحفوظة</string>
     <string name='saved_locations_import_failed'>تعذر استيراد موقع المضيف</string>
     <string name='saved_locations_add_manual_title'>إضافة موقع يدويًا</string>
     <string name='saved_locations_add_manual_summary'>حدّد الاسم والإحداثيات والارتفاع (اختياري) والمنطقة الزمنية</string>

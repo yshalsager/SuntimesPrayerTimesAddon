@@ -613,7 +613,8 @@ private fun SettingsContent(
             SettingsSection(ctx.getString(R.string.saved_locations_title)) {
                 SettingRow(
                     title = ctx.getString(R.string.saved_locations_import_host_title),
-                    subtitle = if (can_add_saved) host_location_label else ctx.getString(R.string.saved_locations_limit_reached, SavedLocations.max_count),
+                    subtitle = if (can_add_saved) ctx.getString(R.string.saved_locations_import_host_summary)
+                    else ctx.getString(R.string.saved_locations_limit_reached, SavedLocations.max_count),
                     on_click = if (can_add_saved) ({ add_host_location() }) else null,
                     trailing = { saved_location_add_action(can_add_saved) }
                 )

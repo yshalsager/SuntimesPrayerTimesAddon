@@ -16,6 +16,7 @@ import org.robolectric.annotation.Config
 
 private const val known_host_package = "com.forrestguice.suntimeswidget"
 private const val known_host_authority = "com.forrestguice.suntimeswidget.event.provider"
+private const val canonical_host_authority = "suntimes.event.provider"
 private const val nightly_host_package = "com.forrestguice.suntimeswidget.nightly"
 private const val nightly_host_authority = "com.forrestguice.suntimeswidget.nightly.event.provider"
 private const val stale_authority = "com.stale.host.event.provider"
@@ -80,6 +81,16 @@ class HostResolverTest {
         val hosts = HostResolver.detect_hosts(context)
 
         assertEquals(listOf(known_host_authority), hosts.map { it.event_authority })
+    }
+
+    @Test
+    fun detect_hosts_deduplicates_multiple_event_authorities_per_package() {
+        register_host_package(authority = "$known_host_authority;$canonical_host_authority")
+
+        val hosts = HostResolver.detect_hosts(context)
+
+        assertEquals(1, hosts.size)
+        assertEquals(canonical_host_authority, hosts.first().event_authority)
     }
 
     private fun register_host_package(
