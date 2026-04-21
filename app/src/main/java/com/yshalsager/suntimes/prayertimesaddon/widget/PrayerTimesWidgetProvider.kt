@@ -7,10 +7,13 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.os.Bundle
+import android.os.LocaleList
 import android.text.format.DateFormat
 import android.view.View
 import android.widget.RemoteViews
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.edit
 import androidx.core.content.ContextCompat
 import androidx.core.os.ConfigurationCompat
@@ -62,11 +65,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
     }
 
     private fun update_all(context: Context, mgr: AppWidgetManager, ids: IntArray) {
+        val text_context = app_localized_context(context)
         val host = HostResolver.ensure_default_selected(context)
         if (host == null) {
             ids.forEach { id ->
                 val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
-                rv.setTextViewText(R.id.widget_hijri, context.getString(R.string.no_host_found))
+                rv.setTextViewText(R.id.widget_hijri, text_context.getString(R.string.no_host_found))
                 rv.setTextViewText(R.id.widget_gregorian, "")
                 rv.setTextViewText(R.id.widget_summary, "")
                 rv.setViewVisibility(R.id.widget_prohibited_row, View.GONE)
@@ -81,12 +85,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
         val cfg = HostConfigReader.read_config(context, host)
         val host_tz = cfg?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
-        val host_location_label = cfg?.display_label() ?: context.getString(R.string.unknown_location)
+        val host_location_label = cfg?.display_label() ?: text_context.getString(R.string.unknown_location)
         val now = System.currentTimeMillis()
 
         val month_basis = Prefs.get_days_month_basis(context)
         val show_hijri = Prefs.get_days_show_hijri(context) || month_basis == Prefs.days_month_basis_hijri
-        val locale = ConfigurationCompat.getLocales(context.resources.configuration).get(0) ?: Locale.getDefault()
+        val locale = ConfigurationCompat.getLocales(text_context.resources.configuration).get(0) ?: Locale.getDefault()
         val rtl = locale.layoutDirection == View.LAYOUT_DIRECTION_RTL
         val row_dir = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
 
@@ -104,9 +108,9 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val scoped_saved_location_id = location_context.resolved_saved_location_id
             val tz = location_context.timezone_override ?: host_tz
             val day_start = day_start(now, tz)
-            val time_format = DateFormat.getTimeFormat(context).apply { timeZone = tz }
+            val time_format = DateFormat.getTimeFormat(text_context).apply { timeZone = tz }
             val time_only_format =
-                SimpleDateFormat(if (DateFormat.is24HourFormat(context)) "HH:mm" else "h:mm", Locale.getDefault()).apply { timeZone = tz }
+                SimpleDateFormat(if (DateFormat.is24HourFormat(text_context)) "HH:mm" else "h:mm", locale).apply { timeZone = tz }
 
             fun time_short(v: Long?): String = v?.let { time_only_format.format(Date(it)) } ?: "--"
             fun time_str(v: Long?): String = v?.let { time_format.format(Date(it)) } ?: "--"
@@ -129,9 +133,9 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                     } catch (_: ArithmeticException) {
                         null
                     }
-            val greg = format_gregorian_day_title(context, day_start, tz, locale)
+            val greg = format_gregorian_day_title(text_context, day_start, tz, locale)
             val location_label = location_context.saved_location?.display_label() ?: host_location_label
-            val method_summary = format_method_summary(context, location_context.method_config_override)
+            val method_summary = format_method_summary(text_context, location_context.method_config_override)
             val summary = "$location_label \u00b7 $method_summary"
 
             val is_friday =
@@ -213,12 +217,15 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setTextColor(R.id.widget_prayer_maghrib, colors.text_primary)
             rv.setTextColor(R.id.widget_prayer_isha, colors.text_primary)
 
-            rv.setTextViewText(R.id.widget_label_fajr, context.getString(R.string.event_prayer_fajr))
-            rv.setTextViewText(R.id.widget_label_duha, context.getString(R.string.event_prayer_duha))
-            rv.setTextViewText(R.id.widget_label_dhuhr, if (is_friday) context.getString(R.string.event_prayer_jummah) else context.getString(R.string.event_prayer_dhuhr))
-            rv.setTextViewText(R.id.widget_label_asr, context.getString(R.string.event_prayer_asr))
-            rv.setTextViewText(R.id.widget_label_maghrib, context.getString(R.string.event_prayer_maghrib))
-            rv.setTextViewText(R.id.widget_label_isha, context.getString(R.string.event_prayer_isha))
+            rv.setTextViewText(R.id.widget_label_fajr, text_context.getString(R.string.event_prayer_fajr))
+            rv.setTextViewText(R.id.widget_label_duha, text_context.getString(R.string.event_prayer_duha))
+            rv.setTextViewText(
+                R.id.widget_label_dhuhr,
+                if (is_friday) text_context.getString(R.string.event_prayer_jummah) else text_context.getString(R.string.event_prayer_dhuhr)
+            )
+            rv.setTextViewText(R.id.widget_label_asr, text_context.getString(R.string.event_prayer_asr))
+            rv.setTextViewText(R.id.widget_label_maghrib, text_context.getString(R.string.event_prayer_maghrib))
+            rv.setTextViewText(R.id.widget_label_isha, text_context.getString(R.string.event_prayer_isha))
 
             listOf(
                 R.id.widget_label_fajr,
@@ -236,7 +243,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                     listOf(prohibited_dawn, prohibited_sunrise, prohibited_zawal, prohibited_after_asr, prohibited_sunset).any { it != null }
             rv.setViewVisibility(R.id.widget_prohibited_row, if (prohibited_ok) View.VISIBLE else View.GONE)
             if (prohibited_ok) {
-                fun labeled(label_res: Int, v: String?): String = "${context.getString(label_res)}\n${v ?: "--"}"
+                fun labeled(label_res: Int, v: String?): String = "${text_context.getString(label_res)}\n${v ?: "--"}"
 
                 rv.setTextViewText(R.id.widget_prohibited_dawn, labeled(R.string.prohibited_dawn, prohibited_dawn))
                 rv.setTextViewText(R.id.widget_prohibited_sunrise, labeled(R.string.prohibited_sunrise, prohibited_sunrise))
@@ -254,7 +261,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val show_night_row = layout_profile.show_optional_rows && night_ok
             rv.setViewVisibility(R.id.widget_night_row, if (show_night_row) View.VISIBLE else View.GONE)
             if (show_night_row) {
-                fun labeled(label_res: Int, v: Long?): String = "${context.getString(label_res)}\n${time_short(v)}"
+                fun labeled(label_res: Int, v: Long?): String = "${text_context.getString(label_res)}\n${time_short(v)}"
 
                 rv.setTextViewText(R.id.widget_night_midpoint, labeled(R.string.night_midpoint, night_midpoint))
                 rv.setTextViewText(R.id.widget_night_last_third, labeled(R.string.night_last_third, night_last_third))
@@ -279,6 +286,19 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             all_candidates += (tomorrow_start + 120_000L)
         }
         schedule_next(context, now, all_candidates)
+    }
+
+    private fun app_localized_context(context: Context): Context {
+        val app_locales = AppCompatDelegate.getApplicationLocales()
+        if (app_locales.isEmpty) return context
+
+        val cfg = Configuration(context.resources.configuration)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            cfg.setLocales(LocaleList.forLanguageTags(app_locales.toLanguageTags()))
+        } else {
+            cfg.setLocale(app_locales[0] ?: Locale.getDefault())
+        }
+        return context.createConfigurationContext(cfg)
     }
 
     private data class WidgetColors(
