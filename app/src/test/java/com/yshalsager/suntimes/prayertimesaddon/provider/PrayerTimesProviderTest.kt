@@ -480,6 +480,42 @@ class PrayerTimesProviderTest {
     }
 
     @Test
+    fun event_calc_supports_selection_args_with_timezone_before_altitude() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val default_location =
+            SavedLocation(
+                id = "loc-default",
+                label = "Default",
+                latitude = "55.0",
+                longitude = "37.0",
+                altitude = null,
+                timezone_id = "UTC"
+            )
+        val custom_location =
+            SavedLocation(
+                id = "loc-custom",
+                label = "Custom",
+                latitude = "55.0",
+                longitude = "37.0",
+                altitude = "100.0",
+                timezone_id = "UTC",
+                calc_mode = SavedLocations.calc_mode_custom,
+                method_asr_factor = 2
+            )
+        SavedLocations.save(context, listOf(default_location, custom_location))
+        val (selection, selection_args) = SavedLocations.build_selection(day_start, custom_location)
+
+        query_event_calc("PRAYER_ASR", selection, selection_args).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start + 16 * 60 * 60 * 1000L + 30 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
+    }
+
+    @Test
     fun night_event_calc_uses_location_selection_for_sun_query() {
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
         val selection = "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"

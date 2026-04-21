@@ -67,7 +67,7 @@ object SavedLocations {
             AlarmEventContract.extra_alarm_offset + "=? AND " +
             AlarmEventContract.extra_alarm_repeat + "=? AND " +
             AlarmEventContract.extra_alarm_repeat_days + "=? AND " +
-            "latitude=? AND longitude=?"
+            "latitude=? AND longitude=? AND timezone=?"
 
     private const val selection_with_alt = "$selection_base AND altitude=?"
 
@@ -262,6 +262,7 @@ object SavedLocations {
                 base_repeat_days,
                 location.latitude,
                 location.longitude,
+                location.timezone_id,
                 alt
             )
         } else {
@@ -271,7 +272,8 @@ object SavedLocations {
                 base_repeat,
                 base_repeat_days,
                 location.latitude,
-                location.longitude
+                location.longitude,
+                location.timezone_id
             )
         }
     }
@@ -301,11 +303,21 @@ object SavedLocations {
         val lat_value = lat.toDoubleOrNull() ?: return null
         val lon_value = lon.toDoubleOrNull() ?: return null
         val alt_value = altitude?.trim()?.toDoubleOrNull()
-        return locations.firstOrNull { loc ->
-            same_number(loc.latitude.toDoubleOrNull(), lat_value) &&
-                same_number(loc.longitude.toDoubleOrNull(), lon_value) &&
+        val coordinate_matches =
+            locations.filter { loc ->
+                same_number(loc.latitude.toDoubleOrNull(), lat_value) &&
+                    same_number(loc.longitude.toDoubleOrNull(), lon_value)
+            }
+        if (coordinate_matches.isEmpty()) return null
+
+        val altitude_match =
+            coordinate_matches.firstOrNull { loc ->
                 same_optional_number(loc.altitude?.toDoubleOrNull(), alt_value)
-        }
+            }
+        if (altitude_match != null) return altitude_match
+
+        val without_altitude = coordinate_matches.firstOrNull { it.altitude?.toDoubleOrNull() == null }
+        return without_altitude ?: coordinate_matches.firstOrNull()
     }
 
     fun method_config_for_location(context: Context, location: SavedLocation?): MethodConfig? {

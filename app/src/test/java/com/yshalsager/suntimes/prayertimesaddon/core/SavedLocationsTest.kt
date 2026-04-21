@@ -117,10 +117,12 @@ class SavedLocationsTest {
 
         assertTrue(selection.contains("latitude=?"))
         assertTrue(selection.contains("longitude=?"))
+        assertTrue(selection.contains("timezone=?"))
         assertFalse(selection.contains("altitude=?"))
-        assertEquals(6, args.size)
+        assertEquals(7, args.size)
         assertEquals("30.0", args[4])
         assertEquals("31.0", args[5])
+        assertEquals("Africa/Cairo", args[6])
     }
 
     @Test
@@ -129,8 +131,10 @@ class SavedLocationsTest {
         val (selection, args) = SavedLocations.build_selection(12345L, location)
 
         assertTrue(selection.contains("altitude=?"))
-        assertEquals(7, args.size)
-        assertEquals("277", args[6])
+        assertTrue(selection.contains("timezone=?"))
+        assertEquals(8, args.size)
+        assertEquals("Asia/Riyadh", args[6])
+        assertEquals("277", args[7])
     }
 
     @Test
@@ -200,5 +204,19 @@ class SavedLocationsTest {
         val matched = SavedLocations.find_matching_location(context, "30.0", "31.0", "100")
 
         assertEquals("2", matched?.id)
+    }
+
+    @Test
+    fun find_matching_location_falls_back_to_coordinate_match_when_altitude_differs() {
+        val locations =
+            listOf(
+                SavedLocation("1", "No Alt", "30.0", "31.0", null, "Africa/Cairo"),
+                SavedLocation("2", "With Alt", "30.0", "31.0", "100", "Africa/Cairo")
+            )
+        SavedLocations.save(context, locations)
+
+        val matched = SavedLocations.find_matching_location(context, "30.0", "31.0", "0.0")
+
+        assertEquals("1", matched?.id)
     }
 }

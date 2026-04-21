@@ -76,6 +76,22 @@ class LocationQueryContextTest {
     }
 
     @Test
+    fun resolve_location_query_context_accepts_host_altitude_zero_for_saved_location_without_altitude() {
+        val resolved =
+            resolve_location_query_context(
+                context = context,
+                saved_location_id = "missing",
+                latitude = "30.0",
+                longitude = "31.0",
+                altitude = "0.0",
+                saved_locations = saved_locations
+            )
+
+        assertEquals(SavedLocations.home_source_saved, resolved.source)
+        assertEquals("loc-a", resolved.resolved_saved_location_id)
+    }
+
+    @Test
     fun resolve_location_query_context_falls_back_to_host_when_unresolvable() {
         val resolved =
             resolve_location_query_context(

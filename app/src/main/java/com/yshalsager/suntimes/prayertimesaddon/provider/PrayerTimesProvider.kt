@@ -378,6 +378,8 @@ class PrayerTimesProvider : ContentProvider() {
         SelectionLocationArgs(
             latitude = selectionArgs?.getOrNull(4),
             longitude = selectionArgs?.getOrNull(5),
-            altitude = selectionArgs?.getOrNull(6)
+            altitude =
+                selectionArgs?.getOrNull(7)
+                    ?: selectionArgs?.getOrNull(6)?.takeIf { it.toDoubleOrNull() != null }
         )
 }
