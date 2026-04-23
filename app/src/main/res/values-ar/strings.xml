@@ -125,6 +125,10 @@
     <string name='import_label'>استيراد</string>
     <string name='export_prayer_alarm_preset_title'>إعداد منبّهات الصلاة</string>
     <string name='export_prayer_alarm_preset_summary'>تصدير ملف إعداد جاهز للاستيراد في منبّهات المضيف</string>
+    <string name='export_prayer_alarm_type_title'>نوع التصدير</string>
+    <string name='alarm_mode_alarm'>منبّه</string>
+    <string name='alarm_mode_notification'>إشعار</string>
+    <string name='alarm_mode_quick_notification'>إشعار سريع</string>
     <string name='prayer_alarm_preset_filename'>prayer-alarms-preset.txt</string>
     <string name='alarm_preset_export_success'>تم تصدير إعداد المنبّهات</string>
     <string name='alarm_preset_export_failed'>فشل تصدير إعداد المنبّهات</string>

@@ -140,6 +140,10 @@
     <string name='import_label'>Import</string>
     <string name='export_prayer_alarm_preset_title'>Prayer alarm preset</string>
     <string name='export_prayer_alarm_preset_summary'>Export an importable host alarms preset file</string>
+    <string name='export_prayer_alarm_type_title'>Export type</string>
+    <string name='alarm_mode_alarm'>Alarm</string>
+    <string name='alarm_mode_notification'>Notification</string>
+    <string name='alarm_mode_quick_notification'>Quick Notification</string>
     <string name='prayer_alarm_preset_filename'>prayer-alarms-preset.txt</string>
     <string name='alarm_preset_export_success'>Alarm preset exported</string>
     <string name='alarm_preset_export_failed'>Failed to export alarm preset</string>

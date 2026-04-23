@@ -27,6 +27,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.foundation.clickable
@@ -112,6 +113,12 @@ private data class SavedLocationDraft(
     val method_preset: String
 )
 
+private enum class AlarmPresetExportType(val alarm_type: String, val file_suffix: String) {
+    alarm("ALARM", "alarm"),
+    notification("NOTIFICATION", "notification"),
+    quick_notification("NOTIFICATION1", "quick-notification")
+}
+
 @Composable
 private fun SettingsContent(
     padding: PaddingValues
@@ -161,6 +168,8 @@ private fun SettingsContent(
     var hijri_day_offset by rememberSaveable { mutableStateOf(Prefs.get_hijri_day_offset(ctx).toString()) }
     var saved_locations by remember { mutableStateOf(SavedLocations.load(ctx)) }
     var editing_location by remember { mutableStateOf<SavedLocationDraft?>(null) }
+    var show_export_preset_dialog by remember { mutableStateOf(false) }
+    var export_preset_type by remember { mutableStateOf(AlarmPresetExportType.alarm) }
 
     fun reload_state_from_prefs() {
         host_event_authority = Prefs.get_host_event_authority(ctx) ?: HostResolver.ensure_default_selected(ctx) ?: ""
@@ -345,7 +354,7 @@ private fun SettingsContent(
 
     val create_preset_file_launcher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/plain")) { uri ->
         if (uri == null) return@rememberLauncherForActivityResult
-        val ok = write_prayer_alarm_preset(ctx, uri)
+        val ok = write_prayer_alarm_preset(ctx, uri, export_preset_type)
         val msg = if (ok) ctx.getString(R.string.alarm_preset_export_success) else ctx.getString(R.string.alarm_preset_export_failed)
         Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
     }
@@ -465,6 +474,18 @@ private fun SettingsContent(
                 editing_location = null
             },
             can_save = can_save
+        )
+    }
+
+    if (show_export_preset_dialog) {
+        ExportPrayerAlarmTypeDialog(
+            selected_type = export_preset_type,
+            on_select = { export_preset_type = it },
+            on_export = {
+                show_export_preset_dialog = false
+                create_preset_file_launcher.launch(prayer_alarm_preset_filename(ctx, export_preset_type))
+            },
+            on_dismiss = { show_export_preset_dialog = false }
         )
     }
 
@@ -594,7 +615,10 @@ private fun SettingsContent(
                 SettingRow(
                     title = ctx.getString(R.string.export_prayer_alarm_preset_title),
                     subtitle = ctx.getString(R.string.export_prayer_alarm_preset_summary),
-                    on_click = { create_preset_file_launcher.launch(ctx.getString(R.string.prayer_alarm_preset_filename)) },
+                    on_click = {
+                        export_preset_type = AlarmPresetExportType.alarm
+                        show_export_preset_dialog = true
+                    },
                     trailing = {
                         Text(
                             text = ctx.getString(R.string.export_label),
@@ -1064,6 +1088,52 @@ private fun SettingsContent(
 }
 
 @Composable
+private fun ExportPrayerAlarmTypeDialog(
+    selected_type: AlarmPresetExportType,
+    on_select: (AlarmPresetExportType) -> Unit,
+    on_export: () -> Unit,
+    on_dismiss: () -> Unit
+) {
+    val ctx = LocalContext.current
+    AlertDialog(
+        onDismissRequest = on_dismiss,
+        title = { Text(ctx.getString(R.string.export_prayer_alarm_type_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                alarm_preset_export_type_options(ctx).forEach { (type, label) ->
+                    Row(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { on_select(type) }
+                                .padding(horizontal = 2.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = label,
+                            modifier = Modifier.weight(1f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        RadioButton(selected = selected_type == type, onClick = null)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = on_export) {
+                Text(ctx.getString(R.string.export_label))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = on_dismiss) {
+                Text(ctx.getString(android.R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
 private fun SavedLocationEditorDialog(
     draft: SavedLocationDraft,
     is_edit: Boolean,
@@ -1392,6 +1462,13 @@ private fun method_options(ctx: android.content.Context): List<Pair<String, Stri
 private fun method_label(ctx: android.content.Context, v: String): String =
     method_options(ctx).firstOrNull { it.first == v }?.second ?: v
 
+private fun alarm_preset_export_type_options(ctx: android.content.Context): List<Pair<AlarmPresetExportType, String>> =
+    listOf(
+        AlarmPresetExportType.alarm to ctx.getString(R.string.alarm_mode_alarm),
+        AlarmPresetExportType.notification to ctx.getString(R.string.alarm_mode_notification),
+        AlarmPresetExportType.quick_notification to ctx.getString(R.string.alarm_mode_quick_notification)
+    )
+
 private fun calc_mode_options(ctx: android.content.Context): List<Pair<String, String>> =
     buildList {
         add(SavedLocations.calc_mode_inherit_global to ctx.getString(R.string.saved_locations_calc_mode_inherit))
@@ -1489,8 +1566,8 @@ private fun hijri_offset_options(ctx: android.content.Context): List<Pair<String
 private fun hijri_offset_label(ctx: android.content.Context, v: String): String =
     hijri_offset_options(ctx).firstOrNull { it.first == v }?.second ?: v
 
-private fun write_prayer_alarm_preset(ctx: android.content.Context, uri: Uri): Boolean {
-    return write_text_to_uri(ctx, uri, prayer_alarm_preset_json(ctx))
+private fun write_prayer_alarm_preset(ctx: android.content.Context, uri: Uri, export_type: AlarmPresetExportType): Boolean {
+    return write_text_to_uri(ctx, uri, prayer_alarm_preset_json(ctx, export_type))
 }
 
 private fun write_settings_backup(ctx: android.content.Context, uri: Uri): Boolean {
@@ -1522,7 +1599,17 @@ private fun settings_backup_filename(ctx: android.content.Context): String {
     return "$base-$ts.json"
 }
 
-private fun prayer_alarm_preset_json(ctx: android.content.Context): String {
+private fun prayer_alarm_preset_filename(ctx: android.content.Context, export_type: AlarmPresetExportType): String {
+    val base = ctx.getString(R.string.prayer_alarm_preset_filename)
+    val dot = base.lastIndexOf('.')
+    return if (dot > 0) {
+        base.substring(0, dot) + "-" + export_type.file_suffix + base.substring(dot)
+    } else {
+        "$base-${export_type.file_suffix}"
+    }
+}
+
+private fun prayer_alarm_preset_json(ctx: android.content.Context, export_type: AlarmPresetExportType): String {
     val repeat_days = "[1,2,3,4,5,6,7]"
     val events = buildList {
         addAll(
@@ -1548,7 +1635,7 @@ private fun prayer_alarm_preset_json(ctx: android.content.Context): String {
         val event_uri = "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}/${event.event_id}"
         arr.put(
             JSONObject()
-                .put("alarmType", "ALARM")
+                .put("alarmType", export_type.alarm_type)
                 .put("enabled", 1)
                 .put("alarmlabel", label)
                 .put("repeating", 1)
