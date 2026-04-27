@@ -160,6 +160,7 @@ fabric.properties
 .idea/
 .android_home/
 .gradle_home/
+.kotlin/
 
 # Generated Fastlane artifacts
 fastlane/report.xml

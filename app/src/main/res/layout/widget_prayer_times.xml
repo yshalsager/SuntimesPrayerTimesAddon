@@ -6,12 +6,25 @@
     android:orientation="vertical"
     android:padding="6dp">
 
-    <TextView
+    <FrameLayout
         android:id="@+id/widget_accent"
         android:layout_width="match_parent"
         android:layout_height="3dp"
-        android:layout_marginBottom="6dp"
-        android:text="" />
+        android:layout_marginBottom="6dp">
+
+        <ImageView
+            android:id="@+id/widget_accent_track"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@null" />
+
+        <ImageView
+            android:id="@+id/widget_accent_fill"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="@null"
+            android:src="@drawable/widget_accent_progress_fill" />
+    </FrameLayout>
 
     <LinearLayout
         android:id="@+id/widget_header"

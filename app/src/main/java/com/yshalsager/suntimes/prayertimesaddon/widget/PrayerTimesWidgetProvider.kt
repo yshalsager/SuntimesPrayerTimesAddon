@@ -8,9 +8,14 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Typeface
 import android.os.Bundle
 import android.os.LocaleList
+import android.text.SpannableString
+import android.text.Spanned
 import android.text.format.DateFormat
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.view.View
 import android.widget.RemoteViews
 import androidx.appcompat.app.AppCompatDelegate
@@ -20,9 +25,11 @@ import androidx.core.os.ConfigurationCompat
 import androidx.core.text.layoutDirection
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
+import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
 import com.yshalsager.suntimes.prayertimesaddon.core.AppIds
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
+import com.yshalsager.suntimes.prayertimesaddon.core.ObligatoryPrayerWindowInput
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
 import com.yshalsager.suntimes.prayertimesaddon.core.format_method_summary
@@ -30,6 +37,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import com.yshalsager.suntimes.prayertimesaddon.core.query_addon_time
 import com.yshalsager.suntimes.prayertimesaddon.core.format_gregorian_day_title
 import com.yshalsager.suntimes.prayertimesaddon.core.resolve_location_query_context
+import com.yshalsager.suntimes.prayertimesaddon.core.select_next_and_prev_obligatory_prayer
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -86,13 +94,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val cfg = HostConfigReader.read_config(context, host)
         val host_tz = cfg?.timezone?.let(TimeZone::getTimeZone) ?: TimeZone.getDefault()
         val host_location_label = cfg?.display_label() ?: text_context.getString(R.string.unknown_location)
-        val now = System.currentTimeMillis()
+        val now = AppClock.now_millis()
 
         val month_basis = Prefs.get_days_month_basis(context)
         val show_hijri = Prefs.get_days_show_hijri(context) || month_basis == Prefs.days_month_basis_hijri
         val locale = ConfigurationCompat.getLocales(text_context.resources.configuration).get(0) ?: Locale.getDefault()
-        val rtl = locale.layoutDirection == View.LAYOUT_DIRECTION_RTL
-        val row_dir = if (rtl) View.LAYOUT_DIRECTION_RTL else View.LAYOUT_DIRECTION_LTR
+        val row_dir = locale.layoutDirection
 
         val widget_show_prohibited = Prefs.get_widget_show_prohibited(context)
         val widget_show_night = Prefs.get_widget_show_night_portions(context)
@@ -136,7 +143,6 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val greg = format_gregorian_day_title(text_context, day_start, tz, locale)
             val location_label = location_context.saved_location?.display_label() ?: host_location_label
             val method_summary = format_method_summary(text_context, location_context.method_config_override)
-            val summary = "$location_label \u00b7 $method_summary"
 
             val is_friday =
                 Calendar.getInstance(tz).run {
@@ -164,11 +170,33 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val prohibited_after_asr = if (!widget_show_prohibited) null else range(asr, sunset_start)
             val prohibited_sunset = if (!widget_show_prohibited) null else range(sunset_start, sunset)
 
+            val yesterday_start = prev_day_start(day_start, tz)
             val tomorrow_start = next_day_start(day_start, tz)
-            val fajr_next =
-                if (!widget_show_night) null
-                else query_addon_time(context, AddonEvent.prayer_fajr, tomorrow_start, saved_location_id = scoped_saved_location_id)
-            val night = if (!widget_show_night) null else calc_night(maghrib, fajr_next)
+            val isha_yesterday = query_addon_time(context, AddonEvent.prayer_isha, yesterday_start, saved_location_id = scoped_saved_location_id)
+            val fajr_tomorrow = query_addon_time(context, AddonEvent.prayer_fajr, tomorrow_start, saved_location_id = scoped_saved_location_id)
+            val obligatory_selection =
+                select_next_and_prev_obligatory_prayer(
+                    now = now,
+                    input =
+                        ObligatoryPrayerWindowInput(
+                            fajr = fajr,
+                            dhuhr = dhuhr,
+                            asr = asr,
+                            maghrib = maghrib,
+                            isha = isha,
+                            prev_day_isha = isha_yesterday,
+                            next_day_fajr = fajr_tomorrow
+                        )
+                )
+            val next_obligatory_prayer = obligatory_selection.next
+            val next_obligatory_time = next_obligatory_prayer?.second
+            val summary =
+                next_obligatory_prayer?.let { (event, time) ->
+                    val next_obligatory_label = obligatory_prayer_label(text_context, event, is_friday)
+                    val countdown = text_context.getString(R.string.in_countdown, format_countdown(time - now, text_context))
+                    timer_summary("$next_obligatory_label $countdown", location_label, method_summary, colors.accent)
+                } ?: "$location_label \u00b7 $method_summary"
+            val night = if (!widget_show_night) null else calc_night(maghrib, fajr_tomorrow)
             val night_times =
                 if (!widget_show_night) emptyList()
                 else listOfNotNull(night?.midpoint, night?.last_third, night?.last_sixth)
@@ -179,9 +207,13 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
             val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
             val layout_profile = widget_layout_profile(mgr, id)
+            val progress_level = prayer_progress_level(now, obligatory_selection.prev_time, next_obligatory_time)
 
             rv.setInt(R.id.widget_root, "setBackgroundResource", colors.bg_res)
-            rv.setInt(R.id.widget_accent, "setBackgroundColor", colors.accent)
+            rv.setInt(R.id.widget_accent, "setLayoutDirection", row_dir)
+            rv.setInt(R.id.widget_accent_track, "setBackgroundColor", with_alpha(colors.text_muted, 92))
+            rv.setInt(R.id.widget_accent_fill, "setColorFilter", colors.accent)
+            rv.setInt(R.id.widget_accent_fill, "setImageLevel", progress_level)
 
             val primary = if (month_basis == Prefs.days_month_basis_hijri && hijri != null) hijri else greg
             val secondary = if (month_basis == Prefs.days_month_basis_hijri) greg else (hijri ?: "")
@@ -211,7 +243,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setTextViewText(R.id.widget_prayer_isha, time_str(isha))
 
             rv.setTextColor(R.id.widget_prayer_fajr, colors.text_primary)
-            rv.setTextColor(R.id.widget_prayer_duha, colors.accent)
+            rv.setTextColor(R.id.widget_prayer_duha, colors.text_primary)
             rv.setTextColor(R.id.widget_prayer_dhuhr, colors.text_primary)
             rv.setTextColor(R.id.widget_prayer_asr, colors.text_primary)
             rv.setTextColor(R.id.widget_prayer_maghrib, colors.text_primary)
@@ -235,7 +267,19 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                 R.id.widget_label_maghrib,
                 R.id.widget_label_isha
             ).forEach { rv.setTextColor(it, colors.text_muted) }
-            rv.setTextColor(R.id.widget_label_duha, colors.accent)
+
+            next_obligatory_prayer?.let { (event, _) ->
+                listOf(
+                    AddonEvent.prayer_fajr to (R.id.widget_label_fajr to R.id.widget_prayer_fajr),
+                    AddonEvent.prayer_dhuhr to (R.id.widget_label_dhuhr to R.id.widget_prayer_dhuhr),
+                    AddonEvent.prayer_asr to (R.id.widget_label_asr to R.id.widget_prayer_asr),
+                    AddonEvent.prayer_maghrib to (R.id.widget_label_maghrib to R.id.widget_prayer_maghrib),
+                    AddonEvent.prayer_isha to (R.id.widget_label_isha to R.id.widget_prayer_isha)
+                ).firstOrNull { it.first == event }?.second?.let { (label_id, time_id) ->
+                    rv.setTextColor(label_id, colors.accent)
+                    rv.setTextColor(time_id, colors.accent)
+                }
+            }
 
             val prohibited_ok =
                 layout_profile.show_optional_rows &&
@@ -280,6 +324,10 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
             mgr.updateAppWidget(id, rv)
 
+            next_obligatory_time?.let {
+                all_candidates += it
+                all_candidates += (now + 30_000L)
+            }
             all_candidates += listOfNotNull(fajr, duha, dhuhr, asr, maghrib, isha)
             all_candidates += listOfNotNull(sunrise, sunrise_end, zawal_start, dhuhr, sunset_start, sunset)
             if (night_ok) all_candidates += night_times
@@ -408,6 +456,43 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             add(Calendar.DAY_OF_YEAR, 1)
             timeInMillis
         }
+
+    private fun prev_day_start(day_start: Long, tz: TimeZone): Long =
+        Calendar.getInstance(tz).run {
+            timeInMillis = day_start
+            add(Calendar.DAY_OF_YEAR, -1)
+            timeInMillis
+        }
+
+    private fun prayer_progress_level(now: Long, prev_time: Long?, next_time: Long?): Int {
+        if (prev_time == null || next_time == null || next_time <= prev_time) return 0
+        val progress = ((now - prev_time).toDouble() / (next_time - prev_time).toDouble()).coerceIn(0.0, 1.0)
+        return (progress * 10_000.0).toInt()
+    }
+
+    private fun with_alpha(color: Int, alpha: Int): Int {
+        val a = alpha.coerceIn(0, 255)
+        return (color and 0x00FFFFFF) or (a shl 24)
+    }
+
+    private fun obligatory_prayer_label(context: Context, event: AddonEvent, is_friday: Boolean): String =
+        if (event == AddonEvent.prayer_dhuhr && is_friday) context.getString(R.string.event_prayer_jummah)
+        else context.getString(event.title_res)
+
+    private fun timer_summary(timer: String, location_label: String, method_summary: String, timer_color: Int): CharSequence {
+        val summary = SpannableString("$timer \u00b7 $location_label \u00b7 $method_summary")
+        summary.setSpan(StyleSpan(Typeface.BOLD), 0, timer.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        summary.setSpan(ForegroundColorSpan(timer_color), 0, timer.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return summary
+    }
+
+    private fun format_countdown(delta_ms: Long, context: Context): String {
+        val mins = (delta_ms.coerceAtLeast(0L) + 30_000L) / 60_000L
+        val h = mins / 60
+        val m = mins % 60
+        return if (h > 0) String.format(Locale.getDefault(), "%d:%02d", h, m)
+        else String.format(Locale.getDefault(), "%d%s", m, context.getString(R.string.minute_abbrev))
+    }
 
     private fun schedule_next(context: Context, now: Long, candidates: List<Long>) {
         val mgr = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return

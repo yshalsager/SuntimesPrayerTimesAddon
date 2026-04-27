@@ -4,8 +4,13 @@ import android.app.AlarmManager
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.pm.ProviderInfo
+import android.graphics.Typeface
 import android.os.Bundle
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
 import android.view.View
+import android.widget.ImageView
 import android.widget.TextView
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
@@ -17,6 +22,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
+import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -53,6 +59,7 @@ class PrayerTimesWidgetProviderTest {
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
         context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).edit().clear().apply()
         HostConfigReader.clear_cache()
+        AppClock.set_fixed_now_millis(null)
 
         Prefs.set_asr_factor(context, 1)
         Prefs.set_widget_show_prohibited(context, true)
@@ -87,6 +94,7 @@ class PrayerTimesWidgetProviderTest {
     @After
     fun tear_down() {
         TimeZone.setDefault(original_timezone)
+        AppClock.set_fixed_now_millis(null)
     }
 
     private fun create_widget_and_provider(): Pair<Int, PrayerTimesWidgetProvider> {
@@ -143,6 +151,74 @@ class PrayerTimesWidgetProviderTest {
         assertNotEquals("--", fajr)
         assertEquals(View.VISIBLE, view.findViewById<View>(R.id.widget_prohibited_row).visibility)
         assertEquals(View.VISIBLE, view.findViewById<View>(R.id.widget_night_row).visibility)
+    }
+
+    @Test
+    fun on_update_before_fajr_highlights_fajr_row() {
+        val (widget_id, provider) = create_widget_and_provider()
+        val now = System.currentTimeMillis()
+        val day_start = now - Math.floorMod(now, day_millis)
+        AppClock.set_fixed_now_millis(day_start + 4L * 60L * 60L * 1000L)
+
+        update_widget_with_host(provider, widget_id)
+
+        val view = widget_view(widget_id)
+        val fajr_label_color = view.findViewById<TextView>(R.id.widget_label_fajr).currentTextColor
+        val fajr_time_color = view.findViewById<TextView>(R.id.widget_prayer_fajr).currentTextColor
+        val dhuhr_label_color = view.findViewById<TextView>(R.id.widget_label_dhuhr).currentTextColor
+        assertEquals(fajr_label_color, fajr_time_color)
+        assertNotEquals(dhuhr_label_color, fajr_label_color)
+    }
+
+    @Test
+    fun on_update_highlights_next_prayer_and_updates_countdown_progress() {
+        val (widget_id, provider) = create_widget_and_provider()
+        val now = System.currentTimeMillis()
+        val day_start = now - Math.floorMod(now, day_millis)
+        AppClock.set_fixed_now_millis(day_start + 13L * 60L * 60L * 1000L)
+
+        update_widget_with_host(provider, widget_id)
+
+        val view = widget_view(widget_id)
+        val summary_text = view.findViewById<TextView>(R.id.widget_summary).text
+        val summary = summary_text.toString()
+        assertTrue("summary=$summary", summary.contains(context.getString(R.string.event_prayer_asr)))
+        assertTrue("summary=$summary", summary.contains("2:30"))
+        val timer_end = summary.indexOf(" \u00b7 ")
+        val timer_spans = (summary_text as Spanned).getSpans(0, timer_end, StyleSpan::class.java)
+        assertTrue(timer_spans.any { it.style == Typeface.BOLD })
+        val timer_color_spans = summary_text.getSpans(0, timer_end, ForegroundColorSpan::class.java)
+        assertTrue("timer_color_spans=${timer_color_spans.size}", timer_color_spans.isNotEmpty())
+
+        val asr_label_color = view.findViewById<TextView>(R.id.widget_label_asr).currentTextColor
+        val asr_time_color = view.findViewById<TextView>(R.id.widget_prayer_asr).currentTextColor
+        val fajr_label_color = view.findViewById<TextView>(R.id.widget_label_fajr).currentTextColor
+        assertEquals(asr_label_color, asr_time_color)
+        assertNotEquals(fajr_label_color, asr_label_color)
+
+        val progress_level = view.findViewById<ImageView>(R.id.widget_accent_fill).drawable.level
+        assertTrue("progress_level=$progress_level", progress_level > 0)
+        assertTrue("progress_level=$progress_level", progress_level < 10000)
+    }
+
+    @Test
+    fun on_update_after_isha_highlights_fajr_row_for_tomorrow_countdown() {
+        val (widget_id, provider) = create_widget_and_provider()
+        val now = System.currentTimeMillis()
+        val day_start = now - Math.floorMod(now, day_millis)
+        AppClock.set_fixed_now_millis(day_start + 21L * 60L * 60L * 1000L)
+
+        update_widget_with_host(provider, widget_id)
+
+        val view = widget_view(widget_id)
+        val summary = view.findViewById<TextView>(R.id.widget_summary).text.toString()
+        assertTrue("summary=$summary", summary.contains(context.getString(R.string.event_prayer_fajr)))
+
+        val fajr_label_color = view.findViewById<TextView>(R.id.widget_label_fajr).currentTextColor
+        val fajr_time_color = view.findViewById<TextView>(R.id.widget_prayer_fajr).currentTextColor
+        val dhuhr_label_color = view.findViewById<TextView>(R.id.widget_label_dhuhr).currentTextColor
+        assertEquals(fajr_label_color, fajr_time_color)
+        assertNotEquals(dhuhr_label_color, fajr_label_color)
     }
 
     @Test

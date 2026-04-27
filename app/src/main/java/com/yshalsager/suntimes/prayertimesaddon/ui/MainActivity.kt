@@ -20,6 +20,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
+import com.yshalsager.suntimes.prayertimesaddon.core.ObligatoryPrayerWindowInput
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
@@ -35,6 +36,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.query_host_addon_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
 import com.yshalsager.suntimes.prayertimesaddon.core.resolve_selected_home_location
 import com.yshalsager.suntimes.prayertimesaddon.core.select_home_location_by_key
+import com.yshalsager.suntimes.prayertimesaddon.core.select_next_and_prev_obligatory_prayer
 import com.yshalsager.suntimes.prayertimesaddon.core.valid_timezone_id
 import com.yshalsager.suntimes.prayertimesaddon.core.add_days
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeItemUi
@@ -372,13 +374,6 @@ class MainActivity : ThemedActivity() {
                     window_range_str(duha, zawal_start)
                 } else null
 
-            val obligatory_prayers = listOf(
-                AddonEvent.prayer_fajr to fajr,
-                AddonEvent.prayer_dhuhr to dhuhr,
-                AddonEvent.prayer_asr to asr,
-                AddonEvent.prayer_maghrib to maghrib,
-                AddonEvent.prayer_isha to isha
-            )
             val timeline_prayers =
                 buildList {
                     add(AddonEvent.prayer_fajr to fajr)
@@ -403,8 +398,25 @@ class MainActivity : ThemedActivity() {
 
             val scope_end = fajr_tomorrow ?: (tomorrow_start + 6L * hour_ms)
 
-            val next_prayer = if (!is_today) null else obligatory_prayers.mapNotNull { (event, t) -> if (t != null && t >= now) event to t else null }.minByOrNull { it.second }
-            val prev_prayer_time = if (!is_today) null else obligatory_prayers.mapNotNull { it.second }.filter { it < now }.maxOrNull() ?: q(AddonEvent.prayer_isha, yesterday_start)
+            val obligatory_selection =
+                if (!is_today) {
+                    null
+                } else {
+                    select_next_and_prev_obligatory_prayer(
+                        now = now,
+                        input =
+                            ObligatoryPrayerWindowInput(
+                                fajr = fajr,
+                                dhuhr = dhuhr,
+                                asr = asr,
+                                maghrib = maghrib,
+                                isha = isha,
+                                prev_day_isha = q(AddonEvent.prayer_isha, yesterday_start)
+                            )
+                    )
+                }
+            val next_prayer = obligatory_selection?.next
+            val prev_prayer_time = obligatory_selection?.prev_time
 
             val items = ArrayList<HomeItemUi>(24)
             timeline_prayers.forEach { (event, t) ->
