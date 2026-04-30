@@ -310,6 +310,7 @@ class PrayerTimesProvider : ContentProvider() {
 
             val t = when (addon_event) {
                 AddonEvent.night_midpoint -> night.midpoint
+                AddonEvent.night_first_third -> night.first_third
                 AddonEvent.night_last_third -> night.last_third
                 AddonEvent.night_last_sixth -> night.last_sixth
                 else -> return null

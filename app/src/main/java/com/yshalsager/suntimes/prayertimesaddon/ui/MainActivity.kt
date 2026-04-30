@@ -481,6 +481,7 @@ class MainActivity : ThemedActivity() {
             fun add_night_items(n: com.yshalsager.suntimes.prayertimesaddon.core.NightPortions?, min_t: Long, max_t: Long) {
                 if (n == null) return
                 listOf(
+                    Triple(AddonEvent.night_first_third.event_id, getString(R.string.night_first_third), n.first_third),
                     Triple(AddonEvent.night_midpoint.event_id, getString(R.string.night_midpoint), n.midpoint),
                     Triple(AddonEvent.night_last_third.event_id, getString(R.string.night_last_third), n.last_third),
                     Triple(AddonEvent.night_last_sixth.event_id, getString(R.string.night_last_sixth), n.last_sixth)

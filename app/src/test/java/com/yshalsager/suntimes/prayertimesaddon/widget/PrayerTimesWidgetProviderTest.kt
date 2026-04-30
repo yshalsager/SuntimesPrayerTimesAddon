@@ -151,6 +151,7 @@ class PrayerTimesWidgetProviderTest {
         assertNotEquals("--", fajr)
         assertEquals(View.VISIBLE, view.findViewById<View>(R.id.widget_prohibited_row).visibility)
         assertEquals(View.VISIBLE, view.findViewById<View>(R.id.widget_night_row).visibility)
+        assertTrue(view.findViewById<TextView>(R.id.widget_night_first_third).text.toString().contains(context.getString(R.string.night_first_third)))
     }
 
     @Test

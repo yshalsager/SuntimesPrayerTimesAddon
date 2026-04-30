@@ -199,11 +199,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val night = if (!widget_show_night) null else calc_night(maghrib, fajr_tomorrow)
             val night_times =
                 if (!widget_show_night) emptyList()
-                else listOfNotNull(night?.midpoint, night?.last_third, night?.last_sixth)
-            val night_ok = widget_show_night && night_times.size == 3
-            val night_midpoint = night_times.getOrNull(0)
-            val night_last_third = night_times.getOrNull(1)
-            val night_last_sixth = night_times.getOrNull(2)
+                else listOfNotNull(night?.first_third, night?.midpoint, night?.last_third, night?.last_sixth)
+            val night_ok = widget_show_night && night_times.size == 4
+            val night_first_third = night_times.getOrNull(0)
+            val night_midpoint = night_times.getOrNull(1)
+            val night_last_third = night_times.getOrNull(2)
+            val night_last_sixth = night_times.getOrNull(3)
 
             val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
             val layout_profile = widget_layout_profile(mgr, id)
@@ -230,7 +231,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setTextColor(R.id.widget_summary, colors.text_muted)
 
             // Keep prayer/prohibited/night column ordering consistent in RTL:
-            // first column (Fajr/Dawn/Midpoint) stays on the Start side.
+            // first column (Fajr/Dawn/First third) stays on the Start side.
             rv.setInt(R.id.widget_prayer_row, "setLayoutDirection", row_dir)
             rv.setInt(R.id.widget_prohibited_row, "setLayoutDirection", row_dir)
             rv.setInt(R.id.widget_night_row, "setLayoutDirection", row_dir)
@@ -307,10 +308,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             if (show_night_row) {
                 fun labeled(label_res: Int, v: Long?): String = "${text_context.getString(label_res)}\n${time_short(v)}"
 
+                rv.setTextViewText(R.id.widget_night_first_third, labeled(R.string.night_first_third, night_first_third))
                 rv.setTextViewText(R.id.widget_night_midpoint, labeled(R.string.night_midpoint, night_midpoint))
                 rv.setTextViewText(R.id.widget_night_last_third, labeled(R.string.night_last_third, night_last_third))
                 rv.setTextViewText(R.id.widget_night_last_sixth, labeled(R.string.night_last_sixth, night_last_sixth))
 
+                rv.setTextColor(R.id.widget_night_first_third, colors.accent)
                 rv.setTextColor(R.id.widget_night_midpoint, colors.accent)
                 rv.setTextColor(R.id.widget_night_last_third, colors.accent)
                 rv.setTextColor(R.id.widget_night_last_sixth, colors.accent)

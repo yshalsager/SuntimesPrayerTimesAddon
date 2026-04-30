@@ -51,6 +51,7 @@ data class SavedLocationCardUi(
     val prohibited_after_asr: String?,
     val prohibited_sunset: String?,
     val night_midpoint: String?,
+    val night_first_third: String?,
     val night_last_third: String?,
     val night_last_sixth: String?
 )
@@ -224,6 +225,7 @@ private fun SavedLocationPrayerCard(card: SavedLocationCardUi) {
 
             val has_night =
                 card.night_midpoint != null ||
+                    card.night_first_third != null ||
                     card.night_last_third != null ||
                     card.night_last_sixth != null
             if (has_night) {
@@ -358,6 +360,7 @@ private fun ProhibitedRow(card: SavedLocationCardUi) {
 private fun NightRow(card: SavedLocationCardUi) {
     val labels =
         listOf(
+            stringResource(R.string.night_first_third) to card.night_first_third,
             stringResource(R.string.night_midpoint) to card.night_midpoint,
             stringResource(R.string.night_last_third) to card.night_last_third,
             stringResource(R.string.night_last_sixth) to card.night_last_sixth

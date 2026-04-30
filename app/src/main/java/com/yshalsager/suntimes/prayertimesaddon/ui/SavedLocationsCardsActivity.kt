@@ -238,6 +238,7 @@ class SavedLocationsCardsActivity : ThemedActivity() {
                 prohibited_after_asr = range_short(asr, sunset_start),
                 prohibited_sunset = range_short(sunset_start, sunset_end),
                 night_midpoint = night?.midpoint?.let { format_or_dash(time_only_format, it) },
+                night_first_third = night?.first_third?.let { format_or_dash(time_only_format, it) },
                 night_last_third = night?.last_third?.let { format_or_dash(time_only_format, it) },
                 night_last_sixth = night?.last_sixth?.let { format_or_dash(time_only_format, it) }
             )

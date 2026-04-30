@@ -40,6 +40,7 @@ private data class PrayerTimesCalendarDay(
     val sunset_start: Long?,
     val sunset: Long?,
     val night_midpoint: Long?,
+    val night_first_third: Long?,
     val night_last_third: Long?,
     val night_last_sixth: Long?
 )
@@ -168,6 +169,7 @@ private fun day_events_for_source(
 
         PrayerTimesCalendarSource.night ->
             buildList {
+                day.night_first_third?.let { add(point_event(meta, context.getString(R.string.night_first_third), it)) }
                 day.night_midpoint?.let { add(point_event(meta, context.getString(R.string.night_midpoint), it)) }
                 day.night_last_third?.let { add(point_event(meta, context.getString(R.string.night_last_third), it)) }
                 day.night_last_sixth?.let { add(point_event(meta, context.getString(R.string.night_last_sixth), it)) }
@@ -272,6 +274,7 @@ private fun build_calendar_day(
         sunset_start = sunset_start,
         sunset = sunset,
         night_midpoint = night?.midpoint,
+        night_first_third = night?.first_third,
         night_last_third = night?.last_third,
         night_last_sixth = night?.last_sixth
     )

@@ -354,6 +354,19 @@ class PrayerTimesCalendarProviderTest {
     }
 
     @Test
+    fun night_calendar_includes_first_third() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val window_start = day_start + 21 * 60 * 60 * 1000L
+        val window_end = window_start + 90 * 60 * 1000L
+
+        val titles = query("content://${PrayerTimesCalendarProvider.authority}/night/calendarContent/$window_start-$window_end")
+            .read_strings(CalendarContract.Events.TITLE)
+
+        assertEquals(listOf(context.getString(R.string.night_first_third)), titles)
+    }
+
+    @Test
     fun calendar_info_returns_fallback_row_when_host_missing_or_denied() {
         Prefs.set_host_event_authority(context, "")
         query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarInfo").use { cursor ->

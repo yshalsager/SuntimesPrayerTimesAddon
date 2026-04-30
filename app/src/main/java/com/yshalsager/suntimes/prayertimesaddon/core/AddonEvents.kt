@@ -27,6 +27,7 @@ enum class AddonEvent(
     prayer_isha("PRAYER_ISHA", R.string.event_prayer_isha, AddonEventType.prayer),
     prayer_isha_extra_1("PRAYER_ISHA_EXTRA_1", R.string.event_prayer_isha_extra_1, AddonEventType.prayer),
 
+    night_first_third("NIGHT_FIRST_THIRD", R.string.night_first_third, AddonEventType.night),
     night_midpoint("NIGHT_MIDPOINT", R.string.night_midpoint, AddonEventType.night),
     night_last_third("NIGHT_LAST_THIRD", R.string.night_last_third, AddonEventType.night),
     night_last_sixth("NIGHT_LAST_SIXTH", R.string.night_last_sixth, AddonEventType.night),
@@ -143,6 +144,7 @@ object AddonEventMapper {
 
             AddonEvent.makruh_sunset_end -> HostQuery("SUNSET")
 
+            AddonEvent.night_first_third,
             AddonEvent.night_midpoint,
             AddonEvent.night_last_third,
             AddonEvent.night_last_sixth -> null

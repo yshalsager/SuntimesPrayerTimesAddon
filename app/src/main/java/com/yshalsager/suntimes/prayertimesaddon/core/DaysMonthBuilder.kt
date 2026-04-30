@@ -42,6 +42,7 @@ data class DayItem(
     val prohibited_after_asr: String?,
     val prohibited_sunset: String?,
     val night_midpoint: String?,
+    val night_first_third: String?,
     val night_last_third: String?,
     val night_last_sixth: String?
 )
@@ -248,6 +249,7 @@ fun build_day_item(
     val night = if (!show_night) null else calc_night(maghrib, fajr_next)
 
     val night_midpoint = night?.midpoint?.let(::time_short)
+    val night_first_third = night?.first_third?.let(::time_short)
     val night_last_third = night?.last_third?.let(::time_short)
     val night_last_sixth = night?.last_sixth?.let(::time_short)
 
@@ -269,6 +271,7 @@ fun build_day_item(
         prohibited_after_asr = prohibited_after_asr,
         prohibited_sunset = prohibited_sunset,
         night_midpoint = night_midpoint,
+        night_first_third = night_first_third,
         night_last_third = night_last_third,
         night_last_sixth = night_last_sixth
     )

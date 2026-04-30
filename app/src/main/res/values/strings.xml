@@ -208,6 +208,7 @@
     <string name='prohibited_sunset'>Sunset</string>
 
     <string name='night_midpoint'>Night midpoint</string>
+    <string name='night_first_third'>First third</string>
     <string name='night_last_third'>Last third</string>
     <string name='night_last_sixth'>Last sixth</string>
 

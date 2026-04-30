@@ -9,7 +9,7 @@ import net.time4j.calendar.HijriCalendar
 import java.util.Locale
 import java.util.TimeZone
 
-data class NightPortions(val midpoint: Long, val last_third: Long, val last_sixth: Long)
+data class NightPortions(val first_third: Long, val midpoint: Long, val last_third: Long, val last_sixth: Long)
 
 data class SunTimes(val noon: Long?, val sunrise: Long?, val sunset: Long?)
 
@@ -161,7 +161,7 @@ fun find_next_eid_day_start(
 fun calc_night(maghrib_prev: Long?, fajr: Long?): NightPortions? {
     if (maghrib_prev == null || fajr == null || fajr <= maghrib_prev) return null
     val night_len = fajr - maghrib_prev
-    return NightPortions(maghrib_prev + night_len / 2, fajr - night_len / 3, fajr - night_len / 6)
+    return NightPortions(maghrib_prev + night_len / 3, maghrib_prev + night_len / 2, fajr - night_len / 3, fajr - night_len / 6)
 }
 
 fun query_host_sun(

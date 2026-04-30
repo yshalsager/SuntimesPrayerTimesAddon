@@ -107,6 +107,19 @@ class TimesTest {
     }
 
     @Test
+    fun calc_night_returns_first_third_midpoint_last_third_and_last_sixth() {
+        val maghrib = 18L * 60L * 60L * 1000L
+        val fajr = 30L * 60L * 60L * 1000L
+
+        val night = calc_night(maghrib, fajr)
+
+        assertEquals(22L * 60L * 60L * 1000L, night?.first_third)
+        assertEquals(24L * 60L * 60L * 1000L, night?.midpoint)
+        assertEquals(26L * 60L * 60L * 1000L, night?.last_third)
+        assertEquals(28L * 60L * 60L * 1000L, night?.last_sixth)
+    }
+
+    @Test
     fun query_host_addon_time_uses_host_shadow_ratio_event_for_asr() {
         val day_start = 0L
 
@@ -366,8 +379,10 @@ class TimesTest {
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
         val night_selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
         val night_midpoint = query_addon_time(context, AddonEvent.night_midpoint, day_start, selection, night_selection_args)
+        val night_first_third = query_addon_time(context, AddonEvent.night_first_third, day_start, selection, night_selection_args)
 
         assertEquals(day_start - 15 * 60 * 1000L, night_midpoint)
+        assertEquals(day_start - 2 * 60 * 60 * 1000L, night_first_third)
     }
 
     private fun find_eid_day_start(): Long {

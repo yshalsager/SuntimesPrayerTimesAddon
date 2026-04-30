@@ -179,7 +179,7 @@ private fun DayCard(meta: DayMeta, item: DayItem?) {
     val ctx = LocalContext.current
     val today = stringResource(R.string.today)
     val month_basis = Prefs.get_days_month_basis(ctx)
-    val show_night = item?.let { it.night_midpoint != null && it.night_last_third != null && it.night_last_sixth != null } ?: false
+    val show_night = item?.let { it.night_midpoint != null && it.night_first_third != null && it.night_last_third != null && it.night_last_sixth != null } ?: false
     val has_prohibited =
         item?.let {
             it.prohibited_dawn != null ||
@@ -329,6 +329,7 @@ private fun ProhibitedRow(item: DayItem) {
 @Composable
 private fun NightRow(item: DayItem) {
     val labels = listOf(
+        stringResource(R.string.night_first_third) to item.night_first_third,
         stringResource(R.string.night_midpoint) to item.night_midpoint,
         stringResource(R.string.night_last_third) to item.night_last_third,
         stringResource(R.string.night_last_sixth) to item.night_last_sixth

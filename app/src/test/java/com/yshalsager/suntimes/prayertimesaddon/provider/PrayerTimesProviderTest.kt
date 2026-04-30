@@ -252,6 +252,7 @@ class PrayerTimesProviderTest {
             assertTrue(names.contains("PRAYER_EID_FITR_END"))
             assertTrue(names.contains("PRAYER_EID_ADHA_START"))
             assertTrue(names.contains("PRAYER_EID_ADHA_END"))
+            assertTrue(names.contains("NIGHT_FIRST_THIRD"))
         }
     }
 
@@ -526,6 +527,15 @@ class PrayerTimesProviderTest {
             cursor.moveToFirst()
             assertEquals(
                 day_start - 15 * 60 * 1000L,
+                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
+            )
+        }
+
+        query_event_calc("NIGHT_FIRST_THIRD", selection, selection_args).use { cursor ->
+            assertEquals(1, cursor.count)
+            cursor.moveToFirst()
+            assertEquals(
+                day_start - 2 * 60 * 60 * 1000L,
                 cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
             )
         }

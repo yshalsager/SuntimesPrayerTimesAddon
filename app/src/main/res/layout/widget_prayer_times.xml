@@ -160,9 +160,10 @@
         android:orientation="horizontal"
         android:visibility="gone">
 
-        <TextView android:id="@+id/widget_night_midpoint" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
-        <TextView android:id="@+id/widget_night_last_third" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
-        <TextView android:id="@+id/widget_night_last_sixth" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="11sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_night_first_third" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_night_midpoint" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_night_last_third" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
+        <TextView android:id="@+id/widget_night_last_sixth" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textSize="10sp" android:maxLines="2" android:ellipsize="end" android:gravity="center_horizontal" />
     </LinearLayout>
 
 </LinearLayout>

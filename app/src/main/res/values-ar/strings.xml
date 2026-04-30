@@ -201,6 +201,7 @@
     <string name='prohibited_sunset'>الغروب</string>
 
     <string name='night_midpoint'>منتصف الليل</string>
+    <string name='night_first_third'>الثلث الأول</string>
     <string name='night_last_third'>الثلث الأخير</string>
     <string name='night_last_sixth'>السدس الأخير</string>
 
