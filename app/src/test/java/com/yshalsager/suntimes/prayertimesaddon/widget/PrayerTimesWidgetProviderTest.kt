@@ -4,12 +4,10 @@ import android.app.AlarmManager
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.pm.ProviderInfo
-import android.graphics.Typeface
 import android.os.Bundle
-import android.text.Spanned
-import android.text.style.ForegroundColorSpan
-import android.text.style.StyleSpan
+import android.os.SystemClock
 import android.view.View
+import android.widget.Chronometer
 import android.widget.ImageView
 import android.widget.TextView
 import com.yshalsager.suntimes.prayertimesaddon.R
@@ -181,15 +179,12 @@ class PrayerTimesWidgetProviderTest {
         update_widget_with_host(provider, widget_id)
 
         val view = widget_view(widget_id)
-        val summary_text = view.findViewById<TextView>(R.id.widget_summary).text
-        val summary = summary_text.toString()
+        val summary_view = view.findViewById<Chronometer>(R.id.widget_summary)
+        val summary = summary_view.text.toString()
         assertTrue("summary=$summary", summary.contains(context.getString(R.string.event_prayer_asr)))
-        assertTrue("summary=$summary", summary.contains("2:30"))
-        val timer_end = summary.indexOf(" \u00b7 ")
-        val timer_spans = (summary_text as Spanned).getSpans(0, timer_end, StyleSpan::class.java)
-        assertTrue(timer_spans.any { it.style == Typeface.BOLD })
-        val timer_color_spans = summary_text.getSpans(0, timer_end, ForegroundColorSpan::class.java)
-        assertTrue("timer_color_spans=${timer_color_spans.size}", timer_color_spans.isNotEmpty())
+        assertTrue("summary=$summary", summary.contains("2:"))
+        assertTrue(summary_view.isCountDown)
+        assertTrue(summary_view.base > SystemClock.elapsedRealtime())
 
         val asr_label_color = view.findViewById<TextView>(R.id.widget_label_asr).currentTextColor
         val asr_time_color = view.findViewById<TextView>(R.id.widget_prayer_asr).currentTextColor
@@ -319,8 +314,9 @@ class PrayerTimesWidgetProviderTest {
     @Test
     fun update_schedules_alarm_with_token() {
         val (widget_id, provider) = create_widget_and_provider()
-
-        val now_before = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        val day_start = now - Math.floorMod(now, day_millis)
+        AppClock.set_fixed_now_millis(day_start + 13L * 60L * 60L * 1000L)
         update_widget_with_host(provider, widget_id)
 
         val alarm_manager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -329,7 +325,7 @@ class PrayerTimesWidgetProviderTest {
 
         assertEquals("alarms=${alarms.size}", 1, alarms.size)
         val scheduled = alarms.first()
-        assertTrue(scheduled.triggerAtMs >= now_before + 60_000L)
+        assertEquals(day_start + 15L * 60L * 60L * 1000L + 30L * 60L * 1000L + 30_000L, scheduled.triggerAtMs)
         assertNotNull(alarm_token_from_prefs())
     }
 }

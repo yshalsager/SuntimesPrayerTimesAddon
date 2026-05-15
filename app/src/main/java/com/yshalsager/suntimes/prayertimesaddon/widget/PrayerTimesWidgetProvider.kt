@@ -8,14 +8,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Typeface
 import android.os.Bundle
 import android.os.LocaleList
-import android.text.SpannableString
-import android.text.Spanned
 import android.text.format.DateFormat
-import android.text.style.ForegroundColorSpan
-import android.text.style.StyleSpan
 import android.view.View
 import android.widget.RemoteViews
 import androidx.appcompat.app.AppCompatDelegate
@@ -44,6 +39,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import android.os.Build
+import android.os.SystemClock
 import java.util.UUID
 
 class PrayerTimesWidgetProvider : AppWidgetProvider() {
@@ -80,7 +76,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                 val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
                 rv.setTextViewText(R.id.widget_hijri, text_context.getString(R.string.no_host_found))
                 rv.setTextViewText(R.id.widget_gregorian, "")
-                rv.setTextViewText(R.id.widget_summary, "")
+                set_static_summary(rv, R.id.widget_summary, "")
                 rv.setViewVisibility(R.id.widget_prohibited_row, View.GONE)
                 rv.setViewVisibility(R.id.widget_night_row, View.GONE)
                 val open_main = PendingIntent.getActivity(context, 0, Intent(context, com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
@@ -193,9 +189,16 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val summary =
                 next_obligatory_prayer?.let { (event, time) ->
                     val next_obligatory_label = obligatory_prayer_label(text_context, event, is_friday)
-                    val countdown = text_context.getString(R.string.in_countdown, format_countdown(time - now, text_context))
-                    timer_summary("$next_obligatory_label $countdown", location_label, method_summary, colors.accent)
-                } ?: "$location_label \u00b7 $method_summary"
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        WidgetSummary.Countdown(
+                            base = SystemClock.elapsedRealtime() + (time - now).coerceAtLeast(0L),
+                            format = "$next_obligatory_label ${text_context.getString(R.string.in_countdown, "%s")} · $location_label · $method_summary"
+                        )
+                    } else {
+                        val countdown = text_context.getString(R.string.in_countdown, format_countdown(time - now, text_context))
+                        WidgetSummary.Static("$next_obligatory_label $countdown \u00b7 $location_label \u00b7 $method_summary")
+                    }
+                } ?: WidgetSummary.Static("$location_label \u00b7 $method_summary")
             val night = if (!widget_show_night) null else calc_night(maghrib, fajr_tomorrow)
             val night_times =
                 if (!widget_show_night) emptyList()
@@ -223,12 +226,24 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setTextViewText(R.id.widget_hijri, primary)
             rv.setTextViewText(R.id.widget_gregorian, secondary_text)
             rv.setViewVisibility(R.id.widget_gregorian, if (secondary_text.isBlank()) View.GONE else View.VISIBLE)
-            rv.setTextViewText(R.id.widget_summary, summary)
+            when (summary) {
+                is WidgetSummary.Countdown -> {
+                    rv.setChronometer(R.id.widget_summary, summary.base, summary.format, layout_profile.show_summary)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        rv.setChronometerCountDown(R.id.widget_summary, true)
+                    }
+                    rv.setTextColor(R.id.widget_summary, colors.accent)
+                }
+
+                is WidgetSummary.Static -> {
+                    set_static_summary(rv, R.id.widget_summary, summary.text)
+                    rv.setTextColor(R.id.widget_summary, colors.text_muted)
+                }
+            }
             rv.setViewVisibility(R.id.widget_summary, if (layout_profile.show_summary) View.VISIBLE else View.GONE)
 
             rv.setTextColor(R.id.widget_hijri, colors.text_primary)
             rv.setTextColor(R.id.widget_gregorian, colors.text_muted)
-            rv.setTextColor(R.id.widget_summary, colors.text_muted)
 
             // Keep prayer/prohibited/night column ordering consistent in RTL:
             // first column (Fajr/Dawn/First third) stays on the Start side.
@@ -329,7 +344,6 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
             next_obligatory_time?.let {
                 all_candidates += it
-                all_candidates += (now + 30_000L)
             }
             all_candidates += listOfNotNull(fajr, duha, dhuhr, asr, maghrib, isha)
             all_candidates += listOfNotNull(sunrise, sunrise_end, zawal_start, dhuhr, sunset_start, sunset)
@@ -482,11 +496,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         if (event == AddonEvent.prayer_dhuhr && is_friday) context.getString(R.string.event_prayer_jummah)
         else context.getString(event.title_res)
 
-    private fun timer_summary(timer: String, location_label: String, method_summary: String, timer_color: Int): CharSequence {
-        val summary = SpannableString("$timer \u00b7 $location_label \u00b7 $method_summary")
-        summary.setSpan(StyleSpan(Typeface.BOLD), 0, timer.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        summary.setSpan(ForegroundColorSpan(timer_color), 0, timer.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        return summary
+    private fun set_static_summary(rv: RemoteViews, view_id: Int, text: CharSequence) {
+        rv.setChronometer(view_id, 0L, null, false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            rv.setChronometerCountDown(view_id, false)
+        }
+        rv.setTextViewText(view_id, text)
     }
 
     private fun format_countdown(delta_ms: Long, context: Context): String {
@@ -522,6 +537,11 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val created = UUID.randomUUID().toString()
         prefs.edit { putString(pref_alarm_token, created) }
         return created
+    }
+
+    private sealed interface WidgetSummary {
+        data class Countdown(val base: Long, val format: String) : WidgetSummary
+        data class Static(val text: String) : WidgetSummary
     }
 
     companion object {
