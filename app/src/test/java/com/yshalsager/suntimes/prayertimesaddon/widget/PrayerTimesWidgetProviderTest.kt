@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
 import android.widget.Chronometer
-import android.widget.ImageView
 import android.widget.TextView
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
@@ -191,10 +190,6 @@ class PrayerTimesWidgetProviderTest {
         val fajr_label_color = view.findViewById<TextView>(R.id.widget_label_fajr).currentTextColor
         assertEquals(asr_label_color, asr_time_color)
         assertNotEquals(fajr_label_color, asr_label_color)
-
-        val progress_level = view.findViewById<ImageView>(R.id.widget_accent_fill).drawable.level
-        assertTrue("progress_level=$progress_level", progress_level > 0)
-        assertTrue("progress_level=$progress_level", progress_level < 10000)
     }
 
     @Test

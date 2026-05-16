@@ -211,13 +211,9 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
             val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
             val layout_profile = widget_layout_profile(mgr, id)
-            val progress_level = prayer_progress_level(now, obligatory_selection.prev_time, next_obligatory_time)
 
             rv.setInt(R.id.widget_root, "setBackgroundResource", colors.bg_res)
-            rv.setInt(R.id.widget_accent, "setLayoutDirection", row_dir)
-            rv.setInt(R.id.widget_accent_track, "setBackgroundColor", with_alpha(colors.text_muted, 92))
-            rv.setInt(R.id.widget_accent_fill, "setColorFilter", colors.accent)
-            rv.setInt(R.id.widget_accent_fill, "setImageLevel", progress_level)
+            rv.setInt(R.id.widget_accent, "setBackgroundColor", colors.accent)
 
             val primary = if (month_basis == Prefs.days_month_basis_hijri && hijri != null) hijri else greg
             val secondary = if (month_basis == Prefs.days_month_basis_hijri) greg else (hijri ?: "")
@@ -480,17 +476,6 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             add(Calendar.DAY_OF_YEAR, -1)
             timeInMillis
         }
-
-    private fun prayer_progress_level(now: Long, prev_time: Long?, next_time: Long?): Int {
-        if (prev_time == null || next_time == null || next_time <= prev_time) return 0
-        val progress = ((now - prev_time).toDouble() / (next_time - prev_time).toDouble()).coerceIn(0.0, 1.0)
-        return (progress * 10_000.0).toInt()
-    }
-
-    private fun with_alpha(color: Int, alpha: Int): Int {
-        val a = alpha.coerceIn(0, 255)
-        return (color and 0x00FFFFFF) or (a shl 24)
-    }
 
     private fun obligatory_prayer_label(context: Context, event: AddonEvent, is_friday: Boolean): String =
         if (event == AddonEvent.prayer_dhuhr && is_friday) context.getString(R.string.event_prayer_jummah)
