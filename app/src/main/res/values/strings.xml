@@ -144,6 +144,16 @@
     <string name='alarm_mode_alarm'>Alarm</string>
     <string name='alarm_mode_notification'>Notification</string>
     <string name='alarm_mode_quick_notification'>Quick Notification</string>
+    <string name='notifications_title'>Notifications</string>
+    <string name='prayer_status_notification_title'>Next: %1$s</string>
+    <string name='prayer_status_notification_setting_title'>Persistent prayer times notification</string>
+    <string name='prayer_status_notification_setting_summary'>Show a quiet ongoing notification for the next prayer using the selected Home location</string>
+    <string name='prayer_status_notification_permission_summary'>Notification permission is required on Android 13+</string>
+    <string name='prayer_status_notification_permission_denied'>Notification permission was not granted</string>
+    <string name='prayer_status_channel_name'>Prayer status</string>
+    <string name='prayer_status_channel_description'>Quiet ongoing next prayer status</string>
+    <string name='prayer_status_refresh_action'>Refresh</string>
+    <string name='prayer_status_disable_action'>Turn off</string>
     <string name='prayer_alarm_preset_filename'>prayer-alarms-preset.txt</string>
     <string name='alarm_preset_export_success'>Alarm preset exported</string>
     <string name='alarm_preset_export_failed'>Failed to export alarm preset</string>

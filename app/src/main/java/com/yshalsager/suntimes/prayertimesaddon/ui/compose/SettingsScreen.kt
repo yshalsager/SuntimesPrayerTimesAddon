@@ -3,9 +3,11 @@
 package com.yshalsager.suntimes.prayertimesaddon.ui.compose
 
 import android.app.Activity
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
@@ -46,6 +48,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -78,6 +81,7 @@ import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingTex
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.components.SettingsSection
 import com.yshalsager.suntimes.prayertimesaddon.ui.SavedLocationsCardsActivity
 import androidx.compose.ui.text.input.KeyboardType
+import com.yshalsager.suntimes.prayertimesaddon.notification.PrayerStatusNotification
 import com.yshalsager.suntimes.prayertimesaddon.widget.WidgetUpdate
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import org.json.JSONArray
@@ -163,6 +167,7 @@ private fun SettingsContent(
 
     var widget_show_prohibited by rememberSaveable { mutableStateOf(Prefs.get_widget_show_prohibited(ctx)) }
     var widget_show_night by rememberSaveable { mutableStateOf(Prefs.get_widget_show_night_portions(ctx)) }
+    var prayer_status_notification_enabled by rememberSaveable { mutableStateOf(Prefs.get_prayer_status_notification_enabled(ctx)) }
 
     var hijri_variant by rememberSaveable { mutableStateOf(Prefs.get_hijri_variant(ctx)) }
     var hijri_day_offset by rememberSaveable { mutableStateOf(Prefs.get_hijri_day_offset(ctx).toString()) }
@@ -200,6 +205,7 @@ private fun SettingsContent(
         days_show_night = Prefs.get_days_show_night_portions(ctx)
         widget_show_prohibited = Prefs.get_widget_show_prohibited(ctx)
         widget_show_night = Prefs.get_widget_show_night_portions(ctx)
+        prayer_status_notification_enabled = Prefs.get_prayer_status_notification_enabled(ctx)
         hijri_variant = Prefs.get_hijri_variant(ctx)
         hijri_day_offset = Prefs.get_hijri_day_offset(ctx).toString()
         saved_locations = SavedLocations.load(ctx)
@@ -218,6 +224,7 @@ private fun SettingsContent(
             }
         }
         WidgetUpdate.request(ctx)
+        PrayerStatusNotification.refresh(ctx)
     }
 
     fun move_saved_location(index: Int, delta: Int) {
@@ -390,10 +397,33 @@ private fun SettingsContent(
                 }
             AppCompatDelegate.setDefaultNightMode(mode)
             WidgetUpdate.request(ctx)
+            PrayerStatusNotification.refresh(ctx)
         }
         val msg = ctx.getString(R.string.settings_backup_restore_success, result.applied_count)
         Toast.makeText(ctx, msg, Toast.LENGTH_SHORT).show()
         if (result.applied_count > 0) activity?.recreate()
+    }
+
+    val request_notification_permission_launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            prayer_status_notification_enabled = true
+            PrayerStatusNotification.set_enabled(ctx, true)
+        } else {
+            prayer_status_notification_enabled = false
+            Prefs.set_prayer_status_notification_enabled(ctx, false)
+            Toast.makeText(ctx, ctx.getString(R.string.prayer_status_notification_permission_denied), Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun set_prayer_status_notification_enabled(enabled: Boolean) {
+        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            request_notification_permission_launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
+        prayer_status_notification_enabled = enabled
+        PrayerStatusNotification.set_enabled(ctx, enabled)
     }
 
     LaunchedEffect(host_event_authority) {
@@ -715,6 +745,24 @@ private fun SettingsContent(
                         )
                     }
                 }
+            }
+
+            Spacer(Modifier.height(12.dp))
+        }
+
+        item {
+            val notification_permission_missing =
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+            SettingsSection(ctx.getString(R.string.notifications_title)) {
+                SettingSwitch(
+                    title = ctx.getString(R.string.prayer_status_notification_setting_title),
+                    subtitle =
+                        if (notification_permission_missing) ctx.getString(R.string.prayer_status_notification_permission_summary)
+                        else ctx.getString(R.string.prayer_status_notification_setting_summary),
+                    checked = prayer_status_notification_enabled,
+                    on_checked_change = { set_prayer_status_notification_enabled(it) }
+                )
             }
 
             Spacer(Modifier.height(12.dp))

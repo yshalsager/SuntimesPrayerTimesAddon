@@ -57,6 +57,7 @@ object Prefs {
     private const val k_saved_locations_json = "saved_locations_json"
     private const val k_home_location_source = "home_location_source"
     private const val k_home_location_id = "home_location_id"
+    private const val k_prayer_status_notification_enabled = "prayer_status_notification_enabled"
 
     private fun sp(context: Context) = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
 
@@ -287,6 +288,12 @@ object Prefs {
 
     fun set_home_location_id(context: Context, id: String?) =
         put_str(context, k_home_location_id, id?.trim().orEmpty())
+
+    fun get_prayer_status_notification_enabled(context: Context): Boolean =
+        sp(context).getBoolean(k_prayer_status_notification_enabled, false)
+
+    fun set_prayer_status_notification_enabled(context: Context, enabled: Boolean) =
+        put_bool(context, k_prayer_status_notification_enabled, enabled)
 
     fun apply_method_preset(context: Context, preset: String) {
         when (preset) {

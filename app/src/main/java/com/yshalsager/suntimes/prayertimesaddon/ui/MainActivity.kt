@@ -57,6 +57,7 @@ import android.os.Looper
 import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import androidx.core.net.toUri
+import com.yshalsager.suntimes.prayertimesaddon.notification.PrayerStatusNotification
 
 class MainActivity : ThemedActivity() {
     companion object {
@@ -229,6 +230,7 @@ class MainActivity : ThemedActivity() {
     private fun select_home_location(key: String) {
         if (!select_home_location_by_key(this, key)) return
         center_day_start = null
+        PrayerStatusNotification.refresh(this)
         refresh_home()
     }
 

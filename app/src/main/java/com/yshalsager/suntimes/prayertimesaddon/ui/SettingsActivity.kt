@@ -2,6 +2,7 @@ package com.yshalsager.suntimes.prayertimesaddon.ui
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import com.yshalsager.suntimes.prayertimesaddon.notification.PrayerStatusNotification
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.PrayerTimesTheme
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.SettingsRoot
 import com.yshalsager.suntimes.prayertimesaddon.widget.WidgetUpdate
@@ -19,5 +20,6 @@ class SettingsActivity : ThemedActivity() {
     override fun onStop() {
         super.onStop()
         WidgetUpdate.request(this)
+        PrayerStatusNotification.refresh(this)
     }
 }

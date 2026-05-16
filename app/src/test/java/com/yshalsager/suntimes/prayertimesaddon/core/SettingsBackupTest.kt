@@ -43,7 +43,8 @@ class SettingsBackupTest {
             "host_event_authority" to "com.forrestguice.suntimeswidget.event.provider",
             "saved_locations_json" to """[{"id":"1","label":"Cairo","latitude":"30.0","longitude":"31.0","timezone_id":"Africa/Cairo"}]""",
             "home_location_source" to SavedLocations.home_source_saved,
-            "home_location_id" to "1"
+            "home_location_id" to "1",
+            "prayer_status_notification_enabled" to true
         )
 
         val raw = SettingsBackup.encode_json(values)
@@ -69,6 +70,7 @@ class SettingsBackupTest {
         assertEquals("""[{"id":"1","label":"Cairo","latitude":"30.0","longitude":"31.0","timezone_id":"Africa/Cairo"}]""", restored["saved_locations_json"])
         assertEquals(SavedLocations.home_source_saved, restored["home_location_source"])
         assertEquals("1", restored["home_location_id"])
+        assertEquals(true, restored["prayer_status_notification_enabled"])
         assertEquals(0, parsed.skipped_count)
     }
 

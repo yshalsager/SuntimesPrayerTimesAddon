@@ -53,7 +53,8 @@ object SettingsBackup {
         "zawal_minutes",
         "saved_locations_json",
         "home_location_source",
-        "home_location_id"
+        "home_location_id",
+        "prayer_status_notification_enabled"
     )
 
     fun export_json(context: Context): String = encode_json(export_values(context))
@@ -133,7 +134,8 @@ object SettingsBackup {
             "zawal_minutes" to Prefs.get_zawal_minutes(context),
             "saved_locations_json" to Prefs.get_saved_locations_json(context),
             "home_location_source" to Prefs.get_home_location_source(context),
-            "home_location_id" to Prefs.get_home_location_id(context)
+            "home_location_id" to Prefs.get_home_location_id(context),
+            "prayer_status_notification_enabled" to Prefs.get_prayer_status_notification_enabled(context)
         )
         Prefs.get_host_event_authority(context)?.let { values["host_event_authority"] = it }
         return values
@@ -197,7 +199,8 @@ object SettingsBackup {
             "widget_show_prohibited",
             "widget_show_night_portions",
             "extra_fajr_1_enabled",
-            "extra_isha_1_enabled" -> parse_bool(raw_value)
+            "extra_isha_1_enabled",
+            "prayer_status_notification_enabled" -> parse_bool(raw_value)
 
             "days_month_basis" -> parse_string(raw_value) { it == "gregorian" || it == "hijri" }
             "gregorian_date_format" -> parse_string(raw_value) { it == "card" || it == "medium" || it == "long" }
