@@ -67,7 +67,7 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
 - Exposes events to **SuntimesWidget Alarms**:
   - prayers (Fajr, optional extra Fajr #1, Duha, Eid al-Fitr and Eid al-Adha window start/end on their days, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, optional extra Isha #1)
   - prohibited (makruh) boundaries and windows
-  - night portions (midpoint, last third, last sixth)
+  - night portions (first third, midpoint, last third, last sixth)
 - Supports split Eid prayer time window events:
   - `Eid al-Fitr: start = sunrise + 15 minutes, end = zawal (solar noon)`
   - `Eid al-Adha: start = sunrise + 15 minutes, end = zawal (solar noon)`
@@ -82,6 +82,8 @@ This project intentionally avoids implementing astronomical algorithms: it deleg
 - Tap a prayer/night item on Home to open the host alarm editor prefilled for that event and selected location context (event-based alarms automatically track changing prayer times; offsets like +/-30m are supported by the host UI).
 - Uses distinct makruh levels in UI (light: dawn/after-asr, heavy: sunrise/zawal/sunset) across timeline, calendar cards, and widget labels.
 - Provides an Android home-screen widget ("Prayer Times (Today)") with the same day-card model.
+  - highlights the next prayer and shows a live remaining-time countdown when supported by the launcher
+- Provides an optional quiet persistent notification showing the next prayer, remaining time at last refresh, scheduled time, selected Home/Days location, and method summary.
 - Provides app shortcuts for Days and Settings via `prayertimes://shortcuts/...` deep links.
 - Supports English + Arabic and RTL.
 - Supports theme mode (System/Light/Dark) + palette selection:
@@ -100,6 +102,7 @@ The app is split into:
 - `core/*`: host discovery, provider contracts, event-id mapping, and small derived calculations (night portions, Hijri date)
 - `provider/*`: addon `ContentProvider` implementations for alarms and calendar feeds
 - `ui/*` and `ui/compose/*`: Compose UI (Home/Days/Settings/Event Picker)
+- `notification/*`: optional persistent prayer status notification
 - `widget/*`: RemoteViews widget and update scheduling
 
 ### Data Flow
@@ -133,6 +136,10 @@ The app is split into:
 |                                           |
 | Widget (RemoteViews)                      |
 |  - reads prefs + provider results         |
+|                                           |
+| Notification                              |
+|  - optional quiet next-prayer status      |
+|  - refreshes at prayer boundaries         |
 +-------------------------------------------+
 ```
 
@@ -204,7 +211,7 @@ Location scoping:
 Calendar behavior:
 - `prayers` exports point events for Fajr, optional extra Fajr #1, Duha, Eid al-Fitr and Eid al-Adha window start/end, Dhuhr/Jumu'ah, Asr, Maghrib, Isha, and optional extra Isha #1
 - `makruh` exports range events for dawn, sunrise, zawal, after-Asr, and sunset windows
-- `night` exports point events for midpoint, last third, and last sixth
+- `night` exports point events for first third, midpoint, last third, and last sixth
 
 ### Exposed Events
 
@@ -223,6 +230,7 @@ Prayers:
 - `PRAYER_ISHA_EXTRA_1` (optional; hidden when disabled)
 
 Night:
+- `NIGHT_FIRST_THIRD`
 - `NIGHT_MIDPOINT`
 - `NIGHT_LAST_THIRD`
 - `NIGHT_LAST_SIXTH`
@@ -269,11 +277,17 @@ Makruh boundaries:
 - Widget:
   - Toggle prohibited row
   - Toggle night row
+  - Show next-prayer highlight and remaining-time countdown
   - Uses separate toggles from Calendar (not shared)
+- Notifications:
+  - Optional persistent prayer status notification
+  - Follows the same selected location as Home/Days
+  - Uses a low-importance silent channel and refreshes only at meaningful boundaries/manual/system refreshes
+  - Requests Android 13+ notification permission only when the user enables the feature
 - Alarms & backup:
-  - Export a host-importable prayer alarm preset file (includes Duha and only enabled extra Fajr/Isha slots)
+  - Export a host-importable prayer alarm preset file as alarm, notification, or quick notification (includes Duha and only enabled extra Fajr/Isha slots)
   - Export/import addon settings as JSON backup
-  - Backup includes saved locations + Home/Days selected location + per-location profiles
+  - Backup includes saved locations + Home/Days selected location + per-location profiles + notification setting
   - Backup preserves raw custom labels for extra slots so localized defaults still work after restore
 - UI:
   - Language: system / English / Arabic
@@ -288,13 +302,15 @@ Widget name:
 Notes:
 - Widgets use RemoteViews, so theming is applied by setting background resources + text colors at update time.
 - Each widget instance can be configured for Host (global) or one saved location; widget selection is independent from Home/Days selection.
+- The next prayer row is highlighted, and the summary uses a live `Chronometer` countdown on supported launchers.
+- The top accent line is decorative/static; it is not a progress bar.
 - Update scheduling is “best effort”: we update on app settings changes and schedule an alarm for the next meaningful boundary (next prayer / prohibited boundary / midnight rollover).
 
 ## Tooling
 
 This repo is intended to be built with:
 - Gradle Wrapper (`./gradlew`)
-- Gradle Wrapper distribution: `9.4.1`
+- Gradle Wrapper distribution: `9.5.1`
 - [`mise`](https://mise.jdx.dev/) for tool/version management (optional but recommended)
 - Release builds enable R8 shrinking/optimization (`minifyEnabled`, `shrinkResources`, optimized ProGuard rules)
 - Release automation is available via GitHub Actions (`.github/workflows/release.yml`) with dry-run, tag/release flow, signed APK validation, and generated release notes
@@ -323,6 +339,7 @@ app/src/main/java/com/yshalsager/suntimes/prayertimesaddon/
   provider/    # exported addon provider for SuntimesWidget
   ui/          # Activities + ViewModels
   ui/compose/  # Compose screens and shared components
+  notification/ # persistent prayer status notification
   widget/      # AppWidgetProvider + update glue
 ```
 
