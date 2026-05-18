@@ -500,7 +500,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
     private fun schedule_next(context: Context, now: Long, candidates: List<Long>) {
         val mgr = context.getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
         val next = candidates.filter { it >= now }.minOrNull() ?: (now + 6 * 60 * 60 * 1000L)
-        val when_ms = (next + 30_000L).coerceAtLeast(now + 60_000L)
+        val when_ms = (next + 5_000L).coerceAtLeast(now + 5_000L)
 
         val intent = Intent(context, PrayerTimesWidgetProvider::class.java).apply {
             action = action_alarm

@@ -320,7 +320,7 @@ class PrayerTimesWidgetProviderTest {
 
         assertEquals("alarms=${alarms.size}", 1, alarms.size)
         val scheduled = alarms.first()
-        assertEquals(day_start + 15L * 60L * 60L * 1000L + 30L * 60L * 1000L + 30_000L, scheduled.triggerAtMs)
+        assertEquals(day_start + 15L * 60L * 60L * 1000L + 30L * 60L * 1000L + 5_000L, scheduled.triggerAtMs)
         assertNotNull(alarm_token_from_prefs())
     }
 }
