@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = 'com.yshalsager.suntimes.prayertimesaddon'
-    compileSdkVersion 36
+    compileSdkVersion 37
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -14,7 +14,7 @@ android {
     defaultConfig {
         applicationId 'com.yshalsager.suntimes.prayertimesaddon'
         minSdkVersion 23
-        targetSdkVersion 36
+        targetSdkVersion 37
         versionCode 20
         versionName '0.11.1'
         resConfigs 'en', 'ar'
