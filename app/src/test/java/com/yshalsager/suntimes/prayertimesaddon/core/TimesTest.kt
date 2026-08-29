@@ -41,6 +41,7 @@ class TimesTest {
         FakeHostEventProvider.event_calc_failures_remaining = 0
         FakeHostEventProvider.query_failure = null
         FakeHostEventProvider.malformed_event_time = false
+        FakeHostEventProvider.distant_asr_time = false
         FakeHostEventProvider.event_calc_query_count = 0
         FakeHostEventProvider.fail_event_calc_query = null
         FakeHostCalcProvider.location = "Test Location"
@@ -224,6 +225,22 @@ class TimesTest {
         val asr = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_asr, day_start)
 
         assertEquals(15 * 60 * 60 * 1000L + 30 * 60 * 1000L, asr)
+    }
+
+    @Test
+    fun query_host_addon_time_rejects_distant_host_shadow_ratio_result() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        FakeHostEventProvider.distant_asr_time = true
+
+        val asr = query_host_addon_time(
+            context,
+            host_event_authority,
+            AddonEvent.prayer_asr,
+            day_start,
+            latitude_override = 10.0
+        )
+
+        assertEquals(day_start + 16 * 60 * 60 * 1000L, asr)
     }
 
     @Test

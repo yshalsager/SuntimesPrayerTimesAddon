@@ -48,6 +48,8 @@ jobs:
         run: |
           set -euo pipefail
           mise x java -- ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest
+          curl -fsSL https://f-droid.org/repo/com.forrestguice.suntimeswidget_130.apk -o suntimeswidget.apk
+          echo 'f38acf2610f6a4087e7c33a0100febd4dc04918ca5392c060ac9fb6ae39412dd  suntimeswidget.apk' | sha256sum --check
 
       - name: Enable KVM
         shell: bash
@@ -65,6 +67,7 @@ jobs:
           profile: pixel_5
           disable-animations: true
           script: |
+            adb install -r suntimeswidget.apk
             mise x java -- bundle exec fastlane android capture_screenshots
 
       - name: Detect screenshot changes

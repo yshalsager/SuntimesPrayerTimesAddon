@@ -98,7 +98,11 @@ object HostEventQueries {
     ): Long? {
         val factor = asr_factor_override ?: Prefs.get_asr_factor(context)
         val host_event_id = resolve_shadow_ratio_event_id(context, host_event_authority, factor)
-        if (host_event_id != null) return query_host_event_time(context, host_event_authority, host_event_id, 0, selection, selectionArgs)
+        if (host_event_id != null) {
+            val host_time = query_host_event_time(context, host_event_authority, host_event_id, 0, selection, selectionArgs)
+            val alarm_now = parse_host_selection(selection, selectionArgs)[AlarmEventContract.extra_alarm_now]?.toLongOrNull()
+            if (host_time != null && (alarm_now == null || host_time - alarm_now in 0L..48L * 60L * 60L * 1000L)) return host_time
+        }
         return calc_asr_fallback_time(context, host_event_authority, selection, selectionArgs, latitude_override, factor)
     }
 

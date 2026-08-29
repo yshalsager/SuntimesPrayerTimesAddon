@@ -25,6 +25,7 @@ class FakeHostEventProvider : ContentProvider() {
         var event_calc_failures_remaining = 0
         var query_failure: RuntimeException? = null
         var malformed_event_time = false
+        var distant_asr_time = false
         var event_calc_query_count = 0
         var fail_event_calc_query: Int? = null
         var last_query_thread: Thread? = null
@@ -109,9 +110,10 @@ class FakeHostEventProvider : ContentProvider() {
                 event_id == "SUNRISE" -> 6 * 60 * 60 * 1000L
                 event_id == "NOON" -> 12 * 60 * 60 * 1000L
                 event_id == "SUNSET" -> 18 * 60 * 60 * 1000L
-                event_id == "SHADOWRATIO_X:1.0" -> 15 * 60 * 60 * 1000L + 30 * 60 * 1000L
+                event_id == "SHADOWRATIO_X:1.0" -> if (distant_asr_time) 200L * day_millis else 15 * 60 * 60 * 1000L + 30 * 60 * 1000L
                 event_id == "SHADOWRATIO_X:2.0" -> 16 * 60 * 60 * 1000L + 30 * 60 * 1000L
                 event_id == "SUN_5.0s" -> 17 * 60 * 60 * 1000L + 45 * 60 * 1000L
+                event_id == "SUN_45.0s" -> 16 * 60 * 60 * 1000L
                 event_id.startsWith("SUN_-") && event_id.endsWith("r") -> 5 * 60 * 60 * 1000L
                 event_id.startsWith("SUN_-") && event_id.endsWith("s") -> 19 * 60 * 60 * 1000L + 30 * 60 * 1000L
                 else -> null
