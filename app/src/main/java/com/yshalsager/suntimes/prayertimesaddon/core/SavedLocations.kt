@@ -50,7 +50,7 @@ data class SavedLocation(
             makruh_angle = method_makruh_angle,
             makruh_sunrise_minutes = method_makruh_sunrise_minutes,
             zawal_minutes = method_zawal_minutes
-        )
+        ).normalized()
 }
 
 object SavedLocations {
@@ -117,10 +117,10 @@ object SavedLocations {
             val method_preset = obj.optString("method_preset").trim().takeIf { it in MethodConfig.supported_presets } ?: defaults.method_preset
 
             fun d(key: String, fallback: Double): Double =
-                obj.takeIf { it.has(key) }?.optDouble(key, Double.NaN)?.takeIf { !it.isNaN() && !it.isInfinite() } ?: fallback
+                obj.takeIf { it.has(key) }?.optDouble(key, Double.NaN)?.takeIf(MethodConfig::is_valid_angle) ?: fallback
 
             fun i(key: String, fallback: Int): Int =
-                obj.takeIf { it.has(key) }?.optInt(key, Int.MIN_VALUE)?.takeIf { it != Int.MIN_VALUE } ?: fallback
+                obj.takeIf { it.has(key) }?.opt(key)?.let(::parse_exact_int) ?: fallback
 
             fun s(key: String, fallback: String): String =
                 obj.optString(key).trim().ifBlank { fallback }
@@ -143,13 +143,14 @@ object SavedLocations {
                     method_fajr_angle = d("method_fajr_angle", defaults.fajr_angle),
                     method_isha_mode = s("method_isha_mode", defaults.isha_mode).takeIf { it == Prefs.isha_mode_angle || it == Prefs.isha_mode_fixed } ?: defaults.isha_mode,
                     method_isha_angle = d("method_isha_angle", defaults.isha_angle),
-                    method_isha_fixed_minutes = i("method_isha_fixed_minutes", defaults.isha_fixed_minutes),
+                    method_isha_fixed_minutes = i("method_isha_fixed_minutes", defaults.isha_fixed_minutes).takeIf(MethodConfig::is_valid_minutes) ?: defaults.isha_fixed_minutes,
                     method_asr_factor = i("method_asr_factor", defaults.asr_factor).takeIf { it == 1 || it == 2 } ?: defaults.asr_factor,
-                    method_maghrib_offset_minutes = i("method_maghrib_offset_minutes", defaults.maghrib_offset_minutes),
+                    method_maghrib_offset_minutes = i("method_maghrib_offset_minutes", defaults.maghrib_offset_minutes).takeIf(MethodConfig::is_valid_offset_minutes)
+                        ?: defaults.maghrib_offset_minutes,
                     method_makruh_angle = d("method_makruh_angle", defaults.makruh_angle),
                     method_makruh_sunrise_minutes = i("method_makruh_sunrise_minutes", defaults.makruh_sunrise_minutes).takeIf { it in listOf(10, 15, 20) }
                         ?: defaults.makruh_sunrise_minutes,
-                    method_zawal_minutes = i("method_zawal_minutes", defaults.zawal_minutes),
+                    method_zawal_minutes = i("method_zawal_minutes", defaults.zawal_minutes).takeIf(MethodConfig::is_valid_minutes) ?: defaults.zawal_minutes,
                     extra_fajr_1_enabled = b("extra_fajr_1_enabled", runtime_defaults.extra_fajr_1_enabled),
                     extra_fajr_1_angle = d("extra_fajr_1_angle", runtime_defaults.extra_fajr_1_angle),
                     extra_fajr_1_label_raw = s("extra_fajr_1_label", runtime_defaults.extra_fajr_1_label_raw),

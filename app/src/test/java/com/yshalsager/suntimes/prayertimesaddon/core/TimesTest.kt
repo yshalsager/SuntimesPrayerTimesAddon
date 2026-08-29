@@ -144,6 +144,19 @@ class TimesTest {
     }
 
     @Test
+    fun direct_calculation_overrides_are_normalized() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val method = MethodConfig.defaults().copy(fajr_angle = Double.NaN)
+        val runtime = AddonRuntimeProfile.defaults().copy(extra_fajr_1_enabled = true, extra_fajr_1_angle = Double.NaN)
+
+        val fajr = query_host_addon_time(context, host_event_authority, AddonEvent.prayer_fajr, day_start, method_config_override = method)
+        val extra_query = AddonEventMapper.map_event(context, AddonEvent.prayer_fajr_extra_1, addon_runtime_profile = runtime)
+
+        assertEquals(day_start + 5 * 60 * 60 * 1000L, fajr)
+        assertEquals("SUN_-18.0r", extra_query?.base_event_id)
+    }
+
+    @Test
     fun query_host_addon_time_uses_host_shadow_ratio_event_for_asr() {
         val day_start = 0L
 

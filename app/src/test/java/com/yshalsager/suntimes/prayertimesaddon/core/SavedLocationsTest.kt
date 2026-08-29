@@ -89,6 +89,61 @@ class SavedLocationsTest {
     }
 
     @Test
+    fun preference_getters_repair_out_of_domain_method_values() {
+        context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit()
+            .putString("fajr_angle", "91")
+            .putString("extra_fajr_1_angle", "-1")
+            .putString("isha_angle", "Infinity")
+            .putString("extra_isha_1_angle", "NaN")
+            .putString("isha_fixed_minutes", "1441")
+            .putString("asr_factor", "3")
+            .putString("maghrib_offset_minutes", "-1441")
+            .putString("makruh_angle", "100")
+            .putString("zawal_minutes", "2000")
+            .apply()
+
+        assertEquals(MethodConfig.defaults(), method_config_from_prefs(context))
+        assertEquals(18.0, addon_runtime_profile_from_prefs(context).extra_fajr_1_angle, 0.0001)
+        assertEquals(18.0, addon_runtime_profile_from_prefs(context).extra_isha_1_angle, 0.0001)
+    }
+
+    @Test
+    fun invalid_numeric_preference_writes_preserve_existing_values() {
+        Prefs.set_fajr_angle(context, 20.0)
+        Prefs.set_extra_fajr_1_angle(context, 21.0)
+        Prefs.set_isha_angle(context, 19.0)
+        Prefs.set_extra_isha_1_angle(context, 22.0)
+        Prefs.set_isha_fixed_minutes(context, 120)
+        Prefs.set_asr_factor(context, 2)
+        Prefs.set_maghrib_offset_minutes(context, -10)
+        Prefs.set_makruh_angle(context, 6.0)
+        Prefs.set_makruh_sunrise_minutes(context, 20)
+        Prefs.set_zawal_minutes(context, 15)
+
+        Prefs.set_fajr_angle(context, 91.0)
+        Prefs.set_extra_fajr_1_angle(context, -1.0)
+        Prefs.set_isha_angle(context, Double.NaN)
+        Prefs.set_extra_isha_1_angle(context, Double.POSITIVE_INFINITY)
+        Prefs.set_isha_fixed_minutes(context, 1441)
+        Prefs.set_asr_factor(context, 3)
+        Prefs.set_maghrib_offset_minutes(context, -1441)
+        Prefs.set_makruh_angle(context, 100.0)
+        Prefs.set_makruh_sunrise_minutes(context, 11)
+        Prefs.set_zawal_minutes(context, -1)
+
+        assertEquals(20.0, Prefs.get_fajr_angle(context), 0.0001)
+        assertEquals(21.0, Prefs.get_extra_fajr_1_angle(context), 0.0001)
+        assertEquals(19.0, Prefs.get_isha_angle(context), 0.0001)
+        assertEquals(22.0, Prefs.get_extra_isha_1_angle(context), 0.0001)
+        assertEquals(120, Prefs.get_isha_fixed_minutes(context))
+        assertEquals(2, Prefs.get_asr_factor(context))
+        assertEquals(-10, Prefs.get_maghrib_offset_minutes(context))
+        assertEquals(6.0, Prefs.get_makruh_angle(context), 0.0001)
+        assertEquals(20, Prefs.get_makruh_sunrise_minutes(context))
+        assertEquals(15, Prefs.get_zawal_minutes(context))
+    }
+
+    @Test
     fun save_enforces_max_count() {
         val many =
             (1..20).map {
@@ -190,6 +245,30 @@ class SavedLocationsTest {
         assertTrue(saved.extra_isha_1_enabled)
         assertEquals(16.8, saved.extra_isha_1_angle, 0.0001)
         assertEquals("City Isha", saved.extra_isha_1_label_raw)
+    }
+
+    @Test
+    fun parse_repairs_out_of_range_method_values() {
+        val raw =
+            """
+            [{
+              "id":"bad-method","label":"A","latitude":"10","longitude":"20","timezone_id":"UTC",
+              "method_fajr_angle":91,"method_isha_angle":-1,"method_isha_fixed_minutes":10.00000000000000000001,
+              "method_maghrib_offset_minutes":4294967306,"method_makruh_angle":100,"method_zawal_minutes":10.9,
+              "extra_fajr_1_angle":-0.1,"extra_isha_1_angle":90.1
+            }]
+            """.trimIndent()
+
+        val saved = SavedLocations.parse_json(raw).single()
+
+        assertEquals(19.5, saved.method_fajr_angle, 0.0001)
+        assertEquals(17.5, saved.method_isha_angle, 0.0001)
+        assertEquals(90, saved.method_isha_fixed_minutes)
+        assertEquals(0, saved.method_maghrib_offset_minutes)
+        assertEquals(5.0, saved.method_makruh_angle, 0.0001)
+        assertEquals(10, saved.method_zawal_minutes)
+        assertEquals(18.0, saved.extra_fajr_1_angle, 0.0001)
+        assertEquals(18.0, saved.extra_isha_1_angle, 0.0001)
     }
 
     @Test

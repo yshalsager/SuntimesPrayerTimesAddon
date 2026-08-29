@@ -205,7 +205,7 @@ fun query_host_addon_time(
 ): Long? {
     val effective_selection = selection ?: event_calc_selection
     val effective_selection_args = selection_args ?: event_calc_args(alarm_now)
-    val method_config = method_config_override ?: method_config_from_prefs(context)
+    val method_config = (method_config_override ?: method_config_from_prefs(context)).normalized()
     val runtime_profile = (addon_runtime_profile_override ?: addon_runtime_profile_from_prefs(context)).normalized()
 
     if (event.type == AddonEventType.night) return null

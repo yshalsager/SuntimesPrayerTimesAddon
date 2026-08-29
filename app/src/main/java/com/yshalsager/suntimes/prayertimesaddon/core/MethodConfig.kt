@@ -1,6 +1,21 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
+import java.math.BigDecimal
+
+internal fun parse_exact_int(value: Any?): Int? =
+    when (value) {
+        is String -> value.toIntOrNull()
+        is Float, is Double -> null
+        is Number -> try {
+            BigDecimal(value.toString()).intValueExact()
+        } catch (_: ArithmeticException) {
+            null
+        } catch (_: NumberFormatException) {
+            null
+        }
+        else -> null
+    }
 
 data class MethodConfig(
     val method_preset: String,
@@ -16,6 +31,10 @@ data class MethodConfig(
 ) {
     companion object {
         val supported_presets = listOf("egypt", "mwl", "karachi", "isna", "uaq", "uiof", "custom")
+        val supported_makruh_presets = listOf("shafi", "hanafi", "custom")
+        fun is_valid_angle(value: Double): Boolean = value.isFinite() && value in 0.0..90.0
+        fun is_valid_minutes(value: Int): Boolean = value in 0..1440
+        fun is_valid_offset_minutes(value: Int): Boolean = value in -1440..1440
 
         fun defaults(): MethodConfig =
             MethodConfig(
@@ -30,6 +49,22 @@ data class MethodConfig(
                 makruh_sunrise_minutes = 15,
                 zawal_minutes = 10
             )
+    }
+
+    fun normalized(): MethodConfig {
+        val fallback = defaults()
+        return copy(
+            method_preset = method_preset.takeIf { it in supported_presets } ?: fallback.method_preset,
+            fajr_angle = fajr_angle.takeIf(::is_valid_angle) ?: fallback.fajr_angle,
+            isha_mode = isha_mode.takeIf { it == Prefs.isha_mode_angle || it == Prefs.isha_mode_fixed } ?: fallback.isha_mode,
+            isha_angle = isha_angle.takeIf(::is_valid_angle) ?: fallback.isha_angle,
+            isha_fixed_minutes = isha_fixed_minutes.takeIf(::is_valid_minutes) ?: fallback.isha_fixed_minutes,
+            asr_factor = asr_factor.takeIf { it == 1 || it == 2 } ?: fallback.asr_factor,
+            maghrib_offset_minutes = maghrib_offset_minutes.takeIf(::is_valid_offset_minutes) ?: fallback.maghrib_offset_minutes,
+            makruh_angle = makruh_angle.takeIf(::is_valid_angle) ?: fallback.makruh_angle,
+            makruh_sunrise_minutes = makruh_sunrise_minutes.takeIf { it == 10 || it == 15 || it == 20 } ?: fallback.makruh_sunrise_minutes,
+            zawal_minutes = zawal_minutes.takeIf(::is_valid_minutes) ?: fallback.zawal_minutes
+        )
     }
 }
 

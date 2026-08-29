@@ -71,6 +71,8 @@ object Prefs {
     }
     private fun get_double(context: Context, key: String, def: Double): Double = get_str(context, key, def.toString()).toDoubleOrNull() ?: def
     private fun get_int(context: Context, key: String, def: Int): Int = get_str(context, key, def.toString()).toIntOrNull() ?: def
+    private fun get_angle(context: Context, key: String, def: Double): Double = get_double(context, key, def).takeIf(MethodConfig::is_valid_angle) ?: def
+    private fun get_minutes(context: Context, key: String, def: Int): Int = get_int(context, key, def).takeIf(MethodConfig::is_valid_minutes) ?: def
 
     fun get_days_show_prohibited(context: Context): Boolean =
         sp(context).getBoolean(k_days_show_prohibited, true)
@@ -145,16 +147,18 @@ object Prefs {
         put_str(context, k_host_event_authority, authority)
 
     fun get_method_preset(context: Context): String =
-        get_str(context, k_method_preset, "egypt")
+        get_str(context, k_method_preset, "egypt").takeIf { it in MethodConfig.supported_presets } ?: "egypt"
 
-    fun set_method_preset(context: Context, preset: String) =
-        put_str(context, k_method_preset, preset)
+    fun set_method_preset(context: Context, preset: String) {
+        if (preset in MethodConfig.supported_presets) put_str(context, k_method_preset, preset)
+    }
 
     fun get_fajr_angle(context: Context): Double =
-        get_double(context, k_fajr_angle, 19.5)
+        get_angle(context, k_fajr_angle, 19.5)
 
-    fun set_fajr_angle(context: Context, angle: Double) =
-        put_str(context, k_fajr_angle, angle.toString())
+    fun set_fajr_angle(context: Context, angle: Double) {
+        if (MethodConfig.is_valid_angle(angle)) put_str(context, k_fajr_angle, angle.toString())
+    }
 
     fun get_extra_fajr_1_enabled(context: Context): Boolean =
         sp(context).getBoolean(k_extra_fajr_1_enabled, false)
@@ -163,10 +167,11 @@ object Prefs {
         put_bool(context, k_extra_fajr_1_enabled, enabled)
 
     fun get_extra_fajr_1_angle(context: Context): Double =
-        get_double(context, k_extra_fajr_1_angle, 18.0)
+        get_angle(context, k_extra_fajr_1_angle, 18.0)
 
-    fun set_extra_fajr_1_angle(context: Context, angle: Double) =
-        put_str(context, k_extra_fajr_1_angle, angle.toString())
+    fun set_extra_fajr_1_angle(context: Context, angle: Double) {
+        if (MethodConfig.is_valid_angle(angle)) put_str(context, k_extra_fajr_1_angle, angle.toString())
+    }
 
     fun get_extra_fajr_1_label_raw(context: Context): String =
         sp(context).getString(k_extra_fajr_1_label, null)?.trim().orEmpty()
@@ -180,22 +185,25 @@ object Prefs {
         put_str(context, k_extra_fajr_1_label, label.trim())
 
     fun get_isha_mode(context: Context): String =
-        get_str(context, k_isha_mode, isha_mode_angle)
+        get_str(context, k_isha_mode, isha_mode_angle).takeIf { it == isha_mode_angle || it == isha_mode_fixed } ?: isha_mode_angle
 
-    fun set_isha_mode(context: Context, mode: String) =
-        put_str(context, k_isha_mode, mode)
+    fun set_isha_mode(context: Context, mode: String) {
+        if (mode == isha_mode_angle || mode == isha_mode_fixed) put_str(context, k_isha_mode, mode)
+    }
 
     fun get_isha_angle(context: Context): Double =
-        get_double(context, k_isha_angle, 17.5)
+        get_angle(context, k_isha_angle, 17.5)
 
-    fun set_isha_angle(context: Context, angle: Double) =
-        put_str(context, k_isha_angle, angle.toString())
+    fun set_isha_angle(context: Context, angle: Double) {
+        if (MethodConfig.is_valid_angle(angle)) put_str(context, k_isha_angle, angle.toString())
+    }
 
     fun get_isha_fixed_minutes(context: Context): Int =
-        get_int(context, k_isha_fixed_minutes, 90)
+        get_minutes(context, k_isha_fixed_minutes, 90)
 
-    fun set_isha_fixed_minutes(context: Context, minutes: Int) =
-        put_str(context, k_isha_fixed_minutes, minutes.toString())
+    fun set_isha_fixed_minutes(context: Context, minutes: Int) {
+        if (MethodConfig.is_valid_minutes(minutes)) put_str(context, k_isha_fixed_minutes, minutes.toString())
+    }
 
     fun get_extra_isha_1_enabled(context: Context): Boolean =
         sp(context).getBoolean(k_extra_isha_1_enabled, false)
@@ -204,10 +212,11 @@ object Prefs {
         put_bool(context, k_extra_isha_1_enabled, enabled)
 
     fun get_extra_isha_1_angle(context: Context): Double =
-        get_double(context, k_extra_isha_1_angle, 18.0)
+        get_angle(context, k_extra_isha_1_angle, 18.0)
 
-    fun set_extra_isha_1_angle(context: Context, angle: Double) =
-        put_str(context, k_extra_isha_1_angle, angle.toString())
+    fun set_extra_isha_1_angle(context: Context, angle: Double) {
+        if (MethodConfig.is_valid_angle(angle)) put_str(context, k_extra_isha_1_angle, angle.toString())
+    }
 
     fun get_extra_isha_1_label_raw(context: Context): String =
         sp(context).getString(k_extra_isha_1_label, null)?.trim().orEmpty()
@@ -221,28 +230,32 @@ object Prefs {
         put_str(context, k_extra_isha_1_label, label.trim())
 
     fun get_asr_factor(context: Context): Int =
-        get_int(context, k_asr_factor, 1)
+        get_int(context, k_asr_factor, 1).takeIf { it == 1 || it == 2 } ?: 1
 
-    fun set_asr_factor(context: Context, factor: Int) =
-        put_str(context, k_asr_factor, factor.toString())
+    fun set_asr_factor(context: Context, factor: Int) {
+        if (factor == 1 || factor == 2) put_str(context, k_asr_factor, factor.toString())
+    }
 
     fun get_maghrib_offset_minutes(context: Context): Int =
-        get_int(context, k_maghrib_offset_minutes, 0)
+        get_int(context, k_maghrib_offset_minutes, 0).takeIf(MethodConfig::is_valid_offset_minutes) ?: 0
 
-    fun set_maghrib_offset_minutes(context: Context, minutes: Int) =
-        put_str(context, k_maghrib_offset_minutes, minutes.toString())
+    fun set_maghrib_offset_minutes(context: Context, minutes: Int) {
+        if (MethodConfig.is_valid_offset_minutes(minutes)) put_str(context, k_maghrib_offset_minutes, minutes.toString())
+    }
 
     fun get_makruh_preset(context: Context): String =
-        get_str(context, k_makruh_preset, "shafi")
+        get_str(context, k_makruh_preset, "shafi").takeIf { it in MethodConfig.supported_makruh_presets } ?: "shafi"
 
-    fun set_makruh_preset(context: Context, preset: String) =
-        put_str(context, k_makruh_preset, preset)
+    fun set_makruh_preset(context: Context, preset: String) {
+        if (preset in MethodConfig.supported_makruh_presets) put_str(context, k_makruh_preset, preset)
+    }
 
     fun get_makruh_angle(context: Context): Double =
-        get_double(context, k_makruh_angle, 5.0)
+        get_angle(context, k_makruh_angle, 5.0)
 
-    fun set_makruh_angle(context: Context, angle: Double) =
-        put_str(context, k_makruh_angle, angle.toString())
+    fun set_makruh_angle(context: Context, angle: Double) {
+        if (MethodConfig.is_valid_angle(angle)) put_str(context, k_makruh_angle, angle.toString())
+    }
 
     fun get_makruh_sunrise_minutes(context: Context): Int {
         return when (val minutes = get_int(context, k_makruh_sunrise_minutes, 15)) {
@@ -252,18 +265,15 @@ object Prefs {
     }
 
     fun set_makruh_sunrise_minutes(context: Context, minutes: Int) {
-        val v = when (minutes) {
-            10, 15, 20 -> minutes
-            else -> 15
-        }
-        put_str(context, k_makruh_sunrise_minutes, v.toString())
+        if (minutes == 10 || minutes == 15 || minutes == 20) put_str(context, k_makruh_sunrise_minutes, minutes.toString())
     }
 
     fun get_zawal_minutes(context: Context): Int =
-        get_int(context, k_zawal_minutes, 10)
+        get_minutes(context, k_zawal_minutes, 10)
 
-    fun set_zawal_minutes(context: Context, minutes: Int) =
-        put_str(context, k_zawal_minutes, minutes.toString())
+    fun set_zawal_minutes(context: Context, minutes: Int) {
+        if (MethodConfig.is_valid_minutes(minutes)) put_str(context, k_zawal_minutes, minutes.toString())
+    }
 
     fun get_saved_locations_json(context: Context): String =
         get_str(context, k_saved_locations_json, "[]")

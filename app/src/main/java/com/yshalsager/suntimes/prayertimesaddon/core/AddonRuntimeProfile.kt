@@ -27,17 +27,21 @@ data class AddonRuntimeProfile(
             )
     }
 
-    fun normalized(): AddonRuntimeProfile =
-        copy(
+    fun normalized(): AddonRuntimeProfile {
+        val fallback = defaults()
+        return copy(
             hijri_variant =
                 when (hijri_variant) {
                     Prefs.hijri_variant_diyanet -> Prefs.hijri_variant_diyanet
                     else -> Prefs.hijri_variant_umalqura
                 },
             hijri_day_offset = hijri_day_offset.coerceIn(-2, 2),
+            extra_fajr_1_angle = extra_fajr_1_angle.takeIf(MethodConfig::is_valid_angle) ?: fallback.extra_fajr_1_angle,
             extra_fajr_1_label_raw = extra_fajr_1_label_raw.trim(),
+            extra_isha_1_angle = extra_isha_1_angle.takeIf(MethodConfig::is_valid_angle) ?: fallback.extra_isha_1_angle,
             extra_isha_1_label_raw = extra_isha_1_label_raw.trim()
         )
+    }
 
     fun extra_fajr_1_label(context: Context): String {
         val raw = extra_fajr_1_label_raw.trim()

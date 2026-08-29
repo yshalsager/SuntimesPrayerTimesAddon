@@ -247,6 +247,33 @@ class SettingsBackupTest {
     }
 
     @Test
+    fun parse_skips_out_of_domain_method_values() {
+        val raw =
+            """
+            {
+              "schema_version": 1,
+              "prefs": {
+                "theme": "dark",
+                "fajr_angle": 91,
+                "extra_fajr_1_angle": -1,
+                "isha_angle": 90.1,
+                "extra_isha_1_angle": -0.1,
+                "isha_fixed_minutes": 1441,
+                "maghrib_offset_minutes": -1441,
+                "makruh_angle": 100,
+                "makruh_sunrise_minutes": 10.00000000000000000001,
+                "zawal_minutes": 2000
+              }
+            }
+            """.trimIndent()
+
+        val parsed = SettingsBackup.parse_json(raw)!!
+
+        assertEquals(mapOf("theme" to Prefs.theme_dark), parsed.values)
+        assertEquals(9, parsed.skipped_count)
+    }
+
+    @Test
     fun parse_skips_out_of_range_integer_values() {
         val raw = """
             {

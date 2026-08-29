@@ -169,16 +169,8 @@ object SettingsBackup {
                 else -> null
             }
 
-        fun parse_int(value: Any?, valid: (Int) -> Boolean = { true }): Int? {
-            val parsed = when (value) {
-                is Number -> value.toLong().takeIf {
-                    it.toDouble() == value.toDouble() && it in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()
-                }?.toInt()
-                is String -> value.toIntOrNull()
-                else -> null
-            }
-            return parsed?.takeIf(valid)
-        }
+        fun parse_int(value: Any?, valid: (Int) -> Boolean = { true }): Int? =
+            parse_exact_int(value)?.takeIf(valid)
 
         fun parse_double(value: Any?): Double? {
             val parsed = when (value) {
@@ -214,7 +206,7 @@ object SettingsBackup {
             "extra_isha_1_label" -> parse_string(raw_value)
             "method_preset" -> parse_string(raw_value) { it in MethodConfig.supported_presets }
             "isha_mode" -> parse_string(raw_value) { it == "angle" || it == "fixed" }
-            "makruh_preset" -> parse_string(raw_value) { it == "shafi" || it == "hanafi" || it == "custom" }
+            "makruh_preset" -> parse_string(raw_value) { it in MethodConfig.supported_makruh_presets }
             "home_location_source" -> parse_string(raw_value) { it == SavedLocations.home_source_host || it == SavedLocations.home_source_saved }
             "home_location_id" -> parse_string(raw_value)
             "asr_factor" -> parse_int(raw_value) { it == 1 || it == 2 }
@@ -223,7 +215,7 @@ object SettingsBackup {
             "extra_fajr_1_angle",
             "isha_angle",
             "extra_isha_1_angle",
-            "makruh_angle" -> parse_double(raw_value)
+            "makruh_angle" -> parse_double(raw_value)?.takeIf(MethodConfig::is_valid_angle)
             "saved_locations_json" -> parse_string(raw_value) {
                 try {
                     JSONArray(it)
@@ -234,8 +226,8 @@ object SettingsBackup {
             }
 
             "isha_fixed_minutes",
-            "maghrib_offset_minutes",
-            "zawal_minutes" -> parse_int(raw_value)
+            "zawal_minutes" -> parse_int(raw_value, MethodConfig::is_valid_minutes)
+            "maghrib_offset_minutes" -> parse_int(raw_value, MethodConfig::is_valid_offset_minutes)
 
             else -> null
         }

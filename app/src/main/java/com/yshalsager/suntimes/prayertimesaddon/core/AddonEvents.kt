@@ -88,8 +88,8 @@ object AddonEventMapper {
         method_config: MethodConfig? = null,
         addon_runtime_profile: AddonRuntimeProfile? = null
     ): HostQuery? {
-        val cfg = method_config ?: method_config_from_prefs(context)
-        val runtime = addon_runtime_profile ?: addon_runtime_profile_from_prefs(context)
+        val cfg = (method_config ?: method_config_from_prefs(context)).normalized()
+        val runtime = (addon_runtime_profile ?: addon_runtime_profile_from_prefs(context)).normalized()
         return when (addon_event) {
             AddonEvent.prayer_fajr ->
                 HostQuery(HostEventIds.sun_elevation(-cfg.fajr_angle, rising = true))
