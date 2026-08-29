@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.pm.ProviderInfo
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.TypedValue
+import android.util.Xml
 import android.view.View
 import android.widget.Chronometer
 import android.widget.TextView
@@ -38,6 +40,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlarmManager
 import java.util.TimeZone
+import kotlin.math.roundToInt
 
 private const val alarm_token_key = "alarm_token"
 private const val alarm_token_pref_key = "widget_alarm_token"
@@ -126,6 +129,18 @@ class PrayerTimesWidgetProviderTest {
 
     private fun alarm_token_from_prefs() =
         context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).getString(alarm_token_pref_key, null)
+
+    @Test
+    fun widget_does_not_allow_six_prayer_columns_below_250dp() {
+        val parser = context.resources.getXml(R.xml.prayer_times_widget)
+        while (parser.eventType != org.xmlpull.v1.XmlPullParser.START_TAG) parser.next()
+        val attrs = context.resources.obtainAttributes(Xml.asAttributeSet(parser), intArrayOf(android.R.attr.minResizeWidth))
+        val expected = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 250f, context.resources.displayMetrics).roundToInt()
+
+        assertEquals(expected, attrs.getDimensionPixelSize(0, 0))
+        attrs.recycle()
+        parser.close()
+    }
 
     @Test
     fun on_update_without_host_shows_no_host_state() {
