@@ -43,15 +43,17 @@ import com.yshalsager.suntimes.prayertimesaddon.core.DayMeta
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.ui.DaysUiState
 import com.yshalsager.suntimes.prayertimesaddon.ui.DaysViewModel
+import com.yshalsager.suntimes.prayertimesaddon.widget.WidgetUpdate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 
 @Composable
 fun DaysScreen(vm: DaysViewModel, on_back: () -> Unit, on_install_host: () -> Unit, on_reinstall_addon: () -> Unit) {
-    LocalContext.current
+    val context = LocalContext.current
 
     val permission_request = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) vm.load(force = true)
+        WidgetUpdate.request(context)
     }
 
     val state = vm.state

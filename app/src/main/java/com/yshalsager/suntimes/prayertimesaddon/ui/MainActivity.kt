@@ -59,6 +59,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import androidx.core.net.toUri
 import com.yshalsager.suntimes.prayertimesaddon.notification.PrayerStatusNotification
+import com.yshalsager.suntimes.prayertimesaddon.widget.WidgetUpdate
 
 class MainActivity : ThemedActivity() {
     companion object {
@@ -146,11 +147,15 @@ class MainActivity : ThemedActivity() {
     override fun onResume() {
         super.onResume()
         refresh_home()
+        WidgetUpdate.request(this)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == request_code_permissions) refresh_home()
+        if (requestCode == request_code_permissions) {
+            refresh_home()
+            WidgetUpdate.request(this)
+        }
     }
 
     private fun handle_shortcut_action(incoming_intent: Intent?) {

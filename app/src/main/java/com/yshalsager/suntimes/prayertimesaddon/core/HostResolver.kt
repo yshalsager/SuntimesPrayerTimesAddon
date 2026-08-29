@@ -23,6 +23,8 @@ object HostResolver {
         "com.forrestguice.suntimeswidget.legacy"
     )
 
+    fun is_known_package(package_name: String?): Boolean = package_name in known_packages
+
     fun detect_hosts(context: Context): List<HostInfo> {
         val pm = context.packageManager
         val hosts = ArrayList<HostInfo>(4)

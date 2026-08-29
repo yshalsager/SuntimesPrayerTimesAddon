@@ -58,9 +58,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         super.onReceive(context, intent)
         val action = intent.action ?: return
         if (action == action_alarm && !is_valid_alarm_intent(context, intent)) return
-        if (action == action_alarm || action == Intent.ACTION_TIME_CHANGED || action == Intent.ACTION_TIMEZONE_CHANGED || action == Intent.ACTION_DATE_CHANGED || action == Intent.ACTION_LOCALE_CHANGED) {
-            enqueue_update(context)
-        }
+        if (action == action_alarm || action == Intent.ACTION_TIME_CHANGED || action == Intent.ACTION_TIMEZONE_CHANGED || action == Intent.ACTION_DATE_CHANGED || action == Intent.ACTION_LOCALE_CHANGED) enqueue_update(context)
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
@@ -115,6 +113,15 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         }
 
         val location_contexts = ids.associateWith { resolve_location_query_context(context, WidgetPrefs.get_saved_location_id(context, it), null, null, null) }
+        fun show_scoped_unavailable(id: Int, message: String) {
+            val location_key = home_location_key(location_contexts.getValue(id).resolved_saved_location_id)
+            show_unavailable(
+                id,
+                message,
+                scoped_intent(id, MainActivity::class.java, location_key),
+                scoped_intent(id, DaysActivity::class.java, location_key)
+            )
+        }
         location_contexts.filterValues { it.saved_location_missing }.forEach { (id, _) ->
             show_unavailable(
                 id,
@@ -128,15 +135,15 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
         val host = HostResolver.ensure_default_selected(context)
         if (host == null) {
-            active_ids.forEach { id ->
-                val location_key = home_location_key(location_contexts.getValue(id).resolved_saved_location_id)
-                show_unavailable(
-                    id,
-                    text_context.getString(R.string.no_host_found),
-                    scoped_intent(id, MainActivity::class.java, location_key),
-                    scoped_intent(id, DaysActivity::class.java, location_key)
-                )
-            }
+            active_ids.forEach { show_scoped_unavailable(it, text_context.getString(R.string.no_host_found)) }
+            schedule_next(context, AppClock.now_millis(), emptyList())
+            return
+        }
+
+        val required_permission = HostResolver.get_required_permission(context, host)
+        if (required_permission != null && ContextCompat.checkSelfPermission(context, required_permission) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            active_ids.forEach { show_scoped_unavailable(it, text_context.getString(R.string.widget_host_permission_missing)) }
+            schedule_next(context, AppClock.now_millis(), emptyList())
             return
         }
 
@@ -174,6 +181,11 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             val asr = query_addon_time(context, AddonEvent.prayer_asr, day_start, saved_location_id = scoped_saved_location_id)
             val maghrib = query_addon_time(context, AddonEvent.prayer_maghrib, day_start, saved_location_id = scoped_saved_location_id)
             val isha = query_addon_time(context, AddonEvent.prayer_isha, day_start, saved_location_id = scoped_saved_location_id)
+
+            if (listOf(fajr, dhuhr, asr, maghrib, isha).all { it == null }) {
+                show_scoped_unavailable(id, text_context.getString(R.string.widget_host_unavailable))
+                return@forEach
+            }
 
             val hijri_variant = location_context.addon_runtime_profile_override?.hijri_variant ?: Prefs.get_hijri_variant(context)
             val hijri_offset = location_context.addon_runtime_profile_override?.hijri_day_offset ?: Prefs.get_hijri_day_offset(context)

@@ -246,5 +246,7 @@
     <string name='no_host_found'>No SuntimesWidget host found (install SuntimesWidget first).</string>
     <string name='saved_location_missing'>Saved location no longer exists.</string>
     <string name='saved_location_missing_widget'>Saved location no longer exists. Tap to reconfigure.</string>
+    <string name='widget_host_permission_missing'>SuntimesWidget access is unavailable. Tap to fix.</string>
+    <string name='widget_host_unavailable'>SuntimesWidget is temporarily unavailable. Tap to retry.</string>
     <string name='unknown_location'>Unknown location</string>
 </resources>

@@ -243,5 +243,7 @@
     <string name='no_host_found'>لم يتم العثور على SuntimesWidget (ثبّت التطبيق أولاً).</string>
     <string name='saved_location_missing'>لم يعد الموقع المحفوظ موجودًا.</string>
     <string name='saved_location_missing_widget'>لم يعد الموقع المحفوظ موجودًا. اضغط لإعادة الإعداد.</string>
+    <string name='widget_host_permission_missing'>الوصول إلى SuntimesWidget غير متاح. اضغط للإصلاح.</string>
+    <string name='widget_host_unavailable'>SuntimesWidget غير متاح مؤقتًا. اضغط لإعادة المحاولة.</string>
     <string name='unknown_location'>موقع غير معروف</string>
 </resources>

@@ -21,6 +21,7 @@ const val day_millis = 24 * 60 * 60 * 1000L
 
 class FakeHostEventProvider : ContentProvider() {
     companion object {
+        var available = true
         var event_calc_failures_remaining = 0
         var last_query_thread: Thread? = null
         var last_alarm_offset: String? = null
@@ -35,6 +36,7 @@ class FakeHostEventProvider : ContentProvider() {
         selection_args: Array<String>?,
         sort_order: String?
     ): Cursor? {
+        if (!available) return null
         val path = uri.pathSegments
         if (path.isEmpty()) return null
         return when (path[0]) {

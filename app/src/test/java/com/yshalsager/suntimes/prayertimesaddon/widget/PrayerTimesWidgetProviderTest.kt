@@ -3,7 +3,10 @@ package com.yshalsager.suntimes.prayertimesaddon.widget
 import android.app.AlarmManager
 import android.appwidget.AppWidgetManager
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ProviderInfo
+import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.TypedValue
@@ -62,6 +65,7 @@ class PrayerTimesWidgetProviderTest {
         context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).edit().clear().apply()
         context.getSharedPreferences("widget_transient", Context.MODE_PRIVATE).edit().clear().apply()
         AppClock.set_fixed_now_millis(null)
+        FakeHostEventProvider.available = true
 
         Prefs.set_asr_factor(context, 1)
         Prefs.set_widget_show_prohibited(context, true)
@@ -157,6 +161,68 @@ class PrayerTimesWidgetProviderTest {
         assertEquals(DaysActivity::class.java.name, header_intent.component?.className)
         assertEquals(widget_id, header_intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1))
         assertEquals(SavedLocations.home_source_host, header_intent.getStringExtra("location_scope"))
+    }
+
+    @Test
+    fun host_package_broadcasts_refresh_widget_once_when_relevant() {
+        val stable = Uri.parse("package:com.forrestguice.suntimeswidget")
+        val broadcasts =
+            listOf(
+                Intent(Intent.ACTION_PACKAGE_ADDED, stable) to true,
+                Intent(Intent.ACTION_PACKAGE_REMOVED, stable) to true,
+                Intent(Intent.ACTION_PACKAGE_REPLACED, stable) to true,
+                Intent(Intent.ACTION_PACKAGE_REPLACED, Uri.parse("package:com.forrestguice.suntimeswidget.nightly")) to true,
+                Intent(Intent.ACTION_PACKAGE_REPLACED, Uri.parse("package:com.forrestguice.suntimeswidget.legacy")) to true,
+                Intent(Intent.ACTION_PACKAGE_ADDED, stable).putExtra(Intent.EXTRA_REPLACING, true) to false,
+                Intent(Intent.ACTION_PACKAGE_REMOVED, stable).putExtra(Intent.EXTRA_REPLACING, true) to false,
+                Intent(Intent.ACTION_PACKAGE_REPLACED, Uri.parse("package:com.example.other")) to false
+            )
+        val (widget_id, provider) = create_widget_and_provider()
+
+        broadcasts.forEach { (intent, refreshes) ->
+            WidgetPrefs.set_saved_location_id(context, widget_id, null)
+            update_widget_with_host(provider, widget_id)
+            val before = widget_view(widget_id).findViewById<TextView>(R.id.widget_hijri).text.toString()
+            WidgetPrefs.set_saved_location_id(context, widget_id, "deleted")
+
+            context.sendBroadcast(intent)
+            shadowOf(android.os.Looper.getMainLooper()).idle()
+
+            val expected = if (refreshes) context.getString(R.string.saved_location_missing_widget) else before
+            assertEquals(intent.toString(), expected, widget_view(widget_id).findViewById<TextView>(R.id.widget_hijri).text.toString())
+        }
+    }
+
+    @Test
+    fun on_update_with_missing_host_permission_shows_access_state() {
+        val (widget_id, provider) = create_widget_and_provider()
+        val permission = "suntimes.permission.ADDON"
+        val info = context.packageManager.resolveContentProvider(host_event_authority, 0)!!
+        info.readPermission = permission
+        shadowOf(context.packageManager).addOrUpdateProvider(info)
+        assertNotEquals(PackageManager.PERMISSION_GRANTED, context.checkSelfPermission(permission))
+        FakeHostEventProvider.last_query_thread = null
+
+        update_widget_with_host(provider, widget_id)
+
+        val view = widget_view(widget_id)
+        assertEquals(context.getString(R.string.widget_host_permission_missing), view.findViewById<TextView>(R.id.widget_hijri).text.toString())
+        assertEquals(View.GONE, view.findViewById<View>(R.id.widget_prayer_row).visibility)
+        assertEquals(null, FakeHostEventProvider.last_query_thread)
+        val alarm_manager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        assertEquals(1, shadowOf(alarm_manager).scheduledAlarms.size)
+    }
+
+    @Test
+    fun on_update_with_unavailable_host_provider_shows_failure_state() {
+        val (widget_id, provider) = create_widget_and_provider()
+        FakeHostEventProvider.available = false
+
+        update_widget_with_host(provider, widget_id)
+
+        val view = widget_view(widget_id)
+        assertEquals(context.getString(R.string.widget_host_unavailable), view.findViewById<TextView>(R.id.widget_hijri).text.toString())
+        assertEquals(View.GONE, view.findViewById<View>(R.id.widget_prayer_row).visibility)
     }
 
     @Test
