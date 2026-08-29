@@ -86,11 +86,9 @@ fun query_host_eid_time(
 
     val tz = resolve_host_timezone(context, host_event_authority, timezone_override)
     val day_start = day_start_at(alarm_now, tz)
-    val eid_selection_args =
-        selection_args?.clone()?.also { args ->
-            if (args.isNotEmpty()) args[0] = day_start.toString()
-        } ?: selection_args
-    val sun = query_host_sun(context, host_event_authority, day_start, selection, eid_selection_args)
+    val eid_selection = parse_host_selection(selection, selection_args)
+        .with_values(mapOf(AlarmEventContract.extra_alarm_now to day_start.toString()))
+    val sun = query_host_sun(context, host_event_authority, day_start, eid_selection.selection, eid_selection.selection_args)
     fun same_selected_day(v: Long?): Boolean = v != null && day_start_at(v, tz) == day_start
     val base_event_id = if (eid_spec.is_start) "SUNRISE" else "NOON"
     val delta = if (eid_spec.is_start) AddonEventMapper.eid_start_offset_millis else 0L
@@ -101,8 +99,8 @@ fun query_host_eid_time(
             host_event_authority,
             base_event_id,
             0L,
-            selection,
-            eid_selection_args
+            eid_selection.selection,
+            eid_selection.selection_args
         )?.takeIf(::same_selected_day)
     return resolved?.plus(delta)
 }

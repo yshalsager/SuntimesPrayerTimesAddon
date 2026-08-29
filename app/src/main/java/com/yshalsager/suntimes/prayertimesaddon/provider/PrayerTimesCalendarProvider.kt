@@ -9,10 +9,12 @@ import android.os.CancellationSignal
 import androidx.core.content.ContextCompat
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.LocationQueryContext
+import com.yshalsager.suntimes.prayertimesaddon.core.CalculatorConfigContract
 import com.yshalsager.suntimes.prayertimesaddon.core.resolve_location_query_context
 import com.yshalsager.suntimes.prayertimesaddon.core.PrayerTimesCalendarContract
 import com.yshalsager.suntimes.prayertimesaddon.core.PrayerTimesCalendarSource
 import com.yshalsager.suntimes.prayertimesaddon.core.query_prayer_times_calendar_events
+import com.yshalsager.suntimes.prayertimesaddon.core.parse_host_selection
 import com.yshalsager.suntimes.prayertimesaddon.core.resolve_prayer_times_calendar_meta
 
 class PrayerTimesCalendarProvider : ContentProvider() {
@@ -43,13 +45,16 @@ class PrayerTimesCalendarProvider : ContentProvider() {
         cancellationSignal?.throwIfCanceled()
         val ctx = context ?: return null
         val source = uri.pathSegments.getOrNull(0)?.let(PrayerTimesCalendarSource::from_id) ?: return null
+        val parsed_selection = parse_host_selection(selection, selectionArgs)
         val location_context =
             resolve_location_query_context(
                 context = ctx,
                 saved_location_id = uri.getQueryParameter(PrayerTimesCalendarContract.param_saved_location_id),
-                latitude = selectionArgs?.getOrNull(4),
-                longitude = selectionArgs?.getOrNull(5),
-                altitude = selectionArgs?.getOrNull(6)
+                latitude = parsed_selection[CalculatorConfigContract.column_latitude],
+                longitude = parsed_selection[CalculatorConfigContract.column_longitude],
+                altitude = parsed_selection[CalculatorConfigContract.column_altitude],
+                timezone = parsed_selection[CalculatorConfigContract.column_timezone],
+                host_selection = parsed_selection
             )
         return when (uri.pathSegments.getOrNull(1)) {
             PrayerTimesCalendarContract.query_calendar_info -> query_calendar_info(ctx, source, projection, location_context)

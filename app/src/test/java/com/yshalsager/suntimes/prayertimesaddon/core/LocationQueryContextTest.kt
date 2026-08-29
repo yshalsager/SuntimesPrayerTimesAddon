@@ -92,6 +92,22 @@ class LocationQueryContextTest {
     }
 
     @Test
+    fun resolve_location_query_context_uses_host_selection_timezone() {
+        val resolved =
+            resolve_location_query_context(
+                context = context,
+                saved_location_id = null,
+                latitude = null,
+                longitude = null,
+                altitude = null,
+                saved_locations = saved_locations,
+                timezone = "Pacific/Kiritimati"
+            )
+
+        assertEquals("Pacific/Kiritimati", resolved.timezone_override?.id)
+    }
+
+    @Test
     fun resolve_location_query_context_does_not_replace_unknown_id_with_coordinate_match() {
         val resolved =
             resolve_location_query_context(

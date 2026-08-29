@@ -48,13 +48,13 @@ object HostEventQueries {
         if (base == null) return null
         if (delta_millis == 0L) return base
 
-        val alarm_now = selectionArgs?.getOrNull(0)?.toLongOrNull()
+        val parsed_selection = parse_host_selection(selection, selectionArgs)
+        val alarm_now = parsed_selection[AlarmEventContract.extra_alarm_now]?.toLongOrNull()
         val adjusted = base + delta_millis
         if (alarm_now != null && adjusted < alarm_now) {
-            val retry_args = selectionArgs.clone()
-            if (retry_args.isNotEmpty()) retry_args[0] = (base + 60_000L).toString()
+            val retry = parsed_selection.with_values(mapOf(AlarmEventContract.extra_alarm_now to (base + 60_000L).toString()))
             val retry_base = try {
-                context.contentResolver.query(host_uri, AlarmEventContract.query_event_calc_projection, selection, retry_args, null)
+                context.contentResolver.query(host_uri, AlarmEventContract.query_event_calc_projection, retry.selection, retry.selection_args, null)
             } catch (_: SecurityException) {
                 null
             }?.use { cur ->

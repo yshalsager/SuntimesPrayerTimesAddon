@@ -7,6 +7,7 @@ import android.database.MatrixCursor
 import android.net.Uri
 import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.core.CalculatorConfigContract
+import com.yshalsager.suntimes.prayertimesaddon.core.parse_host_selection
 
 const val host_event_authority = "com.test.host.event.provider"
 const val host_calc_authority = "com.test.host.calculator.provider"
@@ -22,6 +23,7 @@ class FakeHostEventProvider : ContentProvider() {
     companion object {
         var event_calc_failures_remaining = 0
         var last_query_thread: Thread? = null
+        var last_alarm_offset: String? = null
     }
 
     override fun onCreate(): Boolean = true
@@ -37,7 +39,7 @@ class FakeHostEventProvider : ContentProvider() {
         if (path.isEmpty()) return null
         return when (path[0]) {
             AlarmEventContract.query_event_info -> query_event_info(path.getOrNull(1), projection)
-            AlarmEventContract.query_event_calc -> query_event_calc(path.getOrNull(1), projection, selection_args)
+            AlarmEventContract.query_event_calc -> query_event_calc(path.getOrNull(1), projection, selection, selection_args)
             else -> null
         }
     }
@@ -61,12 +63,14 @@ class FakeHostEventProvider : ContentProvider() {
         return c
     }
 
-    private fun query_event_calc(event_id: String?, projection: Array<String>?, selection_args: Array<String>?): Cursor {
+    private fun query_event_calc(event_id: String?, projection: Array<String>?, selection: String?, selection_args: Array<String>?): Cursor {
         val cols = projection ?: AlarmEventContract.query_event_calc_projection
         val c = MatrixCursor(cols)
         if (event_id == null) return c
 
-        val alarm_now = selection_args?.getOrNull(0)?.toLongOrNull() ?: System.currentTimeMillis()
+        val parsed_selection = parse_host_selection(selection, selection_args)
+        val alarm_now = parsed_selection[AlarmEventContract.extra_alarm_now]?.toLongOrNull() ?: System.currentTimeMillis()
+        last_alarm_offset = parsed_selection[AlarmEventContract.extra_alarm_offset]
         val time = time_for_event(event_id, alarm_now) ?: return c
 
         val row = arrayOfNulls<Any>(cols.size)
@@ -179,6 +183,7 @@ class FallbackOnlyHostEventProvider : ContentProvider() {
 class FakeHostCalcProvider : ContentProvider() {
     companion object {
         var location = "Test Location"
+        var last_extra: String? = null
     }
 
     override fun onCreate(): Boolean = true
@@ -194,7 +199,7 @@ class FakeHostCalcProvider : ContentProvider() {
         if (path.isEmpty()) return null
         return when (path[0]) {
             CalculatorConfigContract.query_config -> query_config(projection)
-            CalculatorConfigContract.query_sun -> query_sun(path.getOrNull(1), projection, selection_args)
+            CalculatorConfigContract.query_sun -> query_sun(path.getOrNull(1), projection, selection, selection_args)
             CalculatorConfigContract.query_sunpos -> query_sunpos(projection)
             else -> null
         }
@@ -223,12 +228,15 @@ class FakeHostCalcProvider : ContentProvider() {
         return c
     }
 
-    private fun query_sun(at_millis_segment: String?, projection: Array<String>?, selection_args: Array<String>?): Cursor {
+    private fun query_sun(at_millis_segment: String?, projection: Array<String>?, selection: String?, selection_args: Array<String>?): Cursor {
         val cols = projection ?: CalculatorConfigContract.projection_sun_basic
         val c = MatrixCursor(cols)
         val at_millis = at_millis_segment?.toLongOrNull() ?: System.currentTimeMillis()
         val day_start = at_millis - Math.floorMod(at_millis, day_millis)
-        val location_shift = if (selection_args?.getOrNull(4) == "55.0") 30L * 60L * 1000L else 0L
+        val parsed_selection = parse_host_selection(selection, selection_args)
+        last_extra = parsed_selection["extra"]
+        val location_shift =
+            if (parsed_selection[CalculatorConfigContract.column_latitude] == "55.0") 30L * 60L * 1000L else 0L
         val row = arrayOfNulls<Any>(cols.size)
         cols.indices.forEach { i ->
             row[i] =

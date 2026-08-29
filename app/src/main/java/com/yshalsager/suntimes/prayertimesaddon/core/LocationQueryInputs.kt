@@ -23,9 +23,18 @@ fun HomeSelectedLocation.query_inputs(alarm_now: Long): LocationQueryInputs {
 }
 
 fun LocationQueryContext.query_inputs(alarm_now: Long): LocationQueryInputs {
-    return build_location_query_inputs(
-        alarm_now = alarm_now,
-        saved_location = saved_location,
+    val base = (host_selection ?: parse_host_selection(null, null)).with_values(
+        mapOf(
+            AlarmEventContract.extra_alarm_now to alarm_now.toString(),
+            AlarmEventContract.extra_alarm_offset to "0",
+            AlarmEventContract.extra_alarm_repeat to "false",
+            AlarmEventContract.extra_alarm_repeat_days to "[]"
+        )
+    )
+    val selection_pair = selection_for_alarm_now(alarm_now, base.selection, base.selection_args)
+    return LocationQueryInputs(
+        selection = selection_pair.first,
+        selection_args = selection_pair.second,
         timezone_override = timezone_override,
         latitude_override = latitude_override,
         method_config_override = method_config_override,

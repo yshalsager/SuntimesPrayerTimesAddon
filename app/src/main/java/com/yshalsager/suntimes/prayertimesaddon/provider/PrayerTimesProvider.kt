@@ -16,6 +16,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.AppIds
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostEventQueries
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
+import com.yshalsager.suntimes.prayertimesaddon.core.CalculatorConfigContract
 import com.yshalsager.suntimes.prayertimesaddon.core.MethodConfig
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
@@ -26,18 +27,13 @@ import com.yshalsager.suntimes.prayertimesaddon.core.is_eid_event
 import com.yshalsager.suntimes.prayertimesaddon.core.is_addon_event_enabled
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_eid_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
+import com.yshalsager.suntimes.prayertimesaddon.core.parse_host_selection
 import com.yshalsager.suntimes.prayertimesaddon.core.resolve_location_query_context
 import com.yshalsager.suntimes.prayertimesaddon.core.visible_addon_events
 import java.util.Calendar
 import java.util.TimeZone
 
 class PrayerTimesProvider : ContentProvider() {
-    private data class SelectionLocationArgs(
-        val latitude: String?,
-        val longitude: String?,
-        val altitude: String?
-    )
-
     companion object {
         val authority = AppIds.event_provider_authority
 
@@ -166,20 +162,21 @@ class PrayerTimesProvider : ContentProvider() {
 
         val selected = HostResolver.ensure_default_selected(context) ?: return c
         val addon_event = AddonEvent.entries.firstOrNull { it.event_id == addon_event_id } ?: return c
-        val selection_location = selection_location_from_args(selectionArgs)
+        val parsed_selection = parse_host_selection(selection, selectionArgs)
         val location_context =
             resolve_location_query_context(
                 context = context,
                 saved_location_id = uri.getQueryParameter(AlarmEventContract.extra_saved_location_id),
-                latitude = selection_location.latitude,
-                longitude = selection_location.longitude,
-                altitude = selection_location.altitude
+                latitude = parsed_selection[CalculatorConfigContract.column_latitude],
+                longitude = parsed_selection[CalculatorConfigContract.column_longitude],
+                altitude = parsed_selection[CalculatorConfigContract.column_altitude],
+                timezone = parsed_selection[CalculatorConfigContract.column_timezone]
             )
         if (location_context.saved_location_missing) return c
         val method_override = location_context.method_config_override
         val runtime_profile = location_context.addon_runtime_profile_override
         val timezone_override = location_context.timezone_override
-        val alarm_now = selectionArgs?.getOrNull(0)?.toLongOrNull() ?: System.currentTimeMillis()
+        val alarm_now = parsed_selection[AlarmEventContract.extra_alarm_now]?.toLongOrNull() ?: System.currentTimeMillis()
         val resolved_selection = location_context.selection_for_alarm_now(alarm_now, selection, selectionArgs)
         val effective_selection = resolved_selection.first
         val effective_selection_args = resolved_selection.second
@@ -264,31 +261,28 @@ class PrayerTimesProvider : ContentProvider() {
         method_override: MethodConfig?,
         timezone_override: TimeZone?
     ): Long? {
-        val now = selectionArgs?.getOrNull(0)?.toLongOrNull() ?: System.currentTimeMillis()
-        val alarm_offset = selectionArgs?.getOrNull(1)?.toLongOrNull() ?: 0L
+        val parsed_selection = parse_host_selection(selection, selectionArgs)
+        val now = parsed_selection[AlarmEventContract.extra_alarm_now]?.toLongOrNull() ?: System.currentTimeMillis()
+        val alarm_offset = parsed_selection[AlarmEventContract.extra_alarm_offset]?.toLongOrNull() ?: 0L
         val fajr_query = AddonEventMapper.map_event(context, AddonEvent.prayer_fajr, method_override) ?: return null
         val tz =
             timezone_override
                 ?: HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(java.util.TimeZone::getTimeZone)
                 ?: java.util.TimeZone.getDefault()
 
-        fun with_now(v: Long): Array<String>? {
-            val a = selectionArgs?.clone() ?: return null
-            if (a.isEmpty()) return null
-            a[0] = v.toString()
-            return a
-        }
+        fun with_now(v: Long) = parsed_selection.with_values(mapOf(AlarmEventContract.extra_alarm_now to v.toString()))
 
         var fajr_alarm_now = now
         repeat(2) { attempt ->
+            val fajr_selection = with_now(fajr_alarm_now)
             val fajr =
                 HostEventQueries.query_host_event_time(
                     context,
                     host_event_authority,
                     fajr_query.base_event_id,
                     fajr_query.delta_millis,
-                    selection,
-                    with_now(fajr_alarm_now) ?: selectionArgs
+                    fajr_selection.selection,
+                    fajr_selection.selection_args
                 ) ?: return null
             val maghrib_day_start = Calendar.getInstance(tz).run {
                 timeInMillis = fajr
@@ -299,13 +293,14 @@ class PrayerTimesProvider : ContentProvider() {
                 add(Calendar.DAY_OF_YEAR, -1)
                 timeInMillis
             }
+            val maghrib_selection = with_now(maghrib_day_start)
             val sunset =
                 query_host_sun(
                     context,
                     host_event_authority,
                     maghrib_day_start,
-                    selection,
-                    with_now(maghrib_day_start) ?: selectionArgs
+                    maghrib_selection.selection,
+                    maghrib_selection.selection_args
                 )?.sunset ?: return null
             val maghrib = sunset + (method_override?.maghrib_offset_minutes ?: Prefs.get_maghrib_offset_minutes(context)) * 60_000L
             val night = calc_night(maghrib, fajr) ?: return null
@@ -335,30 +330,27 @@ class PrayerTimesProvider : ContentProvider() {
         timezone_override: TimeZone?,
         runtime_profile: AddonRuntimeProfile?
     ): Long? {
-        val alarm_offset = selectionArgs?.getOrNull(1)?.toLongOrNull() ?: 0L
+        val parsed_selection = parse_host_selection(selection, selectionArgs)
+        val alarm_offset = parsed_selection[AlarmEventContract.extra_alarm_offset]?.toLongOrNull() ?: 0L
         val tz =
             timezone_override
                 ?: HostConfigReader.read_config(context, host_event_authority)?.timezone?.let(java.util.TimeZone::getTimeZone)
                 ?: java.util.TimeZone.getDefault()
         val current_day_start = day_start_at(alarm_now, tz)
 
-        fun args_for(day_start: Long): Array<String>? {
-            val args = selectionArgs?.clone() ?: return null
-            if (args.isNotEmpty()) args[0] = day_start.toString()
-            return args
-        }
-
-        fun time_for_day(day_start: Long): Long? =
-            query_host_eid_time(
+        fun time_for_day(day_start: Long): Long? {
+            val day_selection = parsed_selection.with_values(mapOf(AlarmEventContract.extra_alarm_now to day_start.toString()))
+            return query_host_eid_time(
                 context = context,
                 host_event_authority = host_event_authority,
                 event = addon_event,
                 alarm_now = day_start,
-                selection = selection,
-                selection_args = args_for(day_start) ?: selectionArgs,
+                selection = day_selection.selection,
+                selection_args = day_selection.selection_args,
                 timezone_override = timezone_override,
                 addon_runtime_profile_override = runtime_profile
             )
+        }
 
         val today_time = time_for_day(current_day_start)
         if (today_time != null && today_time + alarm_offset >= alarm_now) return today_time
@@ -376,13 +368,4 @@ class PrayerTimesProvider : ContentProvider() {
         val next_time = time_for_day(next_day_start) ?: return null
         return if (next_time + alarm_offset >= alarm_now) next_time else null
     }
-
-    private fun selection_location_from_args(selectionArgs: Array<String>?): SelectionLocationArgs =
-        SelectionLocationArgs(
-            latitude = selectionArgs?.getOrNull(4),
-            longitude = selectionArgs?.getOrNull(5),
-            altitude =
-                selectionArgs?.getOrNull(7)
-                    ?: selectionArgs?.getOrNull(6)?.takeIf { it.toDoubleOrNull() != null }
-        )
 }

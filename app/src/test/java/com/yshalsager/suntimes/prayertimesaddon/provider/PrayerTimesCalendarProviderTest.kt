@@ -22,6 +22,7 @@ import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.offday_host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.offday_host_event_authority
+import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.PrayerTimesCalendarContract
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
@@ -213,14 +214,46 @@ class PrayerTimesCalendarProviderTest {
             query(
                 "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}?${PrayerTimesCalendarContract.param_saved_location_id}=loc-custom"
             ).read_strings(CalendarContract.Events.TITLE)
-        val host_titles =
-            query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
-                .read_strings(CalendarContract.Events.TITLE)
+        val content_uri = "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}"
+        val host_titles = query(content_uri).read_strings(CalendarContract.Events.TITLE)
+        val reordered_selection = "extra=? AND longitude=? AND timezone=? AND latitude=?"
+        val coordinate_titles = context.contentResolver.query(
+            Uri.parse(content_uri),
+            null,
+            reordered_selection,
+            arrayOf("ignored", "31.0", "UTC", "30.0"),
+            null
+        )!!.use { it.read_strings(CalendarContract.Events.TITLE) }
 
         assertTrue(scoped_titles.contains("Local Fajr+"))
         assertTrue(scoped_titles.contains("Local Isha+"))
+        assertTrue(coordinate_titles.contains("Local Fajr+"))
         assertFalse(host_titles.contains("Local Fajr+"))
         assertFalse(host_titles.contains("Local Isha+"))
+    }
+
+    @Test
+    fun calendar_content_forwards_non_saved_named_selection() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        FakeHostCalcProvider.last_extra = null
+        FakeHostEventProvider.last_alarm_offset = null
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val uri = Uri.parse(
+            "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}"
+        )
+
+        val events = context.contentResolver.query(
+            uri,
+            null,
+            "${AlarmEventContract.extra_alarm_offset}=? AND extra=? AND longitude=? AND timezone=? AND ${AlarmEventContract.extra_alarm_now}=? AND latitude=?",
+            arrayOf("999", "forwarded", "37.0", "UTC", "0", "55.0"),
+            null
+        )!!.use { it.read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART) }
+
+        val fajr = events.first { it.first == context.getString(R.string.event_prayer_fajr) }.second
+        assertEquals(day_start + 5 * 60 * 60 * 1000L, fajr)
+        assertEquals("0", FakeHostEventProvider.last_alarm_offset)
+        assertEquals("forwarded", FakeHostCalcProvider.last_extra)
     }
 
     @Test

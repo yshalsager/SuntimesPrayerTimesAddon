@@ -8,6 +8,7 @@ object CalculatorConfigContract {
     const val column_location = "location"
     const val column_latitude = "latitude"
     const val column_longitude = "longitude"
+    const val column_altitude = "altitude"
     const val column_timezone = "timezone"
 
     const val column_sun_noon = "solarnoon"

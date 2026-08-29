@@ -463,8 +463,8 @@ class PrayerTimesProviderTest {
             )
         )
         val selection =
-            "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
-        val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+            "extra=? AND longitude=? AND ${AlarmEventContract.extra_alarm_offset}=? AND latitude=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND ${AlarmEventContract.extra_alarm_now}=? AND altitude=? AND ${AlarmEventContract.extra_alarm_repeat}=?"
+        val selection_args = arrayOf("ignored", "37.0", "0", "55.0", "[]", day_start.toString(), "100.0", "false")
 
         query_event_calc("PRAYER_ASR", selection, selection_args).use { cursor ->
             assertEquals(1, cursor.count)
@@ -515,8 +515,8 @@ class PrayerTimesProviderTest {
     @Test
     fun night_event_calc_uses_location_selection_for_sun_query() {
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
-        val selection = "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
-        val selection_args = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+        val selection = "longitude=? AND ${AlarmEventContract.extra_alarm_offset}=? AND latitude=? AND ${AlarmEventContract.extra_alarm_now}=? AND altitude=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=?"
+        val selection_args = arrayOf("37.0", "0", "55.0", day_start.toString(), "100.0", "false", "[]")
 
         query_event_calc("NIGHT_MIDPOINT", selection, selection_args).use { cursor ->
             assertEquals(1, cursor.count)
@@ -540,9 +540,9 @@ class PrayerTimesProviderTest {
     @Test
     fun eid_event_calc_differs_between_two_location_overrides() {
         val day_start = find_eid_day_start()
-        val selection = "${AlarmEventContract.extra_alarm_now}=? AND ${AlarmEventContract.extra_alarm_offset}=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=? AND latitude=? AND longitude=? AND altitude=?"
-        val default_location = arrayOf(day_start.toString(), "0", "false", "[]", "30.0", "31.0", "0.0")
-        val shifted_location = arrayOf(day_start.toString(), "0", "false", "[]", "55.0", "37.0", "100.0")
+        val selection = "longitude=? AND ${AlarmEventContract.extra_alarm_offset}=? AND latitude=? AND ${AlarmEventContract.extra_alarm_now}=? AND altitude=? AND ${AlarmEventContract.extra_alarm_repeat}=? AND ${AlarmEventContract.extra_alarm_repeat_days}=?"
+        val default_location = arrayOf("31.0", "0", "30.0", day_start.toString(), "0.0", "false", "[]")
+        val shifted_location = arrayOf("37.0", "0", "55.0", day_start.toString(), "100.0", "false", "[]")
 
         var t_default: Long? = null
         query_event_calc("PRAYER_EID_FITR_START", selection, default_location).use { cursor ->

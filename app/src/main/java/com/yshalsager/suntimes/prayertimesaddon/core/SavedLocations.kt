@@ -241,25 +241,14 @@ object SavedLocations {
     fun is_valid_lon(v: String): Boolean = v.toDoubleOrNull()?.let { it in -180.0..180.0 } == true
     fun is_valid_alt(v: String): Boolean = v.toDoubleOrNull() != null
 
-    fun build_selection(alarm_now: Long, location: SavedLocation): Pair<String, Array<String>> =
-        build_selection(alarm_now, location, null)
-
-    fun build_selection(
-        alarm_now: Long,
-        location: SavedLocation,
-        base_selection_args: Array<String>? = null
-    ): Pair<String, Array<String>> {
-        val base_now = base_selection_args?.getOrNull(0)?.toLongOrNull() ?: alarm_now
-        val base_offset = base_selection_args?.getOrNull(1) ?: "0"
-        val base_repeat = base_selection_args?.getOrNull(2) ?: "false"
-        val base_repeat_days = base_selection_args?.getOrNull(3) ?: "[]"
+    fun build_selection(alarm_now: Long, location: SavedLocation): Pair<String, Array<String>> {
         val alt = location.altitude?.trim().takeUnless { it.isNullOrBlank() }
         return if (alt != null) {
             selection_with_alt to arrayOf(
-                base_now.toString(),
-                base_offset,
-                base_repeat,
-                base_repeat_days,
+                alarm_now.toString(),
+                "0",
+                "false",
+                "[]",
                 location.latitude,
                 location.longitude,
                 location.timezone_id,
@@ -267,10 +256,10 @@ object SavedLocations {
             )
         } else {
             selection_base to arrayOf(
-                base_now.toString(),
-                base_offset,
-                base_repeat,
-                base_repeat_days,
+                alarm_now.toString(),
+                "0",
+                "false",
+                "[]",
                 location.latitude,
                 location.longitude,
                 location.timezone_id

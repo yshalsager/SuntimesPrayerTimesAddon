@@ -136,10 +136,10 @@ class TimesTest {
         FakeHostEventProvider.event_calc_failures_remaining = 1
         val selection_args = arrayOf("0", "0", "false", "[]")
 
-        assertNull(HostEventQueries.query_host_event_time(context, host_event_authority, "SUNRISE", 0, "retry-test", selection_args))
+        assertNull(HostEventQueries.query_host_event_time(context, host_event_authority, "SUNRISE", 0, null, selection_args))
         assertEquals(
             6 * 60 * 60 * 1000L,
-            HostEventQueries.query_host_event_time(context, host_event_authority, "SUNRISE", 0, "retry-test", selection_args)
+            HostEventQueries.query_host_event_time(context, host_event_authority, "SUNRISE", 0, null, selection_args)
         )
     }
 
