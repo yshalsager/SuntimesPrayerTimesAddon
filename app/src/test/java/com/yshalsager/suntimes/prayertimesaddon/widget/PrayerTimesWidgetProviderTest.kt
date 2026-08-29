@@ -60,6 +60,7 @@ class PrayerTimesWidgetProviderTest {
 
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
         context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences("widget_transient", Context.MODE_PRIVATE).edit().clear().apply()
         AppClock.set_fixed_now_millis(null)
 
         Prefs.set_asr_factor(context, 1)
@@ -128,7 +129,7 @@ class PrayerTimesWidgetProviderTest {
     }
 
     private fun alarm_token_from_prefs() =
-        context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).getString(alarm_token_pref_key, null)
+        context.getSharedPreferences("widget_transient", Context.MODE_PRIVATE).getString(alarm_token_pref_key, null)
 
     @Test
     fun widget_does_not_allow_six_prayer_columns_below_250dp() {
@@ -394,6 +395,23 @@ class PrayerTimesWidgetProviderTest {
     }
 
     @Test
+    fun on_restored_moves_widget_saved_location_bindings_to_new_ids() {
+        val (first_new_id, provider) = create_widget_and_provider()
+        val (second_new_id) = create_widget_and_provider()
+        val other_old_id = second_new_id + 1000
+        WidgetPrefs.set_saved_location_id(context, second_new_id, "loc-a")
+        WidgetPrefs.set_saved_location_id(context, other_old_id, "loc-b")
+
+        provider.onRestored(context, intArrayOf(second_new_id, other_old_id), intArrayOf(first_new_id, second_new_id))
+
+        assertEquals("loc-a", WidgetPrefs.get_saved_location_id(context, first_new_id))
+        assertEquals("loc-b", WidgetPrefs.get_saved_location_id(context, second_new_id))
+        assertEquals(null, WidgetPrefs.get_saved_location_id(context, other_old_id))
+        assertTrue(app_widget_manager.getAppWidgetOptions(first_new_id).getBoolean(AppWidgetManager.OPTION_APPWIDGET_RESTORE_COMPLETED))
+        assertTrue(app_widget_manager.getAppWidgetOptions(second_new_id).getBoolean(AppWidgetManager.OPTION_APPWIDGET_RESTORE_COMPLETED))
+    }
+
+    @Test
     fun on_deleted_clears_widget_saved_location_binding() {
         val (widget_id, provider) = create_widget_and_provider()
         WidgetPrefs.set_saved_location_id(context, widget_id, "loc-widget")
@@ -406,6 +424,7 @@ class PrayerTimesWidgetProviderTest {
     @Test
     fun update_schedules_alarm_with_token() {
         val (widget_id, provider) = create_widget_and_provider()
+        context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).edit().putString(alarm_token_pref_key, "legacy-token").apply()
         val now = System.currentTimeMillis()
         val day_start = now - Math.floorMod(now, day_millis)
         AppClock.set_fixed_now_millis(day_start + 13L * 60L * 60L * 1000L)
@@ -418,6 +437,10 @@ class PrayerTimesWidgetProviderTest {
         assertEquals("alarms=${alarms.size}", 1, alarms.size)
         val scheduled = alarms.first()
         assertEquals(day_start + 15L * 60L * 60L * 1000L + 30L * 60L * 1000L + 5_000L, scheduled.triggerAtMs)
-        assertNotNull(alarm_token_from_prefs())
+        assertEquals("legacy-token", alarm_token_from_prefs())
+        assertEquals(
+            null,
+            context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).getString(alarm_token_pref_key, null)
+        )
     }
 }

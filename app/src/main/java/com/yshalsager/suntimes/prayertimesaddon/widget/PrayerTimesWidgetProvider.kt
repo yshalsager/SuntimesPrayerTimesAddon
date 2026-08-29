@@ -14,7 +14,6 @@ import android.text.format.DateFormat
 import android.view.View
 import android.widget.RemoteViews
 import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.content.edit
 import androidx.core.content.ContextCompat
 import androidx.core.os.ConfigurationCompat
 import androidx.core.text.layoutDirection
@@ -44,7 +43,6 @@ import java.util.Locale
 import java.util.TimeZone
 import android.os.Build
 import android.os.SystemClock
-import java.util.UUID
 
 class PrayerTimesWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
@@ -68,6 +66,21 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
         WidgetPrefs.clear_saved_location_ids(context, appWidgetIds)
+    }
+
+    override fun onRestored(context: Context, oldWidgetIds: IntArray, newWidgetIds: IntArray) {
+        val bindings = oldWidgetIds.zip(newWidgetIds).map { (old_id, new_id) -> new_id to WidgetPrefs.get_saved_location_id(context, old_id) }
+        WidgetPrefs.clear_saved_location_ids(context, oldWidgetIds)
+        bindings.forEach { (new_id, saved_location_id) -> WidgetPrefs.set_saved_location_id(context, new_id, saved_location_id) }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val manager = AppWidgetManager.getInstance(context)
+            newWidgetIds.forEach { id ->
+                manager.updateAppWidgetOptions(
+                    id,
+                    Bundle().apply { putBoolean(AppWidgetManager.OPTION_APPWIDGET_RESTORE_COMPLETED, true) }
+                )
+            }
+        }
     }
 
     private fun enqueue_update(context: Context) {
@@ -542,7 +555,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
         val intent = Intent(context, PrayerTimesWidgetProvider::class.java).apply {
             action = action_alarm
-            putExtra(extra_alarm_token, alarm_token(context))
+            putExtra(extra_alarm_token, WidgetPrefs.alarm_token(context))
         }
         val pi = PendingIntent.getBroadcast(context, 2, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         mgr.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, when_ms, pi)
@@ -550,16 +563,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
     private fun is_valid_alarm_intent(context: Context, intent: Intent): Boolean {
         val token = intent.getStringExtra(extra_alarm_token) ?: return false
-        return token == alarm_token(context)
-    }
-
-    private fun alarm_token(context: Context): String {
-        val prefs = context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE)
-        val existing = prefs.getString(pref_alarm_token, null)
-        if (!existing.isNullOrBlank()) return existing
-        val created = UUID.randomUUID().toString()
-        prefs.edit { putString(pref_alarm_token, created) }
-        return created
+        return token == WidgetPrefs.alarm_token(context)
     }
 
     private sealed interface WidgetSummary {
@@ -570,7 +574,6 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
     companion object {
         val action_alarm = AppIds.action_widget_alarm
         private const val extra_alarm_token = "alarm_token"
-        private const val pref_alarm_token = "widget_alarm_token"
         private val update_work = ReceiverWork.State()
     }
 }
