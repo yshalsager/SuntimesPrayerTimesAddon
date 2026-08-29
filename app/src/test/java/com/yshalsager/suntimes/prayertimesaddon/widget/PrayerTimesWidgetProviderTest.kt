@@ -15,7 +15,6 @@ import com.yshalsager.suntimes.prayertimesaddon.FakeHostEventProvider
 import com.yshalsager.suntimes.prayertimesaddon.day_millis
 import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
-import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
@@ -55,7 +54,6 @@ class PrayerTimesWidgetProviderTest {
 
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
         context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).edit().clear().apply()
-        HostConfigReader.clear_cache()
         AppClock.set_fixed_now_millis(null)
 
         Prefs.set_asr_factor(context, 1)
@@ -117,7 +115,6 @@ class PrayerTimesWidgetProviderTest {
 
     private fun clear_selected_host() {
         Prefs.set_host_event_authority(context, "")
-        HostConfigReader.clear_cache()
     }
 
     private fun alarm_token_from_prefs() =

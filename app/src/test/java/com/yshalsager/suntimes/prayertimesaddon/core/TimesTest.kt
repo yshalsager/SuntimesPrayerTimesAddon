@@ -36,7 +36,8 @@ class TimesTest {
     fun set_up() {
         context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
-        HostConfigReader.clear_cache()
+        FakeHostEventProvider.event_calc_failures_remaining = 0
+        FakeHostCalcProvider.location = "Test Location"
         Prefs.set_asr_factor(context, 1)
         Prefs.set_host_event_authority(context, host_event_authority)
 
@@ -117,6 +118,29 @@ class TimesTest {
         assertEquals(24L * 60L * 60L * 1000L, night?.midpoint)
         assertEquals(26L * 60L * 60L * 1000L, night?.last_third)
         assertEquals(28L * 60L * 60L * 1000L, night?.last_sixth)
+    }
+
+    @Test
+    fun host_config_change_is_visible_without_process_restart() {
+        assertEquals("Test Location", HostConfigReader.read_config(context, host_event_authority)?.location)
+
+        FakeHostCalcProvider.location = "Changed Location"
+        val changed_location = HostConfigReader.read_config(context, host_event_authority)?.location
+        FakeHostCalcProvider.location = "Test Location"
+
+        assertEquals("Changed Location", changed_location)
+    }
+
+    @Test
+    fun failed_host_event_query_is_retried() {
+        FakeHostEventProvider.event_calc_failures_remaining = 1
+        val selection_args = arrayOf("0", "0", "false", "[]")
+
+        assertNull(HostEventQueries.query_host_event_time(context, host_event_authority, "SUNRISE", 0, "retry-test", selection_args))
+        assertEquals(
+            6 * 60 * 60 * 1000L,
+            HostEventQueries.query_host_event_time(context, host_event_authority, "SUNRISE", 0, "retry-test", selection_args)
+        )
     }
 
     @Test

@@ -8,7 +8,6 @@ import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostEventProvider
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
-import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.day_millis
 import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
@@ -41,7 +40,6 @@ class PrayerStatusNotificationTest {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
 
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
-        HostConfigReader.clear_cache()
         AppClock.set_fixed_now_millis(null)
         ShadowAlarmManager.reset()
 

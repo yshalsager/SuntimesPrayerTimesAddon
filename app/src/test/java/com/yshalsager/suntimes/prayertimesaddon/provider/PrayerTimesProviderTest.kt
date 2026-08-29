@@ -7,7 +7,6 @@ import android.net.Uri
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostEventProvider
 import com.yshalsager.suntimes.prayertimesaddon.core.AlarmEventContract
-import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
@@ -41,7 +40,6 @@ class PrayerTimesProviderTest {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
 
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
-        HostConfigReader.clear_cache()
         Prefs.set_host_event_authority(context, host_event_authority)
 
         Robolectric.setupContentProvider(PrayerTimesProvider::class.java, PrayerTimesProvider.authority)

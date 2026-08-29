@@ -20,7 +20,6 @@ import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.offday_host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.offday_host_event_authority
-import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
 import com.yshalsager.suntimes.prayertimesaddon.core.PrayerTimesCalendarContract
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
@@ -53,7 +52,6 @@ class PrayerTimesCalendarProviderTest {
         TimeZone.setDefault(TimeZone.getTimeZone("UTC"))
 
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
-        HostConfigReader.clear_cache()
         Prefs.set_asr_factor(context, 1)
 
         Robolectric.setupContentProvider(PrayerTimesCalendarProvider::class.java, PrayerTimesCalendarProvider.authority)
@@ -377,7 +375,6 @@ class PrayerTimesCalendarProviderTest {
         assertEquals(0, query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/1-2").count)
 
         Prefs.set_host_event_authority(context, denied_host_event_authority)
-        HostConfigReader.clear_cache()
         query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarInfo").use { cursor ->
             assertEquals(1, cursor.count)
             cursor.moveToFirst()

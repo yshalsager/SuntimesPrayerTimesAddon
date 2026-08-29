@@ -19,6 +19,10 @@ const val denied_host_calc_authority = "com.test.denied.calculator.provider"
 const val day_millis = 24 * 60 * 60 * 1000L
 
 class FakeHostEventProvider : ContentProvider() {
+    companion object {
+        var event_calc_failures_remaining = 0
+    }
+
     override fun onCreate(): Boolean = true
 
     override fun query(
@@ -78,6 +82,10 @@ class FakeHostEventProvider : ContentProvider() {
     }
 
     private fun time_for_event(event_id: String, alarm_now: Long): Long? {
+        if (event_calc_failures_remaining > 0) {
+            event_calc_failures_remaining -= 1
+            return null
+        }
         val day_start = alarm_now - Math.floorMod(alarm_now, day_millis)
         val offset =
             when {
@@ -167,6 +175,10 @@ class FallbackOnlyHostEventProvider : ContentProvider() {
 }
 
 class FakeHostCalcProvider : ContentProvider() {
+    companion object {
+        var location = "Test Location"
+    }
+
     override fun onCreate(): Boolean = true
 
     override fun query(
@@ -198,7 +210,7 @@ class FakeHostCalcProvider : ContentProvider() {
         cols.indices.forEach { i ->
             row[i] =
                 when (cols[i]) {
-                    CalculatorConfigContract.column_location -> "Test Location"
+                    CalculatorConfigContract.column_location -> location
                     CalculatorConfigContract.column_latitude -> "30.0"
                     CalculatorConfigContract.column_longitude -> "31.0"
                     CalculatorConfigContract.column_timezone -> "UTC"

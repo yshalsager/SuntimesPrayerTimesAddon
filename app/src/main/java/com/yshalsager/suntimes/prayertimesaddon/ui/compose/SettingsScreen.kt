@@ -296,7 +296,6 @@ private fun SettingsContent(
             host_location_label = ctx.getString(R.string.unknown_location)
             return
         }
-        HostConfigReader.clear_cache(host_event_authority)
         val label = HostConfigReader.read_config(ctx, host_event_authority)?.display_label()
         host_location_label = label ?: ctx.getString(R.string.unknown_location)
     }
