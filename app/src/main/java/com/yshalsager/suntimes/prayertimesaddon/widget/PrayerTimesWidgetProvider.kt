@@ -26,6 +26,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.ObligatoryPrayerWindowInput
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.ReceiverWork
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
 import com.yshalsager.suntimes.prayertimesaddon.core.format_method_summary
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
@@ -44,12 +45,12 @@ import java.util.UUID
 
 class PrayerTimesWidgetProvider : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        update_all(context, appWidgetManager, appWidgetIds)
+        enqueue_update(context)
     }
 
     override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: Bundle) {
         super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
-        update_all(context, appWidgetManager, intArrayOf(appWidgetId))
+        enqueue_update(context)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -57,15 +58,22 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val action = intent.action ?: return
         if (action == action_alarm && !is_valid_alarm_intent(context, intent)) return
         if (action == action_alarm || action == Intent.ACTION_TIME_CHANGED || action == Intent.ACTION_TIMEZONE_CHANGED || action == Intent.ACTION_DATE_CHANGED || action == Intent.ACTION_LOCALE_CHANGED) {
-            val mgr = AppWidgetManager.getInstance(context)
-            val ids = mgr.getAppWidgetIds(ComponentName(context, PrayerTimesWidgetProvider::class.java))
-            if (ids.isNotEmpty()) update_all(context, mgr, ids)
+            enqueue_update(context)
         }
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         super.onDeleted(context, appWidgetIds)
         WidgetPrefs.clear_saved_location_ids(context, appWidgetIds)
+    }
+
+    private fun enqueue_update(context: Context) {
+        val app_context = context.applicationContext
+        ReceiverWork.submit(this, update_work) {
+            val mgr = AppWidgetManager.getInstance(app_context)
+            val ids = mgr.getAppWidgetIds(ComponentName(app_context, PrayerTimesWidgetProvider::class.java))
+            if (ids.isNotEmpty()) update_all(app_context, mgr, ids)
+        }
     }
 
     private fun update_all(context: Context, mgr: AppWidgetManager, ids: IntArray) {
@@ -551,5 +559,6 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val action_alarm = AppIds.action_widget_alarm
         private const val extra_alarm_token = "alarm_token"
         private const val pref_alarm_token = "widget_alarm_token"
+        private val update_work = ReceiverWork.State()
     }
 }

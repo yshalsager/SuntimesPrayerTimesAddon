@@ -3,18 +3,22 @@ package com.yshalsager.suntimes.prayertimesaddon.notification
 import android.Manifest
 import android.app.AlarmManager
 import android.content.Context
+import android.content.Intent
 import android.content.pm.ProviderInfo
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostCalcProvider
 import com.yshalsager.suntimes.prayertimesaddon.FakeHostEventProvider
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
+import com.yshalsager.suntimes.prayertimesaddon.core.AppIds
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.ReceiverWork
 import com.yshalsager.suntimes.prayertimesaddon.day_millis
 import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
@@ -86,6 +90,19 @@ class PrayerStatusNotificationTest {
         assertEquals(data.next_time_millis + 30_000L, data.next_refresh_millis)
         assertEquals("Test Location", data.location_label)
         assertEquals(5, data.day_events.size)
+    }
+
+    @Test
+    fun refresh_receiver_queries_host_off_receiver_thread() {
+        Prefs.set_prayer_status_notification_enabled(context, true)
+        shadowOf(RuntimeEnvironment.getApplication()).grantPermissions(Manifest.permission.POST_NOTIFICATIONS)
+        FakeHostEventProvider.last_query_thread = null
+
+        PrayerStatusNotificationReceiver().onReceive(context, Intent(AppIds.action_prayer_status_refresh))
+        ReceiverWork.await_idle()
+
+        assertNotNull(FakeHostEventProvider.last_query_thread)
+        assertNotEquals(Thread.currentThread(), FakeHostEventProvider.last_query_thread)
     }
 
     @Test

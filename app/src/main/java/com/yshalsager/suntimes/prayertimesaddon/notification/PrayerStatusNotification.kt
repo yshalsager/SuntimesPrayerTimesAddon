@@ -26,6 +26,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.ObligatoryPrayerWindowInput
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.ReceiverWork
 import com.yshalsager.suntimes.prayertimesaddon.core.addon_event_title
 import com.yshalsager.suntimes.prayertimesaddon.core.day_start_at
 import com.yshalsager.suntimes.prayertimesaddon.core.format_method_summary
@@ -68,9 +69,11 @@ object PrayerStatusNotification {
             cancel(context)
             return
         }
+        if (!Prefs.get_prayer_status_notification_enabled(context)) return
         ensure_channel(text_context)
         notify(text_context, build_notification(text_context, data))
         schedule_next(text_context, data.next_refresh_millis)
+        if (!Prefs.get_prayer_status_notification_enabled(context)) cancel(context)
     }
 
     fun cancel(context: Context) {
@@ -290,11 +293,20 @@ internal data class PrayerStatusData(
     val next_refresh_millis: Long
 )
 
+private val notification_refresh_work = ReceiverWork.State()
+
+private fun BroadcastReceiver.enqueue_notification_refresh(context: Context) {
+    val app_context = context.applicationContext
+    ReceiverWork.submit(this, notification_refresh_work) {
+        PrayerStatusNotification.refresh(app_context)
+    }
+}
+
 class PrayerStatusNotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             AppIds.action_prayer_status_disable -> PrayerStatusNotification.set_enabled(context, false)
-            AppIds.action_prayer_status_refresh -> PrayerStatusNotification.refresh(context)
+            AppIds.action_prayer_status_refresh -> enqueue_notification_refresh(context)
         }
     }
 }
@@ -306,7 +318,7 @@ class PrayerStatusSystemReceiver : BroadcastReceiver() {
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED,
             Intent.ACTION_DATE_CHANGED,
-            Intent.ACTION_LOCALE_CHANGED -> PrayerStatusNotification.refresh(context)
+            Intent.ACTION_LOCALE_CHANGED -> enqueue_notification_refresh(context)
         }
     }
 }

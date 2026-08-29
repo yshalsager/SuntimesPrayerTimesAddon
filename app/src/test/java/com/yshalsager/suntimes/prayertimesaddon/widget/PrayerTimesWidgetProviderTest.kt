@@ -16,6 +16,7 @@ import com.yshalsager.suntimes.prayertimesaddon.day_millis
 import com.yshalsager.suntimes.prayertimesaddon.host_calc_authority
 import com.yshalsager.suntimes.prayertimesaddon.host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
+import com.yshalsager.suntimes.prayertimesaddon.core.ReceiverWork
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
 import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
@@ -106,11 +107,15 @@ class PrayerTimesWidgetProviderTest {
         return widget_id to provider
     }
 
-    private fun widget_view(widget_id: Int) = shadowOf(app_widget_manager).getViewFor(widget_id)
+    private fun widget_view(widget_id: Int): View {
+        ReceiverWork.await_idle()
+        return shadowOf(app_widget_manager).getViewFor(widget_id)
+    }
 
     private fun update_widget_with_host(provider: PrayerTimesWidgetProvider, widget_id: Int) {
         Prefs.set_host_event_authority(context, host_event_authority)
         provider.onUpdate(context, app_widget_manager, intArrayOf(widget_id))
+        ReceiverWork.await_idle()
     }
 
     private fun clear_selected_host() {
@@ -128,6 +133,19 @@ class PrayerTimesWidgetProviderTest {
         assertEquals(context.getString(R.string.no_host_found), view.findViewById<TextView>(R.id.widget_hijri).text.toString())
         assertEquals(View.GONE, view.findViewById<View>(R.id.widget_prohibited_row).visibility)
         assertEquals(View.GONE, view.findViewById<View>(R.id.widget_night_row).visibility)
+    }
+
+    @Test
+    fun on_update_queries_host_off_receiver_thread() {
+        val (widget_id, provider) = create_widget_and_provider()
+        Prefs.set_host_event_authority(context, host_event_authority)
+        FakeHostEventProvider.last_query_thread = null
+
+        provider.onUpdate(context, app_widget_manager, intArrayOf(widget_id))
+        ReceiverWork.await_idle()
+
+        assertNotNull(FakeHostEventProvider.last_query_thread)
+        assertNotEquals(Thread.currentThread(), FakeHostEventProvider.last_query_thread)
     }
 
     @Test

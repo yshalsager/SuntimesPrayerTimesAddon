@@ -21,6 +21,7 @@ const val day_millis = 24 * 60 * 60 * 1000L
 class FakeHostEventProvider : ContentProvider() {
     companion object {
         var event_calc_failures_remaining = 0
+        var last_query_thread: Thread? = null
     }
 
     override fun onCreate(): Boolean = true
@@ -82,6 +83,7 @@ class FakeHostEventProvider : ContentProvider() {
     }
 
     private fun time_for_event(event_id: String, alarm_now: Long): Long? {
+        last_query_thread = Thread.currentThread()
         if (event_calc_failures_remaining > 0) {
             event_calc_failures_remaining -= 1
             return null
