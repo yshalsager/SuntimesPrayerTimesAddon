@@ -47,6 +47,39 @@ class HomeLocationSelectionTest {
     }
 
     @Test
+    fun location_key_override_does_not_change_global_selection() {
+        val global = SavedLocation("global", "Global", "21.0", "39.0", null, "UTC")
+        val scoped = SavedLocation("scoped", "Cairo", "30.0", "31.0", null, "Africa/Cairo")
+        Prefs.set_home_location_source(context, SavedLocations.home_source_saved)
+        Prefs.set_home_location_id(context, global.id)
+
+        val selected = resolve_selected_home_location(
+            context,
+            "Host",
+            "UTC",
+            listOf(global, scoped),
+            home_location_key(scoped.id)
+        )
+
+        assertEquals(scoped.id, selected.saved_location?.id)
+        assertFalse(selected.location_missing)
+        assertEquals(SavedLocations.home_source_saved, Prefs.get_home_location_source(context))
+        assertEquals(global.id, Prefs.get_home_location_id(context))
+    }
+
+    @Test
+    fun missing_location_key_override_is_not_treated_as_host() {
+        Prefs.set_home_location_source(context, SavedLocations.home_source_saved)
+        Prefs.set_home_location_id(context, "global")
+
+        val selected = resolve_selected_home_location(context, "Host", "UTC", emptyList(), "saved:missing")
+
+        assertTrue(selected.location_missing)
+        assertEquals(SavedLocations.home_source_saved, Prefs.get_home_location_source(context))
+        assertEquals("global", Prefs.get_home_location_id(context))
+    }
+
+    @Test
     fun select_home_location_by_key_validates_saved_ids() {
         val saved = SavedLocation("loc-1", "Cairo", "30.0", "31.0", null, "Africa/Cairo")
         SavedLocations.save(context, listOf(saved))

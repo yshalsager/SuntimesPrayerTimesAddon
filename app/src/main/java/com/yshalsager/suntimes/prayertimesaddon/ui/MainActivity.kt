@@ -35,6 +35,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.query_inputs
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_addon_time
 import com.yshalsager.suntimes.prayertimesaddon.core.query_host_sun
 import com.yshalsager.suntimes.prayertimesaddon.core.resolve_selected_home_location
+import com.yshalsager.suntimes.prayertimesaddon.core.saved_location_id_from_key
 import com.yshalsager.suntimes.prayertimesaddon.core.select_home_location_by_key
 import com.yshalsager.suntimes.prayertimesaddon.core.select_next_and_prev_obligatory_prayer
 import com.yshalsager.suntimes.prayertimesaddon.core.valid_timezone_id
@@ -61,6 +62,7 @@ import com.yshalsager.suntimes.prayertimesaddon.notification.PrayerStatusNotific
 
 class MainActivity : ThemedActivity() {
     companion object {
+        const val extra_location_scope = "location_scope"
         private val shortcut_days_uri = Uri.parse("prayertimes://shortcuts/days")
         private val shortcut_settings_uri = Uri.parse("prayertimes://shortcuts/settings")
     }
@@ -70,6 +72,7 @@ class MainActivity : ThemedActivity() {
     private var tick: Runnable? = null
     private var refresh_id = 0
 
+    private var location_key_override: String? = null
     private var center_day_start: Long? = null
     private var next_time_millis: Long? = null
     private var prev_time_millis: Long? = null
@@ -99,12 +102,19 @@ class MainActivity : ThemedActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        location_key_override = intent.getStringExtra(extra_location_scope)
         handle_shortcut_action(intent)
         setContent {
             PrayerTimesTheme {
                 HomeScreen(
                     state = state,
-                    on_open_days = { startActivity(Intent(this@MainActivity, DaysActivity::class.java)) },
+                    on_open_days = {
+                        startActivity(
+                            Intent(this@MainActivity, DaysActivity::class.java).apply {
+                                location_key_override?.let { putExtra(extra_location_scope, it) }
+                            }
+                        )
+                    },
                     on_open_settings = { startActivity(Intent(this@MainActivity, SettingsActivity::class.java)) },
                     on_open_saved_locations_cards = { startActivity(Intent(this@MainActivity, SavedLocationsCardsActivity::class.java)) },
                     on_select_location = { key -> select_home_location(key) },
@@ -120,7 +130,10 @@ class MainActivity : ThemedActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        location_key_override = intent.getStringExtra(extra_location_scope)
+        center_day_start = null
         handle_shortcut_action(intent)
+        refresh_home()
     }
 
     override fun onPause() {
@@ -186,6 +199,10 @@ class MainActivity : ThemedActivity() {
                 val computed = compute_home(host)
                 ui.post {
                     if (this_refresh_id != refresh_id) return@post
+                    if (computed == null) {
+                        state = state.copy(error = getString(R.string.saved_location_missing), show_reinstall_addon = false)
+                        return@post
+                    }
                     apply_computed(computed)
                     start_tick()
                 }
@@ -228,18 +245,27 @@ class MainActivity : ThemedActivity() {
     }
 
     private fun select_home_location(key: String) {
+        if (location_key_override != null) {
+            if (key != SavedLocations.home_source_host && SavedLocations.find_by_id(this, saved_location_id_from_key(key)) == null) return
+            location_key_override = key
+            intent.putExtra(extra_location_scope, key)
+            center_day_start = null
+            refresh_home()
+            return
+        }
         if (!select_home_location_by_key(this, key)) return
         center_day_start = null
         PrayerStatusNotification.refresh(this)
         refresh_home()
     }
 
-    private fun compute_home(host: String): Computed {
+    private fun compute_home(host: String): Computed? {
         val host_config = HostConfigReader.read_config(this, host)
         val host_label = host_config?.display_label() ?: "--"
         val host_timezone_id = valid_timezone_id(host_config?.timezone) ?: TimeZone.getDefault().id
         val saved_locations = SavedLocations.load(this)
-        val selected_location = resolve_selected_home_location(this, host_label, host_timezone_id, saved_locations)
+        val selected_location = resolve_selected_home_location(this, host_label, host_timezone_id, saved_locations, location_key_override)
+        if (selected_location.location_missing) return null
         val method_override = selected_location.method_config_override
         val addon_runtime_profile_override = selected_location.addon_runtime_profile_override
         val tz = selected_location.timezone
@@ -579,7 +605,8 @@ class MainActivity : ThemedActivity() {
         val host_config = HostConfigReader.read_config(this, host_event_authority)
         val host_label = host_config?.display_label() ?: "--"
         val host_timezone_id = valid_timezone_id(host_config?.timezone) ?: TimeZone.getDefault().id
-        val selected_location = resolve_selected_home_location(this, host_label, host_timezone_id, SavedLocations.load(this))
+        val selected_location = resolve_selected_home_location(this, host_label, host_timezone_id, SavedLocations.load(this), location_key_override)
+        if (selected_location.location_missing) return
         val component = ComponentName(host_package, "com.forrestguice.suntimeswidget.alarmclock.ui.AlarmClockActivity")
         val event_uri_builder =
             "content://${PrayerTimesProvider.authority}/${AlarmEventContract.query_event_info}/$event_id".toUri().buildUpon()

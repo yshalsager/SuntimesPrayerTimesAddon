@@ -244,6 +244,7 @@
     <string name='calendar_night_title'>Night Portions</string>
 
     <string name='no_host_found'>No SuntimesWidget host found (install SuntimesWidget first).</string>
-    <string name='saved_location_missing'>Saved location no longer exists. Tap to reconfigure.</string>
+    <string name='saved_location_missing'>Saved location no longer exists.</string>
+    <string name='saved_location_missing_widget'>Saved location no longer exists. Tap to reconfigure.</string>
     <string name='unknown_location'>Unknown location</string>
 </resources>

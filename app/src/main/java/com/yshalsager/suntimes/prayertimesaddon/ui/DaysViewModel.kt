@@ -98,6 +98,7 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
     private var day_inflight = Collections.synchronizedSet(HashSet<Long>())
     private val workers = Executors.newFixedThreadPool(3)
 
+    private var location_key_override: String? = null
     private var loaded_host: String? = null
     private var loaded_show_prohibited = false
     private var loaded_show_night = false
@@ -105,6 +106,10 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
 
     var state by mutableStateOf(DaysUiState())
         private set
+
+    fun set_location_scope(location_key: String?) {
+        location_key_override = location_key
+    }
 
     fun load(force: Boolean = false) {
         val ctx = getApplication<Application>().applicationContext
@@ -134,7 +139,11 @@ class DaysViewModel(app: Application) : AndroidViewModel(app) {
         val host_label = host_config?.display_label() ?: "--"
         val host_timezone_id = valid_timezone_id(host_config?.timezone) ?: TimeZone.getDefault().id
         val saved_locations = SavedLocations.load(ctx)
-        val selected_location = resolve_selected_home_location(ctx, host_label, host_timezone_id, saved_locations)
+        val selected_location = resolve_selected_home_location(ctx, host_label, host_timezone_id, saved_locations, location_key_override)
+        if (selected_location.location_missing) {
+            state = DaysUiState(error = ctx.getString(R.string.saved_location_missing))
+            return
+        }
         val runtime_profile = selected_location.addon_runtime_profile_override ?: addon_runtime_profile_from_prefs(ctx)
         val subtitle = ctx.getString(
             R.string.days_location_context,

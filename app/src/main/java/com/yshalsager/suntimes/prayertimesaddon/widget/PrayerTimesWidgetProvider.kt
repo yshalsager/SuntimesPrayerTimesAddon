@@ -30,10 +30,13 @@ import com.yshalsager.suntimes.prayertimesaddon.core.ReceiverWork
 import com.yshalsager.suntimes.prayertimesaddon.core.calc_night
 import com.yshalsager.suntimes.prayertimesaddon.core.format_method_summary
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
+import com.yshalsager.suntimes.prayertimesaddon.core.home_location_key
 import com.yshalsager.suntimes.prayertimesaddon.core.query_addon_time
 import com.yshalsager.suntimes.prayertimesaddon.core.format_gregorian_day_title
 import com.yshalsager.suntimes.prayertimesaddon.core.resolve_location_query_context
 import com.yshalsager.suntimes.prayertimesaddon.core.select_next_and_prev_obligatory_prayer
+import com.yshalsager.suntimes.prayertimesaddon.ui.DaysActivity
+import com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -79,7 +82,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
     private fun update_all(context: Context, mgr: AppWidgetManager, ids: IntArray) {
         val text_context = app_localized_context(context)
 
-        fun show_unavailable(id: Int, message: String, intent: Intent) {
+        fun scoped_intent(id: Int, target: Class<*>, location_key: String) =
+            Intent(context, target)
+                .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+                .putExtra(MainActivity.extra_location_scope, location_key)
+
+        fun show_unavailable(id: Int, message: String, root_intent: Intent, header_intent: Intent = root_intent) {
             val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
             rv.setTextViewText(R.id.widget_hijri, message)
             rv.setTextViewText(R.id.widget_gregorian, "")
@@ -87,9 +95,9 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
             rv.setViewVisibility(R.id.widget_prayer_row, View.GONE)
             rv.setViewVisibility(R.id.widget_prohibited_row, View.GONE)
             rv.setViewVisibility(R.id.widget_night_row, View.GONE)
-            val pending_intent = PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-            rv.setOnClickPendingIntent(R.id.widget_root, pending_intent)
-            rv.setOnClickPendingIntent(R.id.widget_header, pending_intent)
+            val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            rv.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(context, id, root_intent, flags))
+            rv.setOnClickPendingIntent(R.id.widget_header, PendingIntent.getActivity(context, id, header_intent, flags))
             mgr.updateAppWidget(id, rv)
         }
 
@@ -97,7 +105,7 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         location_contexts.filterValues { it.saved_location_missing }.forEach { (id, _) ->
             show_unavailable(
                 id,
-                text_context.getString(R.string.saved_location_missing),
+                text_context.getString(R.string.saved_location_missing_widget),
                 Intent(context, PrayerTimesWidgetConfigureActivity::class.java)
                     .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
             )
@@ -108,10 +116,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val host = HostResolver.ensure_default_selected(context)
         if (host == null) {
             active_ids.forEach { id ->
+                val location_key = home_location_key(location_contexts.getValue(id).resolved_saved_location_id)
                 show_unavailable(
                     id,
                     text_context.getString(R.string.no_host_found),
-                    Intent(context, com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity::class.java)
+                    scoped_intent(id, MainActivity::class.java, location_key),
+                    scoped_intent(id, DaysActivity::class.java, location_key)
                 )
             }
             return
@@ -356,10 +366,12 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
                 rv.setTextColor(R.id.widget_night_last_sixth, colors.accent)
             }
 
-            val open_main = PendingIntent.getActivity(context, 0, Intent(context, com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+            val location_key = home_location_key(scoped_saved_location_id)
+            val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            val open_main = PendingIntent.getActivity(context, id, scoped_intent(id, MainActivity::class.java, location_key), flags)
             rv.setOnClickPendingIntent(R.id.widget_root, open_main)
 
-            val open_days = PendingIntent.getActivity(context, 1, Intent(context, com.yshalsager.suntimes.prayertimesaddon.ui.DaysActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+            val open_days = PendingIntent.getActivity(context, id, scoped_intent(id, DaysActivity::class.java, location_key), flags)
             rv.setOnClickPendingIntent(R.id.widget_header, open_days)
 
             mgr.updateAppWidget(id, rv)

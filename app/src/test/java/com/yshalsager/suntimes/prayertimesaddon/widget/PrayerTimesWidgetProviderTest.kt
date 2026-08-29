@@ -21,6 +21,8 @@ import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocation
 import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
 import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
+import com.yshalsager.suntimes.prayertimesaddon.ui.DaysActivity
+import com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -133,6 +135,12 @@ class PrayerTimesWidgetProviderTest {
         assertEquals(context.getString(R.string.no_host_found), view.findViewById<TextView>(R.id.widget_hijri).text.toString())
         assertEquals(View.GONE, view.findViewById<View>(R.id.widget_prohibited_row).visibility)
         assertEquals(View.GONE, view.findViewById<View>(R.id.widget_night_row).visibility)
+
+        view.findViewById<View>(R.id.widget_header).performClick()
+        val header_intent = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+        assertEquals(DaysActivity::class.java.name, header_intent.component?.className)
+        assertEquals(widget_id, header_intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1))
+        assertEquals(SavedLocations.home_source_host, header_intent.getStringExtra("location_scope"))
     }
 
     @Test
@@ -312,6 +320,40 @@ class PrayerTimesWidgetProviderTest {
     }
 
     @Test
+    fun widget_taps_keep_each_widget_location_scope() {
+        val (first_id, provider) = create_widget_and_provider()
+        val (second_id) = create_widget_and_provider()
+        SavedLocations.save(
+            context,
+            listOf(
+                SavedLocation("loc-a", "A", "30.0", "31.0", null, "UTC"),
+                SavedLocation("loc-b", "B", "55.0", "37.0", null, "UTC")
+            )
+        )
+        WidgetPrefs.set_saved_location_id(context, first_id, "loc-a")
+        WidgetPrefs.set_saved_location_id(context, second_id, "loc-b")
+
+        update_widget_with_host(provider, first_id)
+
+        widget_view(first_id).findViewById<View>(R.id.widget_root).performClick()
+        val first_intent = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+        widget_view(second_id).findViewById<View>(R.id.widget_root).performClick()
+        val second_intent = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+        widget_view(second_id).findViewById<View>(R.id.widget_header).performClick()
+        val days_intent = shadowOf(RuntimeEnvironment.getApplication()).nextStartedActivity
+
+        assertEquals(MainActivity::class.java.name, first_intent.component?.className)
+        assertEquals(first_id, first_intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1))
+        assertEquals("saved:loc-a", first_intent.getStringExtra("location_scope"))
+        assertEquals(MainActivity::class.java.name, second_intent.component?.className)
+        assertEquals(second_id, second_intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1))
+        assertEquals("saved:loc-b", second_intent.getStringExtra("location_scope"))
+        assertEquals(DaysActivity::class.java.name, days_intent.component?.className)
+        assertEquals(second_id, days_intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1))
+        assertEquals("saved:loc-b", days_intent.getStringExtra("location_scope"))
+    }
+
+    @Test
     fun update_with_deleted_saved_location_requires_reconfiguration() {
         val (widget_id, provider) = create_widget_and_provider()
         WidgetPrefs.set_saved_location_id(context, widget_id, "deleted")
@@ -321,7 +363,7 @@ class PrayerTimesWidgetProviderTest {
 
         val view = widget_view(widget_id)
         assertEquals("deleted", WidgetPrefs.get_saved_location_id(context, widget_id))
-        assertEquals(context.getString(R.string.saved_location_missing), view.findViewById<TextView>(R.id.widget_hijri).text.toString())
+        assertEquals(context.getString(R.string.saved_location_missing_widget), view.findViewById<TextView>(R.id.widget_hijri).text.toString())
         assertEquals(View.GONE, view.findViewById<View>(R.id.widget_prayer_row).visibility)
     }
 
@@ -333,7 +375,7 @@ class PrayerTimesWidgetProviderTest {
         provider.onUpdate(context, app_widget_manager, intArrayOf(widget_id))
 
         val message = widget_view(widget_id).findViewById<TextView>(R.id.widget_hijri).text.toString()
-        assertEquals(context.getString(R.string.saved_location_missing), message)
+        assertEquals(context.getString(R.string.saved_location_missing_widget), message)
     }
 
     @Test

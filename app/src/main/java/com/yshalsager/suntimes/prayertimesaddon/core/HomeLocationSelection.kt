@@ -9,6 +9,7 @@ data class HomeSelectedLocation(
     val timezone: TimeZone,
     val timezone_id: String,
     val saved_location: SavedLocation?,
+    val location_missing: Boolean,
     val method_config_override: MethodConfig?,
     val addon_runtime_profile_override: AddonRuntimeProfile?
 )
@@ -26,15 +27,23 @@ fun resolve_selected_home_location(
     context: Context,
     host_label: String,
     host_timezone_id: String,
-    saved_locations: List<SavedLocation> = SavedLocations.load(context)
+    saved_locations: List<SavedLocation> = SavedLocations.load(context),
+    location_key_override: String? = null
 ): HomeSelectedLocation {
     val source_pref = Prefs.get_home_location_source(context)
     val id_pref = Prefs.get_home_location_id(context)
-    val requested_saved_id = if (source_pref == SavedLocations.home_source_saved) id_pref else null
+    val requested_saved_id =
+        if (location_key_override != null) saved_location_id_from_key(location_key_override)
+        else if (source_pref == SavedLocations.home_source_saved) id_pref
+        else null
     val location_context = resolve_location_query_context(context, requested_saved_id, null, null, null, saved_locations)
     val saved = location_context.saved_location
+    val location_missing =
+        location_key_override != null &&
+            location_key_override != SavedLocations.home_source_host &&
+            (requested_saved_id == null || saved == null)
 
-    if (source_pref == SavedLocations.home_source_saved && saved == null) {
+    if (location_key_override == null && source_pref == SavedLocations.home_source_saved && saved == null) {
         Prefs.set_home_location_source(context, SavedLocations.home_source_host)
         Prefs.set_home_location_id(context, "")
     }
@@ -47,6 +56,7 @@ fun resolve_selected_home_location(
             timezone = TimeZone.getTimeZone(timezone_id),
             timezone_id = timezone_id,
             saved_location = saved,
+            location_missing = false,
             method_config_override = location_context.method_config_override,
             addon_runtime_profile_override = location_context.addon_runtime_profile_override
         )
@@ -58,6 +68,7 @@ fun resolve_selected_home_location(
         timezone = TimeZone.getTimeZone(host_timezone_id),
         timezone_id = host_timezone_id,
         saved_location = null,
+        location_missing = location_missing,
         method_config_override = null,
         addon_runtime_profile_override = null
     )

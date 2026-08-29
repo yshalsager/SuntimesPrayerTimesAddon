@@ -14,6 +14,7 @@ class DaysActivity : ThemedActivity() {
         super.onCreate(savedInstanceState)
         vm =
             ViewModelProvider(this, ViewModelProvider.AndroidViewModelFactory.getInstance(application))[DaysViewModel::class.java]
+        vm.set_location_scope(intent.getStringExtra(MainActivity.extra_location_scope))
 
         setContent {
             PrayerTimesTheme {
