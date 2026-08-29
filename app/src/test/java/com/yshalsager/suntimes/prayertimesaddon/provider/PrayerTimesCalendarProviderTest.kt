@@ -252,19 +252,22 @@ class PrayerTimesCalendarProviderTest {
     }
 
     @Test
-    fun prayers_calendar_unknown_saved_location_id_falls_back_to_host() {
+    fun prayers_calendar_unknown_saved_location_id_returns_no_events() {
         Prefs.set_host_event_authority(context, host_event_authority)
         val day_start = utc_day_start(2026, Calendar.MARCH, 12)
 
         val scoped =
             query(
                 "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}?${PrayerTimesCalendarContract.param_saved_location_id}=missing"
-            ).read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART)
-        val host =
-            query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}")
-                .read_events(CalendarContract.Events.TITLE, CalendarContract.Events.DTSTART)
+            )
 
-        assertEquals(host, scoped)
+        assertEquals(0, scoped.count)
+        assertEquals(
+            0,
+            query(
+                "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarInfo?${PrayerTimesCalendarContract.param_saved_location_id}=missing"
+            ).count
+        )
     }
 
     @Test

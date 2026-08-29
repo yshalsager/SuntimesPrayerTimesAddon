@@ -72,7 +72,10 @@ class PrayerTimesWidgetConfigureActivity : ThemedActivity() {
                 )
             }
         val options = listOf(host_entry) + saved_entries
-        val initial_key = WidgetPrefs.get_saved_location_id(this, app_widget_id)?.let { "${SavedLocations.home_source_saved}:$it" } ?: SavedLocations.home_source_host
+        val initial_key = WidgetPrefs.get_saved_location_id(this, app_widget_id)
+            ?.let { "${SavedLocations.home_source_saved}:$it" }
+            ?.takeIf { key -> saved_entries.any { it.key == key } }
+            ?: SavedLocations.home_source_host
 
         setContent {
             PrayerTimesTheme {

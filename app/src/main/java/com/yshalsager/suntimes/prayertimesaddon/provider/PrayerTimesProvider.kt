@@ -117,6 +117,7 @@ class PrayerTimesProvider : ContentProvider() {
                 longitude = null,
                 altitude = null
             )
+        if (location_context.saved_location_missing) return c
         val runtime_profile = location_context.addon_runtime_profile_override
         for (e in visible_addon_events(context, runtime_profile)) {
             if (event_id == null || e.event_id == event_id) c.addRow(event_info_row(context, cols, e, runtime_profile))
@@ -174,6 +175,7 @@ class PrayerTimesProvider : ContentProvider() {
                 longitude = selection_location.longitude,
                 altitude = selection_location.altitude
             )
+        if (location_context.saved_location_missing) return c
         val method_override = location_context.method_config_override
         val runtime_profile = location_context.addon_runtime_profile_override
         val timezone_override = location_context.timezone_override

@@ -192,7 +192,7 @@ class PrayerTimesProviderTest {
     }
 
     @Test
-    fun event_calc_unknown_saved_location_id_falls_back_to_host() {
+    fun event_calc_unknown_saved_location_id_returns_no_time() {
         val day_start = find_eid_day_start()
 
         query_event_calc(
@@ -201,12 +201,10 @@ class PrayerTimesProviderTest {
             selection_args = arrayOf(day_start.toString(), "0", "false", "[]"),
             saved_location_id = "missing-id"
         ).use { cursor ->
-            assertEquals(1, cursor.count)
-            cursor.moveToFirst()
-            assertEquals(
-                day_start + 6 * 60 * 60 * 1000L + 15 * 60 * 1000L,
-                cursor.getLong(cursor.getColumnIndexOrThrow(AlarmEventContract.column_event_timemillis))
-            )
+            assertEquals(0, cursor.count)
+        }
+        query_event_info(saved_location_id = "missing-id").use { cursor ->
+            assertEquals(0, cursor.count)
         }
     }
 

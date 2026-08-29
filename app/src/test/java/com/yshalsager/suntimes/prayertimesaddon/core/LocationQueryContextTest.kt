@@ -59,11 +59,11 @@ class LocationQueryContextTest {
     }
 
     @Test
-    fun resolve_location_query_context_falls_back_to_coordinate_match_when_id_missing() {
+    fun resolve_location_query_context_matches_coordinates_when_id_not_supplied() {
         val resolved =
             resolve_location_query_context(
                 context = context,
-                saved_location_id = "missing",
+                saved_location_id = null,
                 latitude = "30.0",
                 longitude = "31.0",
                 altitude = null,
@@ -80,7 +80,7 @@ class LocationQueryContextTest {
         val resolved =
             resolve_location_query_context(
                 context = context,
-                saved_location_id = "missing",
+                saved_location_id = null,
                 latitude = "30.0",
                 longitude = "31.0",
                 altitude = "0.0",
@@ -92,13 +92,13 @@ class LocationQueryContextTest {
     }
 
     @Test
-    fun resolve_location_query_context_falls_back_to_host_when_unresolvable() {
+    fun resolve_location_query_context_does_not_replace_unknown_id_with_coordinate_match() {
         val resolved =
             resolve_location_query_context(
                 context = context,
                 saved_location_id = "missing",
-                latitude = null,
-                longitude = null,
+                latitude = "30.0",
+                longitude = "31.0",
                 altitude = null,
                 saved_locations = saved_locations
             )

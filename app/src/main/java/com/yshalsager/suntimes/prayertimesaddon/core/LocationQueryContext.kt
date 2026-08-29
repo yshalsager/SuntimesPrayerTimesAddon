@@ -18,6 +18,7 @@ data class LocationQueryContext(
     val latitude_override: Double?
 ) {
     val resolved_saved_location_id: String? = saved_location?.id
+    val saved_location_missing = requested_saved_location_id != null && saved_location == null
 
     fun selection_for_alarm_now(
         alarm_now: Long,
@@ -39,14 +40,9 @@ fun resolve_location_query_context(
     saved_locations: List<SavedLocation> = SavedLocations.load(context)
 ): LocationQueryContext {
     val requested_id = saved_location_id?.trim().orEmpty().ifBlank { null }
-    val from_id = SavedLocations.find_by_id(requested_id, saved_locations)
-    val from_coords =
-        if (from_id == null) {
-            SavedLocations.find_matching_location(saved_locations, latitude, longitude, altitude)
-        } else {
-            null
-        }
-    val saved = from_id ?: from_coords
+    val saved =
+        if (requested_id != null) SavedLocations.find_by_id(requested_id, saved_locations)
+        else SavedLocations.find_matching_location(saved_locations, latitude, longitude, altitude)
     val source = if (saved != null) SavedLocations.home_source_saved else SavedLocations.home_source_host
     val timezone_override = valid_timezone_id(saved?.timezone_id)?.let(TimeZone::getTimeZone)
     val method_override = SavedLocations.method_config_for_location(context, saved)

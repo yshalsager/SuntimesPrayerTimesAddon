@@ -294,6 +294,31 @@ class PrayerTimesWidgetProviderTest {
     }
 
     @Test
+    fun update_with_deleted_saved_location_requires_reconfiguration() {
+        val (widget_id, provider) = create_widget_and_provider()
+        WidgetPrefs.set_saved_location_id(context, widget_id, "deleted")
+
+        update_widget_with_host(provider, widget_id)
+        update_widget_with_host(provider, widget_id)
+
+        val view = widget_view(widget_id)
+        assertEquals("deleted", WidgetPrefs.get_saved_location_id(context, widget_id))
+        assertEquals(context.getString(R.string.saved_location_missing), view.findViewById<TextView>(R.id.widget_hijri).text.toString())
+        assertEquals(View.GONE, view.findViewById<View>(R.id.widget_prayer_row).visibility)
+    }
+
+    @Test
+    fun deleted_saved_location_takes_priority_over_missing_host() {
+        val (widget_id, provider) = create_widget_and_provider()
+        WidgetPrefs.set_saved_location_id(context, widget_id, "deleted")
+
+        provider.onUpdate(context, app_widget_manager, intArrayOf(widget_id))
+
+        val message = widget_view(widget_id).findViewById<TextView>(R.id.widget_hijri).text.toString()
+        assertEquals(context.getString(R.string.saved_location_missing), message)
+    }
+
+    @Test
     fun on_deleted_clears_widget_saved_location_binding() {
         val (widget_id, provider) = create_widget_and_provider()
         WidgetPrefs.set_saved_location_id(context, widget_id, "loc-widget")

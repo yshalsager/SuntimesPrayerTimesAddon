@@ -241,5 +241,6 @@
     <string name='calendar_night_title'>أجزاء الليل</string>
 
     <string name='no_host_found'>لم يتم العثور على SuntimesWidget (ثبّت التطبيق أولاً).</string>
+    <string name='saved_location_missing'>لم يعد الموقع المحفوظ موجودًا. اضغط لإعادة الإعداد.</string>
     <string name='unknown_location'>موقع غير معروف</string>
 </resources>

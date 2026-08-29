@@ -60,6 +60,7 @@ class PrayerTimesCalendarProvider : ContentProvider() {
     ): Cursor {
         val cols = projection ?: PrayerTimesCalendarContract.query_calendar_info_projection
         val c = MatrixCursor(cols)
+        if (location_context.saved_location_missing) return c
         val meta = resolve_prayer_times_calendar_meta(context, source, location_context)
         val summary = meta?.summary ?: context.getString(R.string.no_host_found)
         val color = meta?.color ?: ContextCompat.getColor(context, source.color_res)
@@ -91,6 +92,7 @@ class PrayerTimesCalendarProvider : ContentProvider() {
     ): Cursor {
         val cols = projection ?: PrayerTimesCalendarContract.query_calendar_content_projection
         val c = MatrixCursor(cols)
+        if (location_context.saved_location_missing) return c
         val (window_start, window_end) = parse_window(range_segment) ?: return c
 
         query_prayer_times_calendar_events(context, source, window_start, window_end, location_context).forEach { event ->

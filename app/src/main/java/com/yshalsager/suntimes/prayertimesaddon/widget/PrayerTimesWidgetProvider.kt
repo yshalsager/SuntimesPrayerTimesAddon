@@ -70,19 +70,41 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
 
     private fun update_all(context: Context, mgr: AppWidgetManager, ids: IntArray) {
         val text_context = app_localized_context(context)
+
+        fun show_unavailable(id: Int, message: String, intent: Intent) {
+            val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
+            rv.setTextViewText(R.id.widget_hijri, message)
+            rv.setTextViewText(R.id.widget_gregorian, "")
+            set_static_summary(rv, R.id.widget_summary, "")
+            rv.setViewVisibility(R.id.widget_prayer_row, View.GONE)
+            rv.setViewVisibility(R.id.widget_prohibited_row, View.GONE)
+            rv.setViewVisibility(R.id.widget_night_row, View.GONE)
+            val pending_intent = PendingIntent.getActivity(context, id, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+            rv.setOnClickPendingIntent(R.id.widget_root, pending_intent)
+            rv.setOnClickPendingIntent(R.id.widget_header, pending_intent)
+            mgr.updateAppWidget(id, rv)
+        }
+
+        val location_contexts = ids.associateWith { resolve_location_query_context(context, WidgetPrefs.get_saved_location_id(context, it), null, null, null) }
+        location_contexts.filterValues { it.saved_location_missing }.forEach { (id, _) ->
+            show_unavailable(
+                id,
+                text_context.getString(R.string.saved_location_missing),
+                Intent(context, PrayerTimesWidgetConfigureActivity::class.java)
+                    .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, id)
+            )
+        }
+        val active_ids = ids.filter { !location_contexts.getValue(it).saved_location_missing }
+        if (active_ids.isEmpty()) return
+
         val host = HostResolver.ensure_default_selected(context)
         if (host == null) {
-            ids.forEach { id ->
-                val rv = RemoteViews(context.packageName, R.layout.widget_prayer_times)
-                rv.setTextViewText(R.id.widget_hijri, text_context.getString(R.string.no_host_found))
-                rv.setTextViewText(R.id.widget_gregorian, "")
-                set_static_summary(rv, R.id.widget_summary, "")
-                rv.setViewVisibility(R.id.widget_prohibited_row, View.GONE)
-                rv.setViewVisibility(R.id.widget_night_row, View.GONE)
-                val open_main = PendingIntent.getActivity(context, 0, Intent(context, com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
-                rv.setOnClickPendingIntent(R.id.widget_root, open_main)
-                rv.setOnClickPendingIntent(R.id.widget_header, open_main)
-                mgr.updateAppWidget(id, rv)
+            active_ids.forEach { id ->
+                show_unavailable(
+                    id,
+                    text_context.getString(R.string.no_host_found),
+                    Intent(context, com.yshalsager.suntimes.prayertimesaddon.ui.MainActivity::class.java)
+                )
             }
             return
         }
@@ -102,12 +124,8 @@ class PrayerTimesWidgetProvider : AppWidgetProvider() {
         val colors = widget_colors(context)
         val all_candidates = ArrayList<Long>()
 
-        ids.forEach { id ->
-            val requested_saved_location_id = WidgetPrefs.get_saved_location_id(context, id)
-            val location_context = resolve_location_query_context(context, requested_saved_location_id, null, null, null)
-            if (requested_saved_location_id != null && location_context.saved_location == null) {
-                WidgetPrefs.set_saved_location_id(context, id, null)
-            }
+        active_ids.forEach { id ->
+            val location_context = location_contexts.getValue(id)
             val scoped_saved_location_id = location_context.resolved_saved_location_id
             val tz = location_context.timezone_override ?: host_tz
             val day_start = day_start(now, tz)
