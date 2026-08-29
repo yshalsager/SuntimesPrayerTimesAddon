@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.database.MatrixCursor
 import android.net.Uri
+import android.os.CancellationSignal
 import androidx.core.content.ContextCompat
 import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.LocationQueryContext
@@ -17,6 +18,8 @@ import com.yshalsager.suntimes.prayertimesaddon.core.resolve_prayer_times_calend
 class PrayerTimesCalendarProvider : ContentProvider() {
     companion object {
         val authority = PrayerTimesCalendarContract.authority
+        private const val max_range_millis = 63L * 24 * 60 * 60 * 1000
+        private const val max_timestamp_millis = 4_102_444_800_000L
     }
 
     override fun onCreate(): Boolean = true
@@ -27,7 +30,17 @@ class PrayerTimesCalendarProvider : ContentProvider() {
         selection: String?,
         selectionArgs: Array<String>?,
         sortOrder: String?
+    ): Cursor? = query(uri, projection, selection, selectionArgs, sortOrder, null)
+
+    override fun query(
+        uri: Uri,
+        projection: Array<String>?,
+        selection: String?,
+        selectionArgs: Array<String>?,
+        sortOrder: String?,
+        cancellationSignal: CancellationSignal?
     ): Cursor? {
+        cancellationSignal?.throwIfCanceled()
         val ctx = context ?: return null
         val source = uri.pathSegments.getOrNull(0)?.let(PrayerTimesCalendarSource::from_id) ?: return null
         val location_context =
@@ -42,7 +55,7 @@ class PrayerTimesCalendarProvider : ContentProvider() {
             PrayerTimesCalendarContract.query_calendar_info -> query_calendar_info(ctx, source, projection, location_context)
             PrayerTimesCalendarContract.query_calendar_template_strings -> MatrixCursor(projection ?: PrayerTimesCalendarContract.query_calendar_template_strings_projection)
             PrayerTimesCalendarContract.query_calendar_template_flags -> MatrixCursor(projection ?: PrayerTimesCalendarContract.query_calendar_template_flags_projection)
-            PrayerTimesCalendarContract.query_calendar_content -> query_calendar_content(ctx, source, projection, uri.pathSegments.getOrNull(2), location_context)
+            PrayerTimesCalendarContract.query_calendar_content -> query_calendar_content(ctx, source, projection, uri.pathSegments.getOrNull(2), location_context, cancellationSignal)
             else -> null
         }
     }
@@ -88,14 +101,19 @@ class PrayerTimesCalendarProvider : ContentProvider() {
         source: PrayerTimesCalendarSource,
         projection: Array<String>?,
         range_segment: String?,
-        location_context: LocationQueryContext
+        location_context: LocationQueryContext,
+        cancellation_signal: CancellationSignal?
     ): Cursor {
-        val cols = projection ?: PrayerTimesCalendarContract.query_calendar_content_projection
+        val allowed_columns = PrayerTimesCalendarContract.query_calendar_content_projection
+        val cols = projection ?: allowed_columns
+        require(cols.size <= allowed_columns.size && cols.toSet().size == cols.size && cols.all { it in allowed_columns }) {
+            "Unsupported calendar content projection"
+        }
         val c = MatrixCursor(cols)
         if (location_context.saved_location_missing) return c
         val (window_start, window_end) = parse_window(range_segment) ?: return c
 
-        query_prayer_times_calendar_events(context, source, window_start, window_end, location_context).forEach { event ->
+        query_prayer_times_calendar_events(context, source, window_start, window_end, location_context, cancellation_signal).forEach { event ->
             val row = arrayOfNulls<Any>(cols.size)
             cols.indices.forEach { i ->
                 row[i] =
@@ -119,6 +137,11 @@ class PrayerTimesCalendarProvider : ContentProvider() {
         val (start, end) = range_segment?.split('-', limit = 2)?.takeIf { it.size == 2 } ?: return null
         val window_start = start.toLongOrNull() ?: return null
         val window_end = end.toLongOrNull() ?: return null
-        return if (window_end > window_start) window_start to window_end else null
+        return if (
+            window_start >= 0 &&
+            window_end <= max_timestamp_millis &&
+            window_end > window_start &&
+            window_end - window_start <= max_range_millis
+        ) window_start to window_end else null
     }
 }

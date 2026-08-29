@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.content.pm.ProviderInfo
 import android.database.Cursor
 import android.net.Uri
+import android.os.CancellationSignal
+import android.os.OperationCanceledException
 import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
 import com.yshalsager.suntimes.prayertimesaddon.DeniedHostCalcProvider
@@ -27,6 +29,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.SavedLocations
 import com.yshalsager.suntimes.prayertimesaddon.core.hijri_for_day
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -384,6 +387,46 @@ class PrayerTimesCalendarProviderTest {
             assertEquals(context.getString(R.string.no_host_found), cursor.getString(cursor.getColumnIndexOrThrow(PrayerTimesCalendarContract.column_calendar_summary)))
         }
         assertEquals(0, query("content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/1-2").count)
+    }
+
+    @Test
+    fun oversized_and_extreme_windows_return_empty_cursors() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+
+        query(
+            "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + 64 * day_millis}"
+        ).use { assertEquals(0, it.count) }
+        query(
+            "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/${Long.MAX_VALUE - 1}-${Long.MAX_VALUE}"
+        ).use { assertEquals(0, it.count) }
+    }
+
+    @Test
+    fun calendar_content_rejects_oversized_projection() {
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val uri = Uri.parse(
+            "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}"
+        )
+        val projection = Array(7) { CalendarContract.Events.TITLE }
+
+        assertThrows(IllegalArgumentException::class.java) {
+            context.contentResolver.query(uri, projection, null, null, null)
+        }
+    }
+
+    @Test
+    fun calendar_content_honors_cancellation() {
+        Prefs.set_host_event_authority(context, host_event_authority)
+        val day_start = utc_day_start(2026, Calendar.MARCH, 12)
+        val signal = CancellationSignal().apply { cancel() }
+        val uri = Uri.parse(
+            "content://${PrayerTimesCalendarProvider.authority}/prayers/calendarContent/$day_start-${day_start + day_millis}"
+        )
+
+        assertThrows(OperationCanceledException::class.java) {
+            context.contentResolver.query(uri, null, null, null, null, signal)
+        }
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.yshalsager.suntimes.prayertimesaddon.core
 
 import android.content.Context
+import android.os.CancellationSignal
 import androidx.core.content.ContextCompat
 import com.yshalsager.suntimes.prayertimesaddon.R
 import java.util.Calendar
@@ -22,6 +23,8 @@ data class PrayerTimesCalendarEvent(
     val dtend: Long,
     val event_location: String
 )
+
+private const val max_calendar_events = 600
 
 private data class PrayerTimesCalendarDay(
     val is_friday: Boolean,
@@ -75,7 +78,8 @@ fun query_prayer_times_calendar_events(
     source: PrayerTimesCalendarSource,
     window_start: Long,
     window_end: Long,
-    location_context: LocationQueryContext? = null
+    location_context: LocationQueryContext? = null,
+    cancellation_signal: CancellationSignal? = null
 ): List<PrayerTimesCalendarEvent> {
     if (window_end <= window_start) return emptyList()
     val effective_location_context = resolve_effective_location_context(context, location_context)
@@ -89,7 +93,9 @@ fun query_prayer_times_calendar_events(
     val out = ArrayList<PrayerTimesCalendarEvent>()
     var day_start = first_day
     while (day_start <= last_day) {
+        cancellation_signal?.throwIfCanceled()
         out.addAll(day_events_for_source(context, meta, day_start, source, effective_location_context))
+        if (out.size > max_calendar_events) return emptyList()
         day_start = add_days(day_start, 1, meta.tz)
     }
 
