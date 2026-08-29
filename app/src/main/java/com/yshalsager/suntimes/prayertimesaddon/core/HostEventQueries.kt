@@ -9,11 +9,14 @@ import kotlin.math.tan
 object HostEventQueries {
     fun host_event_exists(context: Context, host_event_authority: String, event_id: String): Boolean {
         val uri = "content://$host_event_authority/${AlarmEventContract.query_event_info}/$event_id".toUri()
-        return try {
-            context.contentResolver.query(uri, arrayOf(AlarmEventContract.column_event_name), null, null, null)
-        } catch (_: SecurityException) {
-            null
-        }?.use { it.moveToFirst() } == true
+        return query_host_provider(
+            authority = host_event_authority,
+            operation = AlarmEventContract.query_event_info,
+            event_id = event_id,
+            query = { context.contentResolver.query(uri, arrayOf(AlarmEventContract.column_event_name), null, null, null) }
+        ) { cur ->
+            if (cur.moveToFirst()) cur.host_string(AlarmEventContract.column_event_name)?.let { true } else null
+        }.value_or_null == true
     }
 
     fun resolve_shadow_ratio_event_id(context: Context, host_event_authority: String, factor: Int): String? {
@@ -32,42 +35,57 @@ object HostEventQueries {
         delta_millis: Long,
         selection: String?,
         selectionArgs: Array<String>?
-    ): Long? {
+    ): Long? = query_host_event_time_result(
+        context,
+        host_event_authority,
+        base_event_id,
+        delta_millis,
+        selection,
+        selectionArgs
+    ).value_or_null
+
+    internal fun query_host_event_time_result(
+        context: Context,
+        host_event_authority: String,
+        base_event_id: String,
+        delta_millis: Long,
+        selection: String?,
+        selection_args: Array<String>?
+    ): HostProviderResult<Long> {
         val host_uri = "content://$host_event_authority/${AlarmEventContract.query_event_calc}/$base_event_id".toUri()
-        val base = try {
-            context.contentResolver.query(host_uri, AlarmEventContract.query_event_calc_projection, selection, selectionArgs, null)
-        } catch (_: SecurityException) {
-            null
-        }?.use { cur ->
-            if (!cur.moveToFirst()) return@use null
-            val i_time = cur.getColumnIndex(AlarmEventContract.column_event_timemillis)
-            if (i_time < 0 || cur.isNull(i_time)) return@use null
-            cur.getLong(i_time)
-        }
+        fun query_time(query_selection: String?, query_args: Array<String>?): HostProviderResult<Long> =
+            query_host_provider(
+                authority = host_event_authority,
+                operation = AlarmEventContract.query_event_calc,
+                event_id = base_event_id,
+                query = {
+                    context.contentResolver.query(
+                        host_uri,
+                        AlarmEventContract.query_event_calc_projection,
+                        query_selection,
+                        query_args,
+                        null
+                    )
+                }
+            ) { cur ->
+                if (cur.moveToFirst()) cur.host_long(AlarmEventContract.column_event_timemillis) else null
+            }
 
-        if (base == null) return null
-        if (delta_millis == 0L) return base
+        val base_result = query_time(selection, selection_args)
+        val base = base_result.value_or_null ?: return base_result
+        if (delta_millis == 0L) return base_result
 
-        val parsed_selection = parse_host_selection(selection, selectionArgs)
+        val parsed_selection = parse_host_selection(selection, selection_args)
         val alarm_now = parsed_selection[AlarmEventContract.extra_alarm_now]?.toLongOrNull()
         val adjusted = base + delta_millis
         if (alarm_now != null && adjusted < alarm_now) {
             val retry = parsed_selection.with_values(mapOf(AlarmEventContract.extra_alarm_now to (base + 60_000L).toString()))
-            val retry_base = try {
-                context.contentResolver.query(host_uri, AlarmEventContract.query_event_calc_projection, retry.selection, retry.selection_args, null)
-            } catch (_: SecurityException) {
-                null
-            }?.use { cur ->
-                if (!cur.moveToFirst()) return@use null
-                val i_time = cur.getColumnIndex(AlarmEventContract.column_event_timemillis)
-                if (i_time < 0 || cur.isNull(i_time)) return@use null
-                cur.getLong(i_time)
-            }
-
-            return (retry_base ?: base) + delta_millis
+            val retry_result = query_time(retry.selection, retry.selection_args)
+            val retry_base = retry_result.value_or_null ?: return retry_result
+            return HostProviderResult.Success(retry_base + delta_millis)
         }
 
-        return adjusted
+        return HostProviderResult.Success(adjusted)
     }
 
     fun query_asr_time(
@@ -108,15 +126,12 @@ object HostEventQueries {
     fun query_host_declination(context: Context, host_event_authority: String, at_millis: Long): Double? {
         val calc_authority = HostConfigReader.calc_authority_from_event_authority(host_event_authority) ?: return null
         val uri = "content://$calc_authority/${CalculatorConfigContract.query_sunpos}/$at_millis".toUri()
-        return try {
-            context.contentResolver.query(uri, CalculatorConfigContract.projection_sunpos_dec, null, null, null)
-        } catch (_: SecurityException) {
-            null
-        }?.use { c ->
-            if (!c.moveToFirst()) return@use null
-            val i = c.getColumnIndex(CalculatorConfigContract.column_sunpos_dec)
-            if (i < 0 || c.isNull(i)) return@use null
-            c.getDouble(i)
-        }
+        return query_host_provider(
+            authority = calc_authority,
+            operation = CalculatorConfigContract.query_sunpos,
+            query = { context.contentResolver.query(uri, CalculatorConfigContract.projection_sunpos_dec, null, null, null) }
+        ) { cur ->
+            if (cur.moveToFirst()) cur.host_double(CalculatorConfigContract.column_sunpos_dec) else null
+        }.value_or_null
     }
 }

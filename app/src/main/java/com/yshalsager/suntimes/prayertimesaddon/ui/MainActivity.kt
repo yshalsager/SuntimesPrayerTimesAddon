@@ -19,6 +19,7 @@ import com.yshalsager.suntimes.prayertimesaddon.R
 import com.yshalsager.suntimes.prayertimesaddon.core.AddonEvent
 import com.yshalsager.suntimes.prayertimesaddon.core.AppClock
 import com.yshalsager.suntimes.prayertimesaddon.core.HostConfigReader
+import com.yshalsager.suntimes.prayertimesaddon.core.HostEventQueries
 import com.yshalsager.suntimes.prayertimesaddon.core.HostResolver
 import com.yshalsager.suntimes.prayertimesaddon.core.ObligatoryPrayerWindowInput
 import com.yshalsager.suntimes.prayertimesaddon.core.Prefs
@@ -39,6 +40,7 @@ import com.yshalsager.suntimes.prayertimesaddon.core.saved_location_id_from_key
 import com.yshalsager.suntimes.prayertimesaddon.core.select_home_location_by_key
 import com.yshalsager.suntimes.prayertimesaddon.core.select_next_and_prev_obligatory_prayer
 import com.yshalsager.suntimes.prayertimesaddon.core.valid_timezone_id
+import com.yshalsager.suntimes.prayertimesaddon.core.value_or_null
 import com.yshalsager.suntimes.prayertimesaddon.core.add_days
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeItemUi
 import com.yshalsager.suntimes.prayertimesaddon.ui.compose.HomeLocationOptionUi
@@ -93,6 +95,7 @@ class MainActivity : ThemedActivity() {
             host_footer = "--",
             error = null,
             show_reinstall_addon = false,
+            show_retry = false,
             days = listOf(
                 HomeDayUiState(0L, "--", null, emptyList()),
                 HomeDayUiState(0L, "--", null, emptyList()),
@@ -121,6 +124,7 @@ class MainActivity : ThemedActivity() {
                     on_select_location = { key -> select_home_location(key) },
                     on_install_host = { open_url(this@MainActivity, "https://github.com/forrestguice/SuntimesWidget") },
                     on_reinstall_addon = { open_url(this@MainActivity, "https://github.com/yshalsager/SuntimesPrayerTimesAddon/releases/latest") },
+                    on_retry = { refresh_home() },
                     on_open_alarm = { event_id -> open_host_alarm(event_id) },
                     on_shift_day = { delta -> shift_day(delta) }
                 )
@@ -171,11 +175,12 @@ class MainActivity : ThemedActivity() {
     private fun refresh_home() {
         tick?.let(ui::removeCallbacks)
         tick = null
+        state = state.copy(show_retry = false)
         val this_refresh_id = ++refresh_id
 
         val host = HostResolver.ensure_default_selected(this)
         if (host == null) {
-            state = state.copy(error = getString(R.string.no_host_found), show_reinstall_addon = false)
+            state = state.copy(error = getString(R.string.no_host_found), show_reinstall_addon = false, show_retry = false)
             return
         }
 
@@ -195,26 +200,30 @@ class MainActivity : ThemedActivity() {
             val message =
                 if (requestable) getString(R.string.missing_permission, required_perm)
                 else getString(R.string.missing_permission_reinstall, required_perm)
-            state = state.copy(error = message, show_reinstall_addon = !requestable)
+            state = state.copy(error = message, show_reinstall_addon = !requestable, show_retry = false)
             return
         }
 
         Thread {
             try {
-                val computed = compute_home(host)
+                val result = compute_home(host)
                 ui.post {
                     if (this_refresh_id != refresh_id) return@post
-                    if (computed == null) {
-                        state = state.copy(error = getString(R.string.saved_location_missing), show_reinstall_addon = false)
-                        return@post
+                    when (result) {
+                        HomeComputeResult.MissingLocation ->
+                            state = state.copy(error = getString(R.string.saved_location_missing), show_reinstall_addon = false, show_retry = false)
+                        HomeComputeResult.HostUnavailable ->
+                            state = state.copy(error = getString(R.string.host_unavailable), show_reinstall_addon = false, show_retry = true)
+                        is HomeComputeResult.Ready -> {
+                            apply_computed(result.computed)
+                            start_tick()
+                        }
                     }
-                    apply_computed(computed)
-                    start_tick()
                 }
             } catch (_: ArithmeticException) {
                 ui.post {
                     if (this_refresh_id != refresh_id) return@post
-                    state = state.copy(error = getString(R.string.hijri_out_of_range), show_reinstall_addon = false)
+                    state = state.copy(error = getString(R.string.hijri_out_of_range), show_reinstall_addon = false, show_retry = false)
                 }
             }
         }.start()
@@ -232,6 +241,12 @@ class MainActivity : ThemedActivity() {
         val day_format: SimpleDateFormat,
         val loc: String
     )
+
+    private sealed interface HomeComputeResult {
+        data class Ready(val computed: Computed) : HomeComputeResult
+        data object MissingLocation : HomeComputeResult
+        data object HostUnavailable : HomeComputeResult
+    }
 
     private fun home_location_options(host_label: String, saved_locations: List<SavedLocation>): List<HomeLocationOptionUi> {
         val out = ArrayList<HomeLocationOptionUi>(saved_locations.size + 1)
@@ -264,13 +279,13 @@ class MainActivity : ThemedActivity() {
         refresh_home()
     }
 
-    private fun compute_home(host: String): Computed? {
+    private fun compute_home(host: String): HomeComputeResult {
         val host_config = HostConfigReader.read_config(this, host)
         val host_label = host_config?.display_label() ?: "--"
         val host_timezone_id = valid_timezone_id(host_config?.timezone) ?: TimeZone.getDefault().id
         val saved_locations = SavedLocations.load(this)
         val selected_location = resolve_selected_home_location(this, host_label, host_timezone_id, saved_locations, location_key_override)
-        if (selected_location.location_missing) return null
+        if (selected_location.location_missing) return HomeComputeResult.MissingLocation
         val method_override = selected_location.method_config_override
         val addon_runtime_profile_override = selected_location.addon_runtime_profile_override
         val tz = selected_location.timezone
@@ -280,6 +295,16 @@ class MainActivity : ThemedActivity() {
         val today_start = day_start_at(now, tz)
         val center = day_start_at(center_day_start ?: today_start, tz)
         center_day_start = center
+        val health_inputs = selected_location.query_inputs(center)
+        if (HostEventQueries.query_host_event_time_result(
+                this,
+                host,
+                "NOON",
+                0L,
+                health_inputs.selection,
+                health_inputs.selection_args
+            ).value_or_null == null
+        ) return HomeComputeResult.HostUnavailable
 
         val time_format = DateFormat.getTimeFormat(this).apply { timeZone = tz }
         val locale = Locale.getDefault()
@@ -598,10 +623,13 @@ class MainActivity : ThemedActivity() {
             host_footer = "HOST: $host",
             error = null,
             show_reinstall_addon = false,
+            show_retry = false,
             days = listOf(day_prev.day, day_center.day, day_next.day)
         )
 
-        return Computed(ui_state, day_center.next_time_millis, day_center.prev_time_millis, day_center.next_boundary_millis, today_start, center, tz, time_format, day_format, loc)
+        return HomeComputeResult.Ready(
+            Computed(ui_state, day_center.next_time_millis, day_center.prev_time_millis, day_center.next_boundary_millis, today_start, center, tz, time_format, day_format, loc)
+        )
     }
 
     private fun open_host_alarm(event_id: String) {

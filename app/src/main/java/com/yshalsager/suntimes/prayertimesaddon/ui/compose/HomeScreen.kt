@@ -120,6 +120,7 @@ data class HomeUiState(
     val host_footer: String,
     val error: String?,
     val show_reinstall_addon: Boolean,
+    val show_retry: Boolean,
     val days: List<HomeDayUiState>
 )
 
@@ -144,12 +145,14 @@ fun HomeScreen(
     on_select_location: (String) -> Unit,
     on_install_host: () -> Unit,
     on_reinstall_addon: () -> Unit,
+    on_retry: () -> Unit,
     on_open_alarm: (String) -> Unit,
     on_shift_day: (Int) -> Unit
 ) {
     val no_host_found = stringResource(R.string.no_host_found)
     val install_host_action = stringResource(R.string.install_host_action)
     val reinstall_addon_action = stringResource(R.string.reinstall_addon_action)
+    val retry_action = stringResource(R.string.retry_action)
     val location_selector_title = stringResource(R.string.home_location_selector_title)
     val locations_cards_action = stringResource(R.string.saved_locations_cards_action)
     val close_label = stringResource(android.R.string.cancel)
@@ -249,6 +252,15 @@ fun HomeScreen(
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                             Button(onClick = on_reinstall_addon) {
                                 Text(text = reinstall_addon_action)
+                            }
+                        }
+                    }
+                }
+                if (state.show_retry) {
+                    item {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                            Button(onClick = on_retry) {
+                                Text(text = retry_action)
                             }
                         }
                     }

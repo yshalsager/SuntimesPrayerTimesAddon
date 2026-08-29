@@ -29,29 +29,26 @@ object HostConfigReader {
     fun read_config(context: Context, host_event_authority: String): HostConfig? {
         val calc_authority = calc_authority_from_event_authority(host_event_authority) ?: return null
         val uri = "content://$calc_authority/${CalculatorConfigContract.query_config}".toUri()
-        val c = try {
-            context.contentResolver.query(
-                uri,
-                CalculatorConfigContract.projection_basic,
-                null,
-                null,
-                null
+        return query_host_provider(
+            authority = calc_authority,
+            operation = CalculatorConfigContract.query_config,
+            query = {
+                context.contentResolver.query(
+                    uri,
+                    CalculatorConfigContract.projection_basic,
+                    null,
+                    null,
+                    null
+                )
+            }
+        ) { cur ->
+            if (!cur.moveToFirst()) return@query_host_provider null
+            HostConfig(
+                location = cur.host_string(CalculatorConfigContract.column_location),
+                latitude = cur.host_string(CalculatorConfigContract.column_latitude),
+                longitude = cur.host_string(CalculatorConfigContract.column_longitude),
+                timezone = cur.host_string(CalculatorConfigContract.column_timezone)
             )
-        } catch (_: SecurityException) {
-            null
-        } ?: return null
-
-        c.use { cur ->
-            if (!cur.moveToFirst()) return null
-
-            fun col(name: String): String? = cur.getColumnIndex(name).takeIf { it >= 0 && !cur.isNull(it) }?.let(cur::getString)
-
-            return HostConfig(
-                location = col(CalculatorConfigContract.column_location),
-                latitude = col(CalculatorConfigContract.column_latitude),
-                longitude = col(CalculatorConfigContract.column_longitude),
-                timezone = col(CalculatorConfigContract.column_timezone)
-            )
-        }
+        }.value_or_null
     }
 }

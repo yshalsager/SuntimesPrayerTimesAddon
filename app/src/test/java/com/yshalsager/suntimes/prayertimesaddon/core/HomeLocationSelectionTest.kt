@@ -35,6 +35,19 @@ class HomeLocationSelectionTest {
     }
 
     @Test
+    fun host_query_inputs_include_requested_alarm_time() {
+        val selected = resolve_selected_home_location(context, "Mecca", "Asia/Riyadh", emptyList())
+
+        val inputs = selected.query_inputs(123_456L)
+        val parsed = parse_host_selection(inputs.selection, inputs.selection_args)
+
+        assertEquals("123456", parsed[AlarmEventContract.extra_alarm_now])
+        assertEquals("0", parsed[AlarmEventContract.extra_alarm_offset])
+        assertEquals("false", parsed[AlarmEventContract.extra_alarm_repeat])
+        assertEquals("[]", parsed[AlarmEventContract.extra_alarm_repeat_days])
+    }
+
+    @Test
     fun resolve_selected_home_location_normalizes_missing_saved_selection() {
         Prefs.set_home_location_source(context, SavedLocations.home_source_saved)
         Prefs.set_home_location_id(context, "missing-id")

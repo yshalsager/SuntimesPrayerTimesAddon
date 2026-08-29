@@ -244,6 +244,8 @@
     <string name='calendar_night_title'>Night Portions</string>
 
     <string name='no_host_found'>No SuntimesWidget host found (install SuntimesWidget first).</string>
+    <string name='host_unavailable'>SuntimesWidget did not return prayer times. Check it, then try again.</string>
+    <string name='retry_action'>Try again</string>
     <string name='saved_location_missing'>Saved location no longer exists.</string>
     <string name='saved_location_missing_widget'>Saved location no longer exists. Tap to reconfigure.</string>
     <string name='widget_host_permission_missing'>SuntimesWidget access is unavailable. Tap to fix.</string>

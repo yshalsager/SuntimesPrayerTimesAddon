@@ -15,13 +15,13 @@ data class SunTimes(val noon: Long?, val sunrise: Long?, val sunset: Long?)
 
 private data class EidSpec(val month: Int, val day: Int, val is_start: Boolean)
 
-private const val event_calc_selection =
+internal const val event_calc_selection =
     AlarmEventContract.extra_alarm_now + "=? AND " +
         AlarmEventContract.extra_alarm_offset + "=? AND " +
         AlarmEventContract.extra_alarm_repeat + "=? AND " +
         AlarmEventContract.extra_alarm_repeat_days + "=?"
 
-private fun event_calc_args(alarm_now: Long): Array<String> =
+internal fun event_calc_args(alarm_now: Long): Array<String> =
     arrayOf(alarm_now.toString(), "0", "false", "[]")
 
 private fun resolve_host_timezone(
@@ -171,24 +171,26 @@ fun query_host_sun(
 ): SunTimes? {
     val calc_authority = HostConfigReader.calc_authority_from_event_authority(host_event_authority) ?: return null
     val uri = "content://$calc_authority/${CalculatorConfigContract.query_sun}/$at_millis".toUri()
-    return try {
-        context.contentResolver.query(uri, CalculatorConfigContract.projection_sun_basic, selection, selection_args, null)
-    } catch (_: SecurityException) {
-        null
-    }?.use { c ->
-        if (!c.moveToFirst()) return@use null
-
-        fun get(col: String): Long? {
-            val i = c.getColumnIndex(col)
-            return if (i >= 0 && !c.isNull(i)) c.getLong(i) else null
+    return query_host_provider(
+        authority = calc_authority,
+        operation = CalculatorConfigContract.query_sun,
+        query = {
+            context.contentResolver.query(
+                uri,
+                CalculatorConfigContract.projection_sun_basic,
+                selection,
+                selection_args,
+                null
+            )
         }
-
+    ) { cur ->
+        if (!cur.moveToFirst()) return@query_host_provider null
         SunTimes(
-            noon = get(CalculatorConfigContract.column_sun_noon),
-            sunrise = get(CalculatorConfigContract.column_sunrise),
-            sunset = get(CalculatorConfigContract.column_sunset)
+            noon = cur.host_long(CalculatorConfigContract.column_sun_noon),
+            sunrise = cur.host_long(CalculatorConfigContract.column_sunrise),
+            sunset = cur.host_long(CalculatorConfigContract.column_sunset)
         )
-    }
+    }.value_or_null
 }
 
 fun query_host_addon_time(

@@ -23,6 +23,10 @@ class FakeHostEventProvider : ContentProvider() {
     companion object {
         var available = true
         var event_calc_failures_remaining = 0
+        var query_failure: RuntimeException? = null
+        var malformed_event_time = false
+        var event_calc_query_count = 0
+        var fail_event_calc_query: Int? = null
         var last_query_thread: Thread? = null
         var last_alarm_offset: String? = null
     }
@@ -36,12 +40,17 @@ class FakeHostEventProvider : ContentProvider() {
         selection_args: Array<String>?,
         sort_order: String?
     ): Cursor? {
+        query_failure?.let { throw it }
         if (!available) return null
         val path = uri.pathSegments
         if (path.isEmpty()) return null
         return when (path[0]) {
             AlarmEventContract.query_event_info -> query_event_info(path.getOrNull(1), projection)
-            AlarmEventContract.query_event_calc -> query_event_calc(path.getOrNull(1), projection, selection, selection_args)
+            AlarmEventContract.query_event_calc -> {
+                event_calc_query_count += 1
+                if (event_calc_query_count == fail_event_calc_query) throw IllegalArgumentException("event calc failed")
+                query_event_calc(path.getOrNull(1), projection, selection, selection_args)
+            }
             else -> null
         }
     }
@@ -80,7 +89,7 @@ class FakeHostEventProvider : ContentProvider() {
             row[i] =
                 when (cols[i]) {
                     AlarmEventContract.column_event_name -> event_id
-                    AlarmEventContract.column_event_timemillis -> time
+                    AlarmEventContract.column_event_timemillis -> if (malformed_event_time) "invalid" else time
                     else -> null
                 }
         }
@@ -185,6 +194,8 @@ class FallbackOnlyHostEventProvider : ContentProvider() {
 class FakeHostCalcProvider : ContentProvider() {
     companion object {
         var location = "Test Location"
+        var query_failure: RuntimeException? = null
+        var malformed_sun_time = false
         var last_extra: String? = null
     }
 
@@ -197,6 +208,7 @@ class FakeHostCalcProvider : ContentProvider() {
         selection_args: Array<String>?,
         sort_order: String?
     ): Cursor? {
+        query_failure?.let { throw it }
         val path = uri.pathSegments
         if (path.isEmpty()) return null
         return when (path[0]) {
@@ -243,9 +255,9 @@ class FakeHostCalcProvider : ContentProvider() {
         cols.indices.forEach { i ->
             row[i] =
                 when (cols[i]) {
-                    CalculatorConfigContract.column_sun_noon -> day_start + 12 * 60 * 60 * 1000L + location_shift
-                    CalculatorConfigContract.column_sunrise -> day_start + 6 * 60 * 60 * 1000L + location_shift
-                    CalculatorConfigContract.column_sunset -> day_start + 18 * 60 * 60 * 1000L + location_shift
+                    CalculatorConfigContract.column_sun_noon -> if (malformed_sun_time) "invalid" else day_start + 12 * 60 * 60 * 1000L + location_shift
+                    CalculatorConfigContract.column_sunrise -> if (malformed_sun_time) "invalid" else day_start + 6 * 60 * 60 * 1000L + location_shift
+                    CalculatorConfigContract.column_sunset -> if (malformed_sun_time) "invalid" else day_start + 18 * 60 * 60 * 1000L + location_shift
                     else -> null
                 }
         }

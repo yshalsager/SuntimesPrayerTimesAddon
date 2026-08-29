@@ -15,6 +15,7 @@ import com.yshalsager.suntimes.prayertimesaddon.offday_host_event_authority
 import com.yshalsager.suntimes.prayertimesaddon.provider.PrayerTimesProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,6 +23,7 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowLog
 import org.robolectric.annotation.Config
 import java.util.Calendar
 import java.util.Locale
@@ -37,7 +39,14 @@ class TimesTest {
         context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE).edit().clear().apply()
         FakeHostEventProvider.event_calc_failures_remaining = 0
+        FakeHostEventProvider.query_failure = null
+        FakeHostEventProvider.malformed_event_time = false
+        FakeHostEventProvider.event_calc_query_count = 0
+        FakeHostEventProvider.fail_event_calc_query = null
         FakeHostCalcProvider.location = "Test Location"
+        FakeHostCalcProvider.query_failure = null
+        FakeHostCalcProvider.malformed_sun_time = false
+        ShadowLog.clear()
         Prefs.set_asr_factor(context, 1)
         Prefs.set_host_event_authority(context, host_event_authority)
 
@@ -154,6 +163,58 @@ class TimesTest {
 
         assertEquals(day_start + 5 * 60 * 60 * 1000L, fajr)
         assertEquals("SUN_-18.0r", extra_query?.base_event_id)
+    }
+
+    @Test
+    fun incompatible_host_queries_fail_closed_with_diagnostics() {
+        FakeHostEventProvider.query_failure = IllegalArgumentException("unsupported event contract")
+
+        assertEquals(
+            HostProviderResult.UnsupportedContract,
+            HostEventQueries.query_host_event_time_result(context, host_event_authority, "SUN_-19.5r", 0L, null, null)
+        )
+        assertNull(query_host_addon_time(context, host_event_authority, AddonEvent.prayer_fajr, 0L))
+        assertTrue(
+            ShadowLog.getLogsForTag("HostProvider")
+                .any { it.msg.contains("authority=$host_event_authority") && it.msg.contains("operation=eventCalc") && it.msg.contains("event=SUN_-19.5r") }
+        )
+
+        FakeHostEventProvider.query_failure = null
+        FakeHostCalcProvider.query_failure = IllegalArgumentException("unsupported calculator contract")
+
+        assertNull(HostConfigReader.read_config(context, host_event_authority))
+        assertNull(query_host_sun(context, host_event_authority, 0L))
+    }
+
+    @Test
+    fun malformed_host_cursor_values_fail_closed() {
+        FakeHostEventProvider.malformed_event_time = true
+        FakeHostCalcProvider.malformed_sun_time = true
+
+        assertEquals(
+            HostProviderResult.UnsupportedContract,
+            HostEventQueries.query_host_event_time_result(context, host_event_authority, "SUN_-19.5r", 0L, null, null)
+        )
+        assertNull(query_host_addon_time(context, host_event_authority, AddonEvent.prayer_fajr, 0L))
+        assertNull(query_host_sun(context, host_event_authority, 0L))
+    }
+
+    @Test
+    fun retry_query_failures_are_propagated() {
+        FakeHostEventProvider.fail_event_calc_query = 2
+        val selection = "alarm_now=? AND alarm_offset=? AND alarm_repeat=? AND alarm_repeat_days=?"
+        val selection_args = arrayOf((7L * 60L * 60L * 1000L).toString(), "0", "false", "[]")
+
+        val result = HostEventQueries.query_host_event_time_result(
+            context,
+            host_event_authority,
+            "SUNRISE",
+            -60L * 60L * 1000L,
+            selection,
+            selection_args
+        )
+
+        assertEquals(HostProviderResult.UnsupportedContract, result)
     }
 
     @Test

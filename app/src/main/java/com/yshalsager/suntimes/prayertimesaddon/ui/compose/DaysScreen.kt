@@ -129,6 +129,7 @@ private fun DaysContent(
     val grant_permission = stringResource(R.string.grant_permission)
     val install_host_action = stringResource(R.string.install_host_action)
     val reinstall_addon_action = stringResource(R.string.reinstall_addon_action)
+    val retry_action = stringResource(R.string.retry_action)
     Column(Modifier.padding(padding)) {
         if (state.error != null) {
             Card(
@@ -156,6 +157,12 @@ private fun DaysContent(
                         Spacer(Modifier.height(10.dp))
                         Button(onClick = on_reinstall_addon) {
                             Text(text = reinstall_addon_action)
+                        }
+                    }
+                    if (state.show_retry) {
+                        Spacer(Modifier.height(10.dp))
+                        Button(onClick = { vm.load(force = true) }) {
+                            Text(text = retry_action)
                         }
                     }
                 }

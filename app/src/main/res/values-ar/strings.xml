@@ -241,6 +241,8 @@
     <string name='calendar_night_title'>أجزاء الليل</string>
 
     <string name='no_host_found'>لم يتم العثور على SuntimesWidget (ثبّت التطبيق أولاً).</string>
+    <string name='host_unavailable'>لم يُرجع SuntimesWidget مواقيت الصلاة. تحقّق منه ثم حاول مرة أخرى.</string>
+    <string name='retry_action'>حاول مرة أخرى</string>
     <string name='saved_location_missing'>لم يعد الموقع المحفوظ موجودًا.</string>
     <string name='saved_location_missing_widget'>لم يعد الموقع المحفوظ موجودًا. اضغط لإعادة الإعداد.</string>
     <string name='widget_host_permission_missing'>الوصول إلى SuntimesWidget غير متاح. اضغط للإصلاح.</string>

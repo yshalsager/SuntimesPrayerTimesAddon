@@ -51,9 +51,10 @@ private fun build_location_query_inputs(
     addon_runtime_profile_override: AddonRuntimeProfile?
 ): LocationQueryInputs {
     val selection_pair = saved_location?.let { SavedLocations.build_selection(alarm_now, it) }
+        ?: (event_calc_selection to event_calc_args(alarm_now))
     return LocationQueryInputs(
-        selection = selection_pair?.first,
-        selection_args = selection_pair?.second,
+        selection = selection_pair.first,
+        selection_args = selection_pair.second,
         timezone_override = timezone_override,
         latitude_override = latitude_override,
         method_config_override = method_config_override,
