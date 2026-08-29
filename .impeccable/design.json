@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-29T10:46:44Z",
+  "title": "Design System: Suntimes Prayer Times Addon",
+  "extensions": {
+    "colorMeta": {
+      "earth-teal-light": {
+        "role": "primary",
+        "displayName": "Earth Teal",
+        "canonical": "#00695C",
+        "tonalRamp": ["#00201B", "#00382F", "#005044", "#00695C", "#2F8175", "#65A197", "#A0C9C2", "#E4F5F1"]
+      },
+      "prayer-gold-light": {
+        "role": "secondary",
+        "displayName": "Prayer Gold",
+        "canonical": "#D4A017",
+        "tonalRamp": ["#251A00", "#413000", "#604700", "#806000", "#A37C00", "#C89A10", "#E9C766", "#FFF0C0"]
+      },
+      "quiet-parchment-light": {
+        "role": "neutral",
+        "displayName": "Quiet Parchment",
+        "canonical": "#F6F1E6",
+        "tonalRamp": ["#211F1A", "#39372F", "#525047", "#6C6A60", "#89867B", "#AAA69A", "#CEC9BC", "#F6F1E6"]
+      },
+      "charcoal-ink-light": {
+        "role": "neutral",
+        "displayName": "Charcoal Ink",
+        "canonical": "#263238",
+        "tonalRamp": ["#111719", "#263238", "#3F4B51", "#58656B", "#748087", "#929DA3", "#B3BDC2", "#EDF2F4"]
+      },
+      "sapphire-light": {
+        "role": "primary",
+        "displayName": "Sapphire",
+        "canonical": "#1B5EAB",
+        "tonalRamp": ["#001C39", "#00315F", "#004788", "#1B5EAB", "#4778BE", "#7395D0", "#A7B9E2", "#E1E8F7"]
+      },
+      "rose-light": {
+        "role": "primary",
+        "displayName": "Rose",
+        "canonical": "#8B2F4A",
+        "tonalRamp": ["#30000F", "#521025", "#70233A", "#8B2F4A", "#A84C66", "#C66C84", "#E39AAD", "#FFD9E2"]
+      }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Large prayer times and high-value summaries." },
+      "title": { "displayName": "Title", "purpose": "Screen titles, dates, locations, and prayer names." },
+      "body": { "displayName": "Body", "purpose": "Explanations, values, and status text." },
+      "label": { "displayName": "Label", "purpose": "Compact widget labels and metadata; the minimum meaningful role." }
+    },
+    "shadows": [],
+    "breakpoints": [
+      { "name": "compact-widget", "value": "250dp" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "description": "Decisive confirmation or recovery action using the active palette.",
+      "html": "<button class=\"ds-button-primary\">Confirm</button>",
+      "css": ".ds-button-primary { background: #00695C; color: #FFFFFF; border: 0; border-radius: 20px; padding: 10px 24px; min-height: 40px; font: 500 14px/20px Roboto, system-ui, sans-serif; } .ds-button-primary:hover { background: #00574C; } .ds-button-primary:focus-visible { outline: 3px solid rgba(0,105,92,.35); outline-offset: 2px; } .ds-button-primary:active { background: #004A41; }"
+    },
+    {
+      "name": "Text Button",
+      "kind": "button",
+      "description": "Low-emphasis dialog and navigation action.",
+      "html": "<button class=\"ds-button-text\">Cancel</button>",
+      "css": ".ds-button-text { background: transparent; color: #00695C; border: 0; border-radius: 20px; padding: 10px 12px; min-height: 40px; font: 500 14px/20px Roboto, system-ui, sans-serif; } .ds-button-text:hover { background: rgba(0,105,92,.08); } .ds-button-text:focus-visible { outline: 3px solid rgba(0,105,92,.35); outline-offset: 2px; } .ds-button-text:active { background: rgba(0,105,92,.14); }"
+    },
+    {
+      "name": "Outlined Field",
+      "kind": "input",
+      "description": "Material-style settings input with explicit label and active outline.",
+      "html": "<label class=\"ds-field\"><span>Location</span><input value=\"Cairo\" /></label>",
+      "css": ".ds-field { display: grid; gap: 4px; color: #263238; font: 400 12px/16px Roboto, system-ui, sans-serif; } .ds-field input { background: #FFFFFF; color: #263238; border: 1px solid rgba(38,50,56,.55); border-radius: 4px; padding: 14px 12px; font: 400 16px/24px Roboto, system-ui, sans-serif; } .ds-field input:hover { border-color: #263238; } .ds-field input:focus-visible { border: 2px solid #00695C; outline: 0; padding: 13px 11px; }"
+    },
+    {
+      "name": "Information Card",
+      "kind": "card",
+      "refersTo": "location-option-card",
+      "description": "Flat surface card with soft structural outline.",
+      "html": "<article class=\"ds-card\"><strong>Cairo</strong><span>Africa/Cairo · Custom method</span></article>",
+      "css": ".ds-card { display: grid; gap: 2px; background: #FFFFFF; color: #263238; border: 1px solid rgba(38,50,56,.10); border-radius: 12px; padding: 10px 12px; font: 400 16px/24px Roboto, system-ui, sans-serif; } .ds-card strong { font-weight: 600; } .ds-card span { color: rgba(38,50,56,.70); font-size: 12px; line-height: 16px; } .ds-card:hover { border-color: #00695C; } .ds-card:focus-within { outline: 3px solid rgba(0,105,92,.25); outline-offset: 2px; }"
+    },
+    {
+      "name": "Today Widget",
+      "kind": "custom",
+      "refersTo": "widget-container",
+      "description": "Prayer summary container whose detail reduces responsively instead of shrinking.",
+      "html": "<section class=\"ds-widget\"><i></i><strong>12 Sha'ban 1447</strong><span>Asr in 1:24 · Cairo</span><div><b>Fajr<br>5:08</b><b>Dhuhr<br>12:09</b><b>Asr<br>3:24</b><b>Maghrib<br>5:51</b><b>Isha<br>7:12</b></div></section>",
+      "css": ".ds-widget { display: grid; gap: 6px; width: 340px; max-width: 100%; background: #F6F1E6; color: #263238; border: 1px solid rgba(0,0,0,.10); border-radius: 18px; padding: 6px; font: 400 13px/18px Roboto, system-ui, sans-serif; } .ds-widget i { display: block; height: 3px; border-radius: 2px; background: #00695C; } .ds-widget strong { font-size: 17px; line-height: 22px; } .ds-widget span { color: rgba(38,50,56,.70); } .ds-widget div { display: flex; justify-content: space-between; text-align: center; } .ds-widget b { font-size: 12px; line-height: 17px; } .ds-widget:hover { border-color: rgba(0,105,92,.45); } .ds-widget:focus-visible { outline: 3px solid rgba(0,105,92,.30); outline-offset: 2px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Almanac",
+    "overview": "The interface should feel like a dependable daily reference: calm enough for repeated use, precise enough for alarms, and structured enough that the active date, location, and next prayer are never ambiguous. Native Material 3 patterns carry interaction behavior while a restrained, earth-led palette gives the product its own identity. Information hierarchy must survive small widgets, large system fonts, English, and Arabic RTL. Prayer times lead; dates, method details, prohibited windows, and night portions recede or disappear as space narrows.",
+    "keyCharacteristics": [
+      "Calm earth-led color with user-selectable sapphire, rose, and dynamic alternatives.",
+      "Native Android typography and controls.",
+      "Tonal hierarchy, soft borders, and no decorative elevation.",
+      "Location, date, next prayer, and failures remain explicit.",
+      "Responsive reduction rather than compressed text."
+    ],
+    "rules": [
+      { "name": "The One Active Accent Rule", "body": "Use Earth Teal, Sapphire, Rose, or Android dynamic color as the active palette—never mix palette primaries on one surface.", "section": "colors" },
+      { "name": "The Meaning Before Color Rule", "body": "Color may reinforce prayer, prohibited, and night states, but labels, structure, and icons must carry the meaning independently.", "section": "colors" },
+      { "name": "The Time Leads Rule", "body": "A prayer time must be at least as prominent as its label, and the next prayer may receive weight and accent—not a larger decorative font.", "section": "typography" },
+      { "name": "The No Squeezing Rule", "body": "When content does not fit, reduce detail or change layout. Never solve narrow widths by pushing meaningful text below 11sp.", "section": "typography" },
+      { "name": "The Flat Almanac Rule", "body": "Persistent content uses tonal layering and borders, never decorative drop shadows.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do make date, location, and next prayer legible before secondary method details.",
+      "Do preserve 44dp activity touch targets and native Android state feedback.",
+      "Do use tonal surfaces and soft 1dp outlines for hierarchy.",
+      "Do test English, Arabic RTL, 12/24-hour time, system font scaling, light/dark themes, and compact widget widths.",
+      "Do replace unavailable data with an explicit, actionable state."
+    ],
+    "donts": [
+      "Don't use ornamental religious motifs.",
+      "Don't use flashy clock styling.",
+      "Don't ship information-dense layouts without hierarchy.",
+      "Don't add decorative effects that compete with times.",
+      "Don't show ambiguous failure states or a normal-looking table of placeholders.",
+      "Don't shrink meaningful widget text below 11sp to force six columns into a compact width.",
+      "Don't combine multiple user-selectable palette accents on one surface."
+    ]
+  }
+}
