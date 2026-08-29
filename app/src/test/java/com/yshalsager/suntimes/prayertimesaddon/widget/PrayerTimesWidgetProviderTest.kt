@@ -490,7 +490,8 @@ class PrayerTimesWidgetProviderTest {
     @Test
     fun update_schedules_alarm_with_token() {
         val (widget_id, provider) = create_widget_and_provider()
-        context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).edit().putString(alarm_token_pref_key, "legacy-token").apply()
+        context.getSharedPreferences("widget_transient", Context.MODE_PRIVATE).edit().clear().commit()
+        context.getSharedPreferences("${context.packageName}_widget", Context.MODE_PRIVATE).edit().putString(alarm_token_pref_key, "legacy-token").commit()
         val now = System.currentTimeMillis()
         val day_start = now - Math.floorMod(now, day_millis)
         AppClock.set_fixed_now_millis(day_start + 13L * 60L * 60L * 1000L)
